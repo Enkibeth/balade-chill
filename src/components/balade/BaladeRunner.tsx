@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Flag, Cloud, CloudOff } from 'lucide-react'
 import { useBaladeSession } from '@/hooks/useBaladeSession'
+import { OfflineDownloadButton } from '@/components/offline/OfflineDownloadButton'
 import { EtapeCard } from './EtapeCard'
 import { ScoreSummary } from './ScoreSummary'
 import type { Balade, BaladeSession } from '@/types'
@@ -105,6 +106,9 @@ export function BaladeRunner({
           {etapes.length} étapes · ~{Math.round(balade.estimated_duration_min)} min
           · {balade.distance_km} km
         </p>
+        <div className="mt-4 flex justify-center">
+          <OfflineDownloadButton balade={balade} />
+        </div>
       </header>
 
       {balade.prologue && (

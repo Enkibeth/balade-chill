@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { upsertSession, type SessionUpsert } from '@/lib/supabase/queries'
+import {
+  cacheSession,
+  queuePendingScore,
+  clearPendingScore,
+} from '@/lib/offline/idb'
 import type { Balade, BaladeSession } from '@/types'
 
 type ScoreMap = Record<string, boolean>
@@ -65,6 +70,10 @@ export function useBaladeSession(
   }, [session])
 
   const persist = useCallback(async (s: BaladeSession) => {
+    const local: BaladeSession = { ...s, id: idRef.current }
+    // Always mirror locally first so the session survives offline.
+    void cacheSession(local).catch(() => {})
+
     const payload: SessionUpsert = {
       ...(idRef.current ? { id: idRef.current } : {}),
       balade_id: s.balade_id,
@@ -81,7 +90,10 @@ export function useBaladeSession(
       const saved = await upsertSession(createClient(), payload)
       idRef.current = saved.id
       setSynced(true)
+      void clearPendingScore(s.balade_id).catch(() => {})
     } catch {
+      // Offline or failing — queue the update for later sync.
+      void queuePendingScore(local).catch(() => {})
       setSynced(false)
     }
   }, [])
