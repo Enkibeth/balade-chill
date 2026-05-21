@@ -156,8 +156,9 @@ export function renderBaladeHtml(balade: Balade): string {
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background-color: ${esc(t.bg)}; font-family: 'Lora', serif; color: var(--ink); min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 1000; opacity: 0.3; }
   .container { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
-  .cover { background: var(--cream); border: 2px solid var(--gold); padding: 48px 32px; text-align: center; position: relative; margin-bottom: 24px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+  .cover { background: var(--cream); border: 2px solid var(--gold); padding: 48px 32px; text-align: center; position: relative; margin-bottom: 24px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.05); }
   .cover::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(0,0,0,0.18); pointer-events: none; }
   .cover-ornament { font-size: 28px; letter-spacing: 12px; color: var(--gold); opacity: 0.7; margin-bottom: 20px; }
   .cover-label { font-size: 11px; letter-spacing: 5px; text-transform: uppercase; color: var(--faded); margin-bottom: 16px; }
@@ -185,15 +186,17 @@ export function renderBaladeHtml(balade: Balade): string {
   .etape-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(245,239,224,0.55); margin-bottom: 2px; }
   .etape-location { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--cream); font-style: italic; }
   .etape-body { padding: 24px; }
-  .story-excerpt { background: var(--parchment); border-left: 2px solid var(--rose); padding: 14px 18px; margin-bottom: 20px; font-size: 13.5px; font-style: italic; line-height: 1.8; color: #4a3020; }
+  .story-excerpt { background: var(--parchment); border-left: 2px solid var(--rose); padding: 14px 18px 14px 34px; margin-bottom: 20px; font-size: 13.5px; font-style: italic; line-height: 1.8; color: #4a3020; position: relative; }
+  .story-excerpt::before { content: '❝'; font-family: 'Playfair Display', serif; font-size: 32px; color: var(--rose); opacity: 0.4; position: absolute; top: 2px; left: 12px; }
   .direction { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 20px; background: #f0e8d8; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.15); }
   .direction-icon { font-size: 18px; flex-shrink: 0; }
   .direction-text { font-size: 13px; color: var(--faded); line-height: 1.6; }
   .enigme-block { border: 1.5px solid var(--burgundy); padding: 20px; margin-bottom: 16px; position: relative; }
   .difficulty-tag { position: absolute; top: -1px; right: 16px; background: var(--burgundy); color: var(--cream); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 10px; }
-  .enigme-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--burgundy); margin-bottom: 14px; }
+  .enigme-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--burgundy); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .enigme-title::after { content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.15); }
   .enigme-text { font-size: 14px; line-height: 1.85; color: var(--ink); }
-  .cipher-block { background: var(--cipher-bg); border: 1px solid rgba(74,222,128,0.25); padding: 16px 20px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; color: var(--cipher-green); text-align: center; }
+  .cipher-block { background: var(--cipher-bg); border: 1px solid rgba(74,222,128,0.25); padding: 16px 20px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; color: var(--cipher-green); text-align: center; box-shadow: inset 0 0 20px rgba(74,222,128,0.05); }
   .cipher-block .cipher-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: rgba(74,222,128,0.4); display: block; margin-bottom: 8px; font-family: 'Lora', serif; }
   .cipher-block .cipher-code { font-size: 18px; font-weight: 700; word-break: break-word; line-height: 1.6; letter-spacing: 3px; }
   .polybe-grid { margin: 14px auto; max-width: 300px; }
@@ -201,7 +204,8 @@ export function renderBaladeHtml(balade: Balade): string {
   .polybe-grid th { background: rgba(74,222,128,0.15); color: var(--cipher-green); padding: 6px; text-align: center; border: 1px solid rgba(74,222,128,0.2); }
   .polybe-grid td { color: rgba(245,239,224,0.6); padding: 6px; text-align: center; border: 1px solid rgba(74,222,128,0.1); }
   .med-block { border: 1.5px solid var(--teal); padding: 20px; margin-bottom: 16px; background: rgba(26,107,107,0.04); }
-  .med-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; }
+  .med-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .med-title::after { content: ''; flex: 1; height: 1px; background: rgba(26,107,107,0.2); }
   .med-question { font-size: 13.5px; line-height: 1.8; color: var(--ink); }
   .med-spec { display: inline-block; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: var(--teal); color: white; padding: 2px 8px; border-radius: 100px; margin-bottom: 10px; }
   .action-block { background: rgba(0,0,0,0.04); border: 1px dashed var(--rose); padding: 14px 18px; font-size: 13px; line-height: 1.7; }
@@ -262,6 +266,12 @@ function go(btn, id) {
   var open = el.style.display === 'block';
   el.style.display = open ? 'none' : 'block';
   btn.classList.toggle('open', !open);
+  var labels = btn.classList.contains('hint')
+    ? ['💡 Indice', '💡 Masquer']
+    : btn.classList.contains('answer')
+      ? ['✓ Réponse', '✓ Masquer']
+      : ['🩺 Voir la réponse', '🩺 Masquer'];
+  btn.textContent = open ? labels[0] : labels[1];
 }
 document.querySelectorAll('.step-dot').forEach(function (d) {
   d.addEventListener('click', function (e) {
