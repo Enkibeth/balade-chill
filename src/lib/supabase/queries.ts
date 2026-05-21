@@ -58,6 +58,7 @@ export async function saveGeneratedBalade(
   const { data, error } = await supabase
     .from('balades')
     .insert({
+      id: balade.id,
       title: balade.title,
       city: balade.city,
       country: balade.country,
