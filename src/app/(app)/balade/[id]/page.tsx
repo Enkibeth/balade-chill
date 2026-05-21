@@ -2,11 +2,13 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getBaladeById, getSessionForUser } from '@/lib/supabase/queries'
 import { BaladeRunner } from '@/components/balade/BaladeRunner'
+import { ValidationScreen } from '@/components/balade/ValidationScreen'
 
 export const dynamic = 'force-dynamic'
 
 export default async function BaladePage({
   params,
+  searchParams,
 }: {
   params: { id: string }
   searchParams: { mode?: string }
@@ -20,8 +22,12 @@ export default async function BaladePage({
   const balade = await getBaladeById(supabase, params.id)
   if (!balade) notFound()
 
-  const session = await getSessionForUser(supabase, balade.id, user.id)
+  // A draft balade must be validated first; ?mode=preview forces the screen.
+  if (balade.status === 'draft' || searchParams.mode === 'preview') {
+    return <ValidationScreen balade={balade} />
+  }
 
+  const session = await getSessionForUser(supabase, balade.id, user.id)
   return (
     <BaladeRunner balade={balade} userId={user.id} initialSession={session} />
   )
