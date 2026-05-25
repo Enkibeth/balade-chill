@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #1a0f08;
+  --foreground: #f3e7d3;
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(ellipse at top, #2a1a0e 0%, #1a0f08 60%, #120a04 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .font-mono {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+  }
+}
+
+/* Parchment surface used by story excerpts and cards. */
+.parchment {
+  background: linear-gradient(135deg, #f3e2c0 0%, #e8d3a8 100%);
+  color: #3a2410;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #120a04;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a3018;
+  border-radius: 5px;
+}
