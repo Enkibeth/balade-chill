@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import {
   getUserSettings,
   saveGeneratedBalade,
@@ -312,8 +311,7 @@ export async function POST(request: Request) {
   // 5. Assemble, render, and persist.
   try {
     const balade = assembleBalade(generated, req, user.id)
-    const admin = createAdminClient()
-    const baladeId = await saveGeneratedBalade(admin, balade)
+    const baladeId = await saveGeneratedBalade(supabase, balade)
     return NextResponse.json({ balade_id: baladeId, status: 'draft' })
   } catch (err) {
     console.error('Saving generated balade failed:', err)

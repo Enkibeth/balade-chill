@@ -1,7 +1,8 @@
 'use client'
 
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import Map, {
   Marker,
   Popup,
@@ -28,6 +29,19 @@ function centroid(balade: Balade): { lat: number; lng: number } | null {
   }
 }
 
+
+function staticOverviewUrl(
+  points: Array<{ lat: number; lng: number }>,
+  token: string,
+): string {
+  const pins = points
+    .slice(0, 40)
+    .map((p) => `pin-s+b8860b(${p.lng},${p.lat})`)
+    .join(',')
+  const overlay = pins.length ? `${pins}/` : ''
+  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${overlay}auto/1200x800?padding=64&access_token=${token}`
+}
+
 export function BaladeGlobe({
   items,
   selectedId,
@@ -42,6 +56,15 @@ export function BaladeGlobe({
   const MAPBOX_TOKEN = mapboxToken
   const mapRef = useRef<MapRef>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [projectionName, setProjectionName] = useState<'globe' | 'mercator'>('mercator')
+  const [mapFailed, setMapFailed] = useState(false)
+
+  useEffect(() => {
+    const ua = navigator.userAgent
+    const isIOS = /iPhone|iPad|iPod/i.test(ua)
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setProjectionName(isIOS || prefersReducedMotion ? 'mercator' : 'globe')
+  }, [])
 
   const points = useMemo(
     () =>
@@ -59,6 +82,7 @@ export function BaladeGlobe({
   const maxScore = Math.max(1, ...points.map((p) => p.score))
 
   const selected = points.find((p) => p.balade.id === selectedId) ?? null
+  const staticMapUrl = useMemo(() => staticOverviewUrl(points, MAPBOX_TOKEN ?? ''), [points, MAPBOX_TOKEN])
 
   const routeLine = useMemo(() => {
     if (!selected) return null
@@ -94,13 +118,31 @@ export function BaladeGlobe({
 
   const initial = points[0]
 
+  if (mapFailed) {
+    return (
+      <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15 bg-black/40">
+        <Image
+          src={staticMapUrl}
+          alt="Aperçu statique de la carte"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-x-3 top-3 rounded-lg border border-amber-200/20 bg-black/65 p-3 text-xs text-amber-100/90">
+          Mode compatibilité activé: la carte interactive a échoué sur cet appareil, affichage statique utilisé.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15">
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
         mapStyle="mapbox://styles/mapbox/dark-v11"
-        projection={{ name: 'globe' }}
+        projection={{ name: projectionName }}
         fog={{
           color: '#1a0f08',
           'high-color': '#2a1a0e',
@@ -114,6 +156,10 @@ export function BaladeGlobe({
           zoom: initial ? 9 : 2.4,
         }}
         style={{ width: '100%', height: '100%' }}
+        onError={(evt) => {
+          console.error('Mapbox render error:', evt.error)
+          setMapFailed(true)
+        }}
       >
         {routeLine && (
           <Source id="route" type="geojson" data={routeLine}>
