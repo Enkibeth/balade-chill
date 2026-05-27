@@ -113,3 +113,14 @@ export interface GenerationRequest {
   theme_preference?: string
   special_instructions?: string
 }
+
+export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq'
+
+export interface UserSettings {
+  user_id: string
+  ai_provider: AIProvider
+  ai_model: string
+  ai_api_key: string | null
+  mapbox_token: string | null
+  updated_at: string
+}

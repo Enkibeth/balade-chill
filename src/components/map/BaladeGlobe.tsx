@@ -11,8 +11,6 @@ import Map, {
 } from 'react-map-gl/mapbox'
 import type { Balade } from '@/types'
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-
 export interface GlobeBalade {
   balade: Balade
   score: number
@@ -34,11 +32,14 @@ export function BaladeGlobe({
   items,
   selectedId,
   onSelect,
+  mapboxToken,
 }: {
   items: GlobeBalade[]
   selectedId: string | null
   onSelect: (id: string) => void
+  mapboxToken: string | null
 }) {
+  const MAPBOX_TOKEN = mapboxToken
   const mapRef = useRef<MapRef>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -81,9 +82,11 @@ export function BaladeGlobe({
     return (
       <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl border border-amber-200/15 bg-black/40 p-6 text-center">
         <p className="text-sm text-amber-100/50">
-          Carte indisponible — ajoute{' '}
-          <code className="text-amber-300">NEXT_PUBLIC_MAPBOX_TOKEN</code> dans
-          ton environnement pour afficher le globe.
+          Carte indisponible — ajoute ton token Mapbox dans{' '}
+          <a href="/settings" className="text-amber-300 underline">
+            Réglages
+          </a>{' '}
+          pour afficher le globe.
         </p>
       </div>
     )

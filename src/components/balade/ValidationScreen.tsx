@@ -17,8 +17,11 @@ const PALETTES: ThemeColor[] = [
   { name: 'Forêt Ancienne', primary: '#3d5a3a', secondary: '#bfa14a', accent: '#8fae7d', bg: '#0e120c' },
 ]
 
-function staticMapUrl(balade: Balade, color: string): string | null {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+function staticMapUrl(
+  balade: Balade,
+  color: string,
+  token: string | null,
+): string | null {
   if (!token) return null
   const pts = [...balade.etapes]
     .sort((a, b) => a.order - b.order)
@@ -31,7 +34,13 @@ function staticMapUrl(balade: Balade, color: string): string | null {
   return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pins}/auto/640x280@2x?access_token=${token}&padding=48`
 }
 
-export function ValidationScreen({ balade }: { balade: Balade }) {
+export function ValidationScreen({
+  balade,
+  mapboxToken,
+}: {
+  balade: Balade
+  mapboxToken: string | null
+}) {
   const router = useRouter()
   const [theme, setTheme] = useState<ThemeColor>(balade.theme_color)
   const [loading, setLoading] = useState(false)
@@ -40,7 +49,7 @@ export function ValidationScreen({ balade }: { balade: Balade }) {
   const etapes = [...balade.etapes].sort((a, b) => a.order - b.order)
   const hours = balade.estimated_duration_min / 60
   const tooLong = balade.estimated_duration_min > 180
-  const mapUrl = staticMapUrl(balade, theme.primary)
+  const mapUrl = staticMapUrl(balade, theme.primary, mapboxToken)
 
   function regenerateTheme() {
     const others = PALETTES.filter((p) => p.name !== theme.name)
