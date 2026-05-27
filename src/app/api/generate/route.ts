@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { saveGeneratedBalade } from '@/lib/supabase/queries'
+import {
+  getUserSettings,
+  saveGeneratedBalade,
+} from '@/lib/supabase/queries'
 import {
   GENERATION_SYSTEM_PROMPT,
   buildGenerationPrompt,
 } from '@/lib/claude/generation-prompt'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
+import { generateBaladeText } from '@/lib/ai/providers'
 import type {
+  AIProvider,
   Balade,
   Difficulty,
   Enigme,
@@ -265,38 +269,47 @@ export async function POST(request: Request) {
     )
   }
 
-  // 3. Generate the balade content with Claude.
+  // 3. Pick the AI provider — user settings override the env-var fallback.
+  const settings = await getUserSettings(supabase, user.id)
+  const provider: AIProvider = settings?.ai_provider ?? 'anthropic'
+  const apiKey =
+    settings?.ai_api_key && settings.ai_api_key.length > 0
+      ? settings.ai_api_key
+      : provider === 'anthropic'
+        ? process.env.ANTHROPIC_API_KEY
+        : undefined
+  if (!apiKey) {
+    return NextResponse.json(
+      {
+        error:
+          'Aucune clé API configurée. Ajoute la tienne dans Réglages, ou définis ANTHROPIC_API_KEY côté serveur.',
+      },
+      { status: 400 },
+    )
+  }
+  const model =
+    settings?.ai_model && settings.ai_model.length > 0
+      ? settings.ai_model
+      : 'claude-sonnet-4-6'
+
+  // 4. Generate the balade content.
   let generated: GeneratedBalade
   try {
-    const anthropic = new Anthropic()
-    const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      thinking: { type: 'adaptive' },
-      system: [
-        {
-          type: 'text',
-          text: GENERATION_SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [{ role: 'user', content: buildGenerationPrompt(req) }],
-    })
-    const message = await stream.finalMessage()
-    const text = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('')
+    const text = await generateBaladeText(
+      { provider, apiKey, model },
+      GENERATION_SYSTEM_PROMPT,
+      buildGenerationPrompt(req),
+    )
     generated = extractJson(text)
   } catch (err) {
     console.error('Balade generation failed:', err)
     return NextResponse.json(
-      { error: 'La génération a échoué. Réessaie dans un instant.' },
+      { error: 'La génération a échoué. Vérifie ta clé API et réessaie.' },
       { status: 502 },
     )
   }
 
-  // 4. Assemble, render, and persist.
+  // 5. Assemble, render, and persist.
   try {
     const balade = assembleBalade(generated, req, user.id)
     const admin = createAdminClient()

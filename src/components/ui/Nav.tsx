@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/dashboard', label: 'Carte' },
   { href: '/generate', label: 'Générer' },
   { href: '/history', label: 'Historique' },
+  { href: '/settings', label: 'Réglages' },
 ]
 
 export function Nav() {

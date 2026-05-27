@@ -35,6 +35,7 @@ export default function GeneratePage() {
     'neurologie',
   ])
   const [theme, setTheme] = useState('')
+  const [specialInstructions, setSpecialInstructions] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,6 +56,7 @@ export default function GeneratePage() {
       medical_specialties: specialties,
       nb_etapes: nbEtapes,
       theme_preference: theme.trim() || undefined,
+      special_instructions: specialInstructions.trim() || undefined,
     }
     try {
       const res = await fetch('/api/generate', {
@@ -208,6 +210,19 @@ export default function GeneratePage() {
                 className={inputClass}
               />
             </div>
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Instructions spéciales{' '}
+                <span className="text-amber-100/25">(optionnel)</span>
+              </label>
+              <textarea
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                placeholder="Ex : uniquement les 5e et 6e arrondissements, éviter les rues passantes, démarrer près du métro…"
+                rows={3}
+                className={inputClass + ' resize-none'}
+              />
+            </div>
           </div>
         )}
 
@@ -229,6 +244,9 @@ export default function GeneratePage() {
                 value={specialties.join(', ') || 'cardiologie, neurologie'}
               />
               {theme && <Row label="Thème" value={theme} />}
+              {specialInstructions && (
+                <Row label="Instructions" value={specialInstructions} />
+              )}
             </dl>
             <p className="pt-2 text-xs text-amber-100/40">
               La génération prend environ 30 secondes.

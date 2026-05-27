@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Balade, BaladeSession } from '@/types'
+import type { Balade, BaladeSession, UserSettings } from '@/types'
 
 /** A session payload for upsert — id/timestamps are filled by the DB. */
 export type SessionUpsert = Partial<BaladeSession> & {
@@ -124,4 +124,36 @@ export async function getSessionForUser(
     .maybeSingle()
   if (error) throw error
   return (data as BaladeSession) ?? null
+}
+
+/** Reads the caller's settings row (provider, model, keys). */
+export async function getUserSettings(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<UserSettings | null> {
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return (data as UserSettings) ?? null
+}
+
+export type UserSettingsUpdate = Partial<
+  Pick<UserSettings, 'ai_provider' | 'ai_model' | 'ai_api_key' | 'mapbox_token'>
+> & { user_id: string }
+
+/** Inserts or updates the caller's settings row. */
+export async function upsertUserSettings(
+  supabase: SupabaseClient,
+  settings: UserSettingsUpdate,
+): Promise<UserSettings> {
+  const { data, error } = await supabase
+    .from('user_settings')
+    .upsert({ ...settings, updated_at: new Date().toISOString() })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as UserSettings
 }
