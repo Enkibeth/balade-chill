@@ -18,13 +18,7 @@ const BaladeGlobe = dynamic(
   },
 )
 
-export function DashboardView({
-  items,
-  mapboxToken,
-}: {
-  items: GlobeBalade[]
-  mapboxToken: string | null
-}) {
+export function DashboardView({ items }: { items: GlobeBalade[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(
     items[0]?.balade.id ?? null,
   )
@@ -36,7 +30,6 @@ export function DashboardView({
           items={items}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          mapboxToken={mapboxToken}
         />
       </div>
       <div className="lg:col-span-2 lg:h-[640px]">
