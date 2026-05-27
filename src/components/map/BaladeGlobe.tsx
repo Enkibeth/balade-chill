@@ -1,7 +1,7 @@
 'use client'
 
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, {
   Marker,
   Popup,
@@ -42,6 +42,14 @@ export function BaladeGlobe({
   const MAPBOX_TOKEN = mapboxToken
   const mapRef = useRef<MapRef>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [projectionName, setProjectionName] = useState<'globe' | 'mercator'>('mercator')
+
+  useEffect(() => {
+    const ua = navigator.userAgent
+    const isIOS = /iPhone|iPad|iPod/i.test(ua)
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setProjectionName(isIOS || prefersReducedMotion ? 'mercator' : 'globe')
+  }, [])
 
   const points = useMemo(
     () =>
@@ -100,7 +108,7 @@ export function BaladeGlobe({
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
         mapStyle="mapbox://styles/mapbox/dark-v11"
-        projection={{ name: 'globe' }}
+        projection={{ name: projectionName }}
         fog={{
           color: '#1a0f08',
           'high-color': '#2a1a0e',
