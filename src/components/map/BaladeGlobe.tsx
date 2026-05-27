@@ -9,6 +9,7 @@ import Map, {
   Layer,
   type MapRef,
 } from 'react-map-gl/mapbox'
+import { RefreshCw, AlertTriangle } from 'lucide-react'
 import type { Balade } from '@/types'
 
 export interface GlobeBalade {
@@ -28,6 +29,26 @@ function centroid(balade: Balade): { lat: number; lng: number } | null {
   }
 }
 
+function staticOverviewUrl(
+  points: Array<{ lat: number; lng: number; color: string }>,
+  token: string,
+): string | null {
+  if (!token) return null
+  const overlay = points
+    .slice(0, 40)
+    .map((p) => `pin-s+${p.color.replace('#', '')}(${p.lng},${p.lat})`)
+    .join(',')
+  const prefix = overlay ? `${overlay}/` : ''
+  const center = points[0]
+    ? `${points[0].lng},${points[0].lat},9`
+    : '2.3522,48.8566,2'
+  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${prefix}${
+    overlay ? 'auto' : center
+  }/1200x800@2x?padding=64&access_token=${token}`
+}
+
+type RenderState = 'loading' | 'live' | 'failed'
+
 export function BaladeGlobe({
   items,
   selectedId,
@@ -39,33 +60,52 @@ export function BaladeGlobe({
   onSelect: (id: string) => void
   mapboxToken: string | null
 }) {
-  const MAPBOX_TOKEN = mapboxToken
   const mapRef = useRef<MapRef>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [projectionName, setProjectionName] = useState<'globe' | 'mercator'>('mercator')
+  // Default to mercator — iOS Safari has WebGL issues with globe.
+  // Promote to globe on capable browsers after mount.
+  const [projectionName, setProjectionName] = useState<'globe' | 'mercator'>(
+    'mercator',
+  )
+  const [renderState, setRenderState] = useState<RenderState>('loading')
 
   useEffect(() => {
     const ua = navigator.userAgent
     const isIOS = /iPhone|iPad|iPod/i.test(ua)
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
     setProjectionName(isIOS || prefersReducedMotion ? 'mercator' : 'globe')
   }, [])
+
+  // If the map never finishes loading within 8s, drop back to a static image.
+  useEffect(() => {
+    if (renderState !== 'loading') return
+    const t = setTimeout(() => {
+      setRenderState((s) => (s === 'loading' ? 'failed' : s))
+    }, 8000)
+    return () => clearTimeout(t)
+  }, [renderState])
 
   const points = useMemo(
     () =>
       items
         .map((it) => {
           const c = centroid(it.balade)
-          return c ? { ...it, ...c } : null
+          return c
+            ? { ...it, ...c, color: it.balade.theme_color.primary }
+            : null
         })
-        .filter((p): p is GlobeBalade & { lat: number; lng: number } =>
-          Boolean(p),
+        .filter(
+          (
+            p,
+          ): p is GlobeBalade & { lat: number; lng: number; color: string } =>
+            Boolean(p),
         ),
     [items],
   )
 
   const maxScore = Math.max(1, ...points.map((p) => p.score))
-
   const selected = points.find((p) => p.balade.id === selectedId) ?? null
 
   const routeLine = useMemo(() => {
@@ -82,11 +122,16 @@ export function BaladeGlobe({
     }
   }, [selected])
 
+  const staticUrl = useMemo(
+    () => staticOverviewUrl(points, mapboxToken ?? ''),
+    [points, mapboxToken],
+  )
+
   function flyTo(lng: number, lat: number, zoom: number) {
     mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1400 })
   }
 
-  if (!MAPBOX_TOKEN) {
+  if (!mapboxToken) {
     return (
       <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl border border-amber-200/15 bg-black/40 p-6 text-center">
         <p className="text-sm text-amber-100/50">
@@ -102,26 +147,62 @@ export function BaladeGlobe({
 
   const initial = points[0]
 
+  // Static-image fallback when the interactive map fails.
+  if (renderState === 'failed') {
+    return (
+      <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15 bg-black/60">
+        {staticUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={staticUrl}
+            alt="Aperçu statique des balades"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center p-6 text-center text-sm text-amber-100/50">
+            Aucune balade à afficher.
+          </div>
+        )}
+        <div className="absolute inset-x-3 top-3 flex items-start gap-2 rounded-lg border border-amber-200/20 bg-black/75 p-2.5 text-[11px] text-amber-100/85 backdrop-blur">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-300" />
+          <span className="flex-1">
+            Carte interactive indisponible — affichage statique.
+          </span>
+          <button
+            onClick={() => setRenderState('loading')}
+            className="inline-flex items-center gap-1 rounded bg-amber-300 px-2 py-0.5 text-amber-950"
+          >
+            <RefreshCw size={11} /> Réessayer
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15">
+    <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15 bg-black">
       <Map
         ref={mapRef}
-        mapboxAccessToken={MAPBOX_TOKEN}
+        mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/dark-v11"
         projection={{ name: projectionName }}
-        fog={{
-          color: '#1a0f08',
-          'high-color': '#2a1a0e',
-          'horizon-blend': 0.15,
-          'space-color': '#0a0604',
-          'star-intensity': 0.5,
-        }}
         initialViewState={{
           longitude: initial?.lng ?? 2.3522,
           latitude: initial?.lat ?? 48.8566,
           zoom: initial ? 9 : 2.4,
         }}
         style={{ width: '100%', height: '100%' }}
+        reuseMaps
+        onLoad={() => {
+          setRenderState('live')
+          // iOS Safari sometimes mounts the canvas at 0×0 — force a resize
+          // once the map is loaded so the container's actual size is picked up.
+          requestAnimationFrame(() => mapRef.current?.resize())
+        }}
+        onError={(e) => {
+          console.warn('[BaladeGlobe] mapbox error', e.error?.message ?? e)
+          setRenderState('failed')
+        }}
       >
         {routeLine && (
           <Source id="route" type="geojson" data={routeLine}>
@@ -129,7 +210,8 @@ export function BaladeGlobe({
               id="route-line"
               type="line"
               paint={{
-                'line-color': selected?.balade.theme_color.secondary ?? '#b8860b',
+                'line-color':
+                  selected?.balade.theme_color.secondary ?? '#b8860b',
                 'line-width': 3,
                 'line-opacity': 0.8,
               }}
@@ -216,6 +298,12 @@ export function BaladeGlobe({
             )
           })()}
       </Map>
+
+      {renderState === 'loading' && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <p className="text-xs text-amber-100/60">Chargement de la carte…</p>
+        </div>
+      )}
     </div>
   )
 }
