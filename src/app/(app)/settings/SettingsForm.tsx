@@ -5,10 +5,29 @@ import { Save, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { upsertUserSettings } from '@/lib/supabase/queries'
 import { PROVIDERS } from '@/lib/ai/catalog'
-import type { AIProvider, UserSettings } from '@/types'
+import type {
+  AIProvider,
+  Difficulty,
+  RefineTarget,
+  UserSettings,
+} from '@/types'
 
 const inputClass =
   'w-full rounded-lg border border-amber-200/15 bg-black/40 px-3 py-2 text-sm text-amber-50 outline-none focus:border-amber-300/50'
+
+const REFINE_TARGETS: { value: RefineTarget; label: string; hint: string }[] = [
+  { value: 'enigmes', label: 'Énigmes', hint: 'vérifie que le chiffrement donne la bonne réponse' },
+  { value: 'coherence', label: 'Cohérence', hint: 'lieux réels, GPS plausibles, itinéraire marchable' },
+  { value: 'prose', label: 'Prose', hint: 'améliore les textes plats (sortie plus coûteuse)' },
+]
+
+const DIFFICULTIES: Difficulty[] = ['facile', 'moyen', 'difficile', 'boss']
+
+function toggle<T>(list: T[], value: T): T[] {
+  return list.includes(value)
+    ? list.filter((v) => v !== value)
+    : [...list, value]
+}
 
 export function SettingsForm({
   userId,
@@ -33,7 +52,42 @@ export function SettingsForm({
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const initRefine = initial?.generation_pipeline?.refine
+  const [refineEnabled, setRefineEnabled] = useState(initRefine?.enabled ?? false)
+  const [refineProvider, setRefineProvider] = useState<AIProvider>(
+    initRefine?.provider ?? 'anthropic',
+  )
+  const [refineModel, setRefineModel] = useState<string>(
+    initRefine?.model ?? PROVIDERS.anthropic.models[0].value,
+  )
+  const [refineApiKey, setRefineApiKey] = useState<string>(
+    initRefine?.apiKey ?? '',
+  )
+  const [refineTargets, setRefineTargets] = useState<RefineTarget[]>(
+    initRefine?.targets ?? ['enigmes', 'coherence'],
+  )
+  const [refineDifficulties, setRefineDifficulties] = useState<Difficulty[]>(
+    initRefine?.difficulties ?? ['difficile', 'boss'],
+  )
+  const [showRefineKey, setShowRefineKey] = useState(false)
+
   const models = useMemo(() => PROVIDERS[provider].models, [provider])
+  const refineModels = useMemo(
+    () => PROVIDERS[refineProvider].models,
+    [refineProvider],
+  )
+
+  function handleRefineProviderChange(next: AIProvider) {
+    setRefineProvider(next)
+    if (!PROVIDERS[next].models.some((m) => m.value === refineModel)) {
+      setRefineModel(PROVIDERS[next].models[0].value)
+    }
+    setSaved(false)
+  }
+
+  function markDirty() {
+    setSaved(false)
+  }
 
   function handleProviderChange(next: AIProvider) {
     setProvider(next)
@@ -55,6 +109,16 @@ export function SettingsForm({
         ai_model: model,
         ai_api_key: apiKey.trim() || null,
         mapbox_token: mapboxToken.trim() || null,
+        generation_pipeline: {
+          refine: {
+            enabled: refineEnabled,
+            provider: refineProvider,
+            model: refineModel,
+            apiKey: refineApiKey.trim() || null,
+            targets: refineTargets,
+            difficulties: refineDifficulties,
+          },
+        },
       })
       setSaved(true)
     } catch {
@@ -70,6 +134,11 @@ export function SettingsForm({
         <h2 className="text-sm font-semibold text-amber-100">
           Génération de balades (IA)
         </h2>
+        <p className="text-[11px] text-amber-100/40">
+          Modèle principal qui rédige le brouillon complet. Pour réduire les
+          coûts, choisis ici un modèle économique (Groq, NVIDIA…) et active la
+          vérification ci-dessous avec un modèle plus fort.
+        </p>
 
         <div>
           <label className="mb-1 block text-xs text-amber-100/50">
@@ -143,6 +212,171 @@ export function SettingsForm({
             {provider === 'groq' && 'console.groq.com → API Keys (gratuit)'}
           </p>
         </div>
+      </section>
+
+      <section className="space-y-3 border-t border-amber-200/10 pt-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-amber-100">
+            Vérification par un 2ᵉ modèle{' '}
+            <span className="font-normal text-amber-100/40">
+              (qualité, coût maîtrisé)
+            </span>
+          </h2>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={refineEnabled}
+            onClick={() => {
+              setRefineEnabled((v) => !v)
+              markDirty()
+            }}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+              refineEnabled ? 'bg-amber-300' : 'bg-amber-100/15'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition ${
+                refineEnabled ? 'left-[22px]' : 'left-0.5'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-[11px] text-amber-100/40">
+          Après le brouillon, ce modèle relit uniquement les parties cochées et
+          ne renvoie que les corrections — sa sortie reste minuscule, donc le
+          surcoût est faible.
+        </p>
+
+        {refineEnabled && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs text-amber-100/50">
+                  Fournisseur
+                </label>
+                <select
+                  value={refineProvider}
+                  onChange={(e) =>
+                    handleRefineProviderChange(e.target.value as AIProvider)
+                  }
+                  className={inputClass}
+                >
+                  {Object.entries(PROVIDERS).map(([key, info]) => (
+                    <option key={key} value={key}>
+                      {info.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-xs text-amber-100/50">
+                  Modèle
+                </label>
+                <select
+                  value={refineModel}
+                  onChange={(e) => {
+                    setRefineModel(e.target.value)
+                    markDirty()
+                  }}
+                  className={inputClass}
+                >
+                  {refineModels.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Clé API ({PROVIDERS[refineProvider].label})
+              </label>
+              <div className="relative">
+                <input
+                  type={showRefineKey ? 'text' : 'password'}
+                  value={refineApiKey}
+                  onChange={(e) => {
+                    setRefineApiKey(e.target.value)
+                    markDirty()
+                  }}
+                  placeholder="sk-…"
+                  className={`${inputClass} pr-10`}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRefineKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-amber-100/50 transition hover:text-amber-100"
+                  aria-label={showRefineKey ? 'Masquer' : 'Afficher'}
+                >
+                  {showRefineKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Parties à revérifier
+              </label>
+              <div className="space-y-1.5">
+                {REFINE_TARGETS.map((t) => (
+                  <label
+                    key={t.value}
+                    className="flex cursor-pointer items-start gap-2 text-sm text-amber-100/80"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={refineTargets.includes(t.value)}
+                      onChange={() => {
+                        setRefineTargets((prev) => toggle(prev, t.value))
+                        markDirty()
+                      }}
+                      className="mt-0.5 accent-amber-300"
+                    />
+                    <span>
+                      {t.label}
+                      <span className="text-[11px] text-amber-100/35">
+                        {' '}
+                        — {t.hint}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Difficultés concernées
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {DIFFICULTIES.map((d) => {
+                  const active = refineDifficulties.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        setRefineDifficulties((prev) => toggle(prev, d))
+                        markDirty()
+                      }}
+                      className={`rounded-full border px-3 py-1 text-xs capitalize transition ${
+                        active
+                          ? 'border-amber-300/60 bg-amber-300/15 text-amber-100'
+                          : 'border-amber-200/15 text-amber-100/50'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="space-y-3 border-t border-amber-200/10 pt-5">

@@ -116,11 +116,34 @@ export interface GenerationRequest {
 
 export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq'
 
+/** Which parts of a draft balade the refine pass is allowed to rewrite. */
+export type RefineTarget = 'enigmes' | 'coherence' | 'prose'
+
+/**
+ * Optional second-pass ("refine") configuration. The primary provider/model
+ * (ai_provider/ai_model/ai_api_key) drafts the whole balade with a cheap model;
+ * when enabled, a stronger model re-checks only the targeted parts and returns
+ * just the corrections — keeping its (expensive) output tiny.
+ */
+export interface RefineConfig {
+  enabled: boolean
+  provider: AIProvider
+  model: string
+  apiKey: string | null
+  targets: RefineTarget[]
+  difficulties: Difficulty[]
+}
+
+export interface GenerationPipeline {
+  refine: RefineConfig
+}
+
 export interface UserSettings {
   user_id: string
   ai_provider: AIProvider
   ai_model: string
   ai_api_key: string | null
   mapbox_token: string | null
+  generation_pipeline: GenerationPipeline | null
   updated_at: string
 }
