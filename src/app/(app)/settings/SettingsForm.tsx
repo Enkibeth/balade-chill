@@ -210,6 +210,7 @@ export function SettingsForm({
             {provider === 'nvidia' &&
               'build.nvidia.com → Generate API Key (gratuit)'}
             {provider === 'groq' && 'console.groq.com → API Keys (gratuit)'}
+            {provider === 'google' && 'aistudio.google.com → API keys'}
           </p>
         </div>
       </section>

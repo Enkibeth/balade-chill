@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import {
   MapPin,
   Clock,
@@ -16,6 +17,19 @@ import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { CipherBlock } from './CipherBlock'
 import type { Balade, ThemeColor } from '@/types'
 
+const RoutePreviewMap = dynamic(
+  () =>
+    import('@/components/map/RoutePreviewMap').then((m) => m.RoutePreviewMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center rounded-2xl border border-amber-200/15 bg-black/30 text-xs text-amber-100/40">
+        Chargement de la carte…
+      </div>
+    ),
+  },
+)
+
 const PALETTES: ThemeColor[] = [
   { name: 'Sépia & Or', primary: '#7a1c2e', secondary: '#b8860b', accent: '#c4757a', bg: '#1a0f08' },
   { name: 'Nuit Émeraude', primary: '#1a5e4a', secondary: '#d4af37', accent: '#7ab8a0', bg: '#0c1410' },
@@ -25,30 +39,11 @@ const PALETTES: ThemeColor[] = [
   { name: 'Forêt Ancienne', primary: '#3d5a3a', secondary: '#bfa14a', accent: '#8fae7d', bg: '#0e120c' },
 ]
 
-function staticMapUrl(
-  balade: Balade,
-  color: string,
-  token: string | null,
-): string | null {
-  if (!token) return null
-  const pts = [...balade.etapes]
-    .sort((a, b) => a.order - b.order)
-    .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lng))
-  if (pts.length === 0) return null
-  const hex = color.replace('#', '')
-  const pins = pts
-    .map((e) => `pin-s-${e.order}+${hex}(${e.lng},${e.lat})`)
-    .join(',')
-  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pins}/auto/640x280@2x?access_token=${token}&padding=48`
-}
-
 export function ValidationScreen({
   balade,
-  mapboxToken,
   editing = false,
 }: {
   balade: Balade
-  mapboxToken: string | null
   editing?: boolean
 }) {
   const router = useRouter()
@@ -62,7 +57,6 @@ export function ValidationScreen({
   const etapes = orderedEtapes
   const hours = balade.estimated_duration_min / 60
   const tooLong = balade.estimated_duration_min > 180
-  const mapUrl = staticMapUrl(balade, theme.primary, mapboxToken)
 
   function regenerateTheme() {
     const others = PALETTES.filter((p) => p.name !== theme.name)
@@ -154,19 +148,8 @@ export function ValidationScreen({
         </div>
       )}
 
-      {/* Static map preview */}
-      {mapUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={mapUrl}
-          alt="Aperçu de l'itinéraire"
-          className="w-full rounded-2xl border border-amber-200/15"
-        />
-      ) : (
-        <div className="rounded-2xl border border-amber-200/15 bg-black/30 p-4 text-center text-xs text-amber-100/40">
-          Aperçu cartographique indisponible (token Mapbox manquant).
-        </div>
-      )}
+      {/* Free route preview (no token needed) */}
+      <RoutePreviewMap etapes={etapes} color={theme.secondary} />
 
       {/* Ordered etape list */}
       <div className="space-y-2">

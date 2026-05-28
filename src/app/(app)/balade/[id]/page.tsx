@@ -1,10 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import {
-  getBaladeById,
-  getSessionForUser,
-  getUserSettings,
-} from '@/lib/supabase/queries'
+import { getBaladeById, getSessionForUser } from '@/lib/supabase/queries'
 import { BaladeRunner } from '@/components/balade/BaladeRunner'
 import { ValidationScreen } from '@/components/balade/ValidationScreen'
 
@@ -34,18 +30,7 @@ export default async function BaladePage({
     searchParams.mode === 'preview' ||
     searchParams.mode === 'edit'
   ) {
-    const settings = await getUserSettings(supabase, user.id)
-    return (
-      <ValidationScreen
-        balade={balade}
-        editing={editing}
-        mapboxToken={
-          settings?.mapbox_token ??
-          process.env.NEXT_PUBLIC_MAPBOX_TOKEN ??
-          null
-        }
-      />
-    )
+    return <ValidationScreen balade={balade} editing={editing} />
   }
 
   const session = await getSessionForUser(supabase, balade.id, user.id)
