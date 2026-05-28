@@ -26,12 +26,19 @@ export default async function BaladePage({
   const balade = await getBaladeById(supabase, params.id)
   if (!balade) notFound()
 
-  // A draft balade must be validated first; ?mode=preview forces the screen.
-  if (balade.status === 'draft' || searchParams.mode === 'preview') {
+  // A draft balade must be validated first; ?mode=preview|edit opens the editor
+  // for an already-saved balade so its étapes can be tweaked after generation.
+  const editing = balade.status !== 'draft'
+  if (
+    balade.status === 'draft' ||
+    searchParams.mode === 'preview' ||
+    searchParams.mode === 'edit'
+  ) {
     const settings = await getUserSettings(supabase, user.id)
     return (
       <ValidationScreen
         balade={balade}
+        editing={editing}
         mapboxToken={
           settings?.mapbox_token ??
           process.env.NEXT_PUBLIC_MAPBOX_TOKEN ??

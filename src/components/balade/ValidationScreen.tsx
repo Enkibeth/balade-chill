@@ -2,7 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MapPin, Clock, AlertTriangle, Shuffle, Play, Pencil } from 'lucide-react'
+import {
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Shuffle,
+  Play,
+  Pencil,
+  Save,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { CipherBlock } from './CipherBlock'
@@ -37,9 +45,11 @@ function staticMapUrl(
 export function ValidationScreen({
   balade,
   mapboxToken,
+  editing = false,
 }: {
   balade: Balade
   mapboxToken: string | null
+  editing?: boolean
 }) {
   const router = useRouter()
   const [theme, setTheme] = useState<ThemeColor>(balade.theme_color)
@@ -81,14 +91,18 @@ export function ValidationScreen({
     const { error: updateError } = await createClient()
       .from('balades')
       .update({
-        status: 'validated',
+        status: editing ? balade.status : 'validated',
         theme_color: theme,
         html_content: html,
         etapes: themed.etapes,
       })
       .eq('id', balade.id)
     if (updateError) {
-      setError("Impossible de valider la balade. Réessaie.")
+      setError(
+        editing
+          ? 'Impossible d’enregistrer les modifications. Réessaie.'
+          : 'Impossible de valider la balade. Réessaie.',
+      )
       setLoading(false)
       return
     }
@@ -100,7 +114,7 @@ export function ValidationScreen({
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
         <h1 className="font-mono text-xl tracking-[0.18em] text-amber-200">
-          VALIDATION DE L&apos;ITINÉRAIRE
+          {editing ? 'MODIFIER L’ITINÉRAIRE' : 'VALIDATION DE L’ITINÉRAIRE'}
         </h1>
         <p className="mt-1 text-sm text-amber-100/45">
           {balade.title} · {balade.city}
@@ -171,6 +185,7 @@ export function ValidationScreen({
               <input
                 value={e.location_name}
                 onChange={(ev) => patchEtape(i, { location_name: ev.target.value })}
+                placeholder="Nom du lieu"
                 className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
               />
               <p className="text-[11px] text-amber-100/40">
@@ -179,8 +194,18 @@ export function ValidationScreen({
               <input
                 value={e.action_mission}
                 onChange={(ev) => patchEtape(i, { action_mission: ev.target.value })}
+                placeholder="Mission complice"
                 className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
               />
+              {editing && (
+                <textarea
+                  value={e.story_text}
+                  onChange={(ev) => patchEtape(i, { story_text: ev.target.value })}
+                  placeholder="Récit de l’étape"
+                  rows={2}
+                  className="mt-1 w-full resize-y rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+                />
+              )}
             </div>
             <div className="flex shrink-0 flex-col gap-1">
               <button
@@ -258,19 +283,27 @@ export function ValidationScreen({
 
       <div className="flex gap-3">
         <button
-          onClick={() => router.push('/generate')}
+          onClick={() =>
+            router.push(editing ? `/balade/${balade.id}` : '/generate')
+          }
           disabled={loading}
           className="inline-flex items-center gap-2 rounded-lg border border-amber-200/20 px-4 py-2.5 text-sm text-amber-100/70 transition hover:border-amber-200/40 disabled:opacity-40"
         >
-          <Pencil size={15} /> Modifier
+          <Pencil size={15} /> {editing ? 'Annuler' : 'Modifier'}
         </button>
         <button
           onClick={handleStart}
           disabled={loading}
           className="ml-auto inline-flex items-center gap-2 rounded-lg bg-amber-300 px-5 py-2.5 text-sm font-medium text-amber-950 transition hover:bg-amber-200 disabled:opacity-50"
         >
-          <Play size={16} />
-          {loading ? 'Validation…' : "Ça me semble bon — Démarrer l'aventure"}
+          {editing ? <Save size={16} /> : <Play size={16} />}
+          {editing
+            ? loading
+              ? 'Enregistrement…'
+              : 'Enregistrer les modifications'
+            : loading
+              ? 'Validation…'
+              : "Ça me semble bon — Démarrer l'aventure"}
         </button>
       </div>
     </div>

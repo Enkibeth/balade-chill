@@ -271,7 +271,19 @@ export function BaladeGlobe({
                   e.order,
                 )}
               >
-                <Popup>{e.location_name}</Popup>
+                <Popup>
+                  <strong>
+                    {e.order}. {e.location_name}
+                  </strong>
+                  <br />
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {"Lancer l'itinéraire"}
+                  </a>
+                </Popup>
               </Marker>
             ))}
         {userPosition && (
