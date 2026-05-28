@@ -2,11 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MapPin, Clock, AlertTriangle, Shuffle, Play, Pencil } from 'lucide-react'
+import {
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Shuffle,
+  Play,
+  Pencil,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { CipherBlock } from './CipherBlock'
-import type { Balade, ThemeColor } from '@/types'
+import type { Balade, Etape, ThemeColor } from '@/types'
 
 const PALETTES: ThemeColor[] = [
   { name: 'Sépia & Or', primary: '#7a1c2e', secondary: '#b8860b', accent: '#c4757a', bg: '#1a0f08' },
@@ -18,18 +27,18 @@ const PALETTES: ThemeColor[] = [
 ]
 
 function staticMapUrl(
-  balade: Balade,
+  etapes: Etape[],
   color: string,
   token: string | null,
 ): string | null {
   if (!token) return null
-  const pts = [...balade.etapes]
-    .sort((a, b) => a.order - b.order)
-    .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lng))
+  const pts = etapes.filter(
+    (e) => Number.isFinite(e.lat) && Number.isFinite(e.lng),
+  )
   if (pts.length === 0) return null
   const hex = color.replace('#', '')
   const pins = pts
-    .map((e) => `pin-s-${e.order}+${hex}(${e.lng},${e.lat})`)
+    .map((e, i) => `pin-s-${i + 1}+${hex}(${e.lng},${e.lat})`)
     .join(',')
   return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pins}/auto/640x280@2x?access_token=${token}&padding=48`
 }
@@ -43,29 +52,44 @@ export function ValidationScreen({
 }) {
   const router = useRouter()
   const [theme, setTheme] = useState<ThemeColor>(balade.theme_color)
+  const [etapes, setEtapes] = useState<Etape[]>(() =>
+    [...balade.etapes]
+      .sort((a, b) => a.order - b.order)
+      .map((e, i) => ({ ...e, order: i + 1 })),
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const etapes = [...balade.etapes].sort((a, b) => a.order - b.order)
   const hours = balade.estimated_duration_min / 60
   const tooLong = balade.estimated_duration_min > 180
-  const mapUrl = staticMapUrl(balade, theme.primary, mapboxToken)
+  const mapUrl = staticMapUrl(etapes, theme.primary, mapboxToken)
 
   function regenerateTheme() {
     const others = PALETTES.filter((p) => p.name !== theme.name)
     setTheme(others[Math.floor(Math.random() * others.length)])
   }
 
+  function moveEtape(index: number, dir: -1 | 1) {
+    setEtapes((prev) => {
+      const j = index + dir
+      if (j < 0 || j >= prev.length) return prev
+      const next = [...prev]
+      ;[next[index], next[j]] = [next[j], next[index]]
+      return next.map((e, i) => ({ ...e, order: i + 1 }))
+    })
+  }
+
   async function handleStart() {
     setError(null)
     setLoading(true)
-    const themed: Balade = { ...balade, theme_color: theme }
+    const themed: Balade = { ...balade, theme_color: theme, etapes }
     const html = renderBaladeHtml(themed)
     const { error: updateError } = await createClient()
       .from('balades')
       .update({
         status: 'validated',
         theme_color: theme,
+        etapes,
         html_content: html,
       })
       .eq('id', balade.id)
@@ -136,39 +160,62 @@ export function ValidationScreen({
         </div>
       )}
 
-      {/* Ordered etape list */}
-      <div className="space-y-2">
-        {etapes.map((e) => (
-          <div
-            key={e.id}
-            className="flex items-center gap-3 rounded-xl border border-amber-200/12 bg-black/30 p-3"
-          >
-            <span
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: theme.primary }}
+      {/* Ordered etape list — réordonnable */}
+      <div>
+        <p className="mb-2 text-xs text-amber-100/45">
+          Réordonne les étapes si l&apos;itinéraire te semble illogique :
+        </p>
+        <div className="space-y-2">
+          {etapes.map((e, index) => (
+            <div
+              key={e.id}
+              className="flex items-center gap-3 rounded-xl border border-amber-200/12 bg-black/30 p-3"
             >
-              {e.order}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-amber-100">
-                {e.location_name}
-              </p>
-              <p className="text-[11px] text-amber-100/40">
-                {e.walk_minutes} min de marche
-              </p>
-            </div>
-            {e.maps_url && (
-              <a
-                href={e.maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                style={{ backgroundColor: theme.primary }}
               >
-                🗺 Maps
-              </a>
-            )}
-          </div>
-        ))}
+                {e.order}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-amber-100">
+                  {e.location_name}
+                </p>
+                <p className="text-[11px] text-amber-100/40">
+                  {e.walk_minutes} min de marche
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <button
+                  onClick={() => moveEtape(index, -1)}
+                  disabled={index === 0}
+                  aria-label="Monter l'étape"
+                  className="rounded border border-amber-200/20 p-0.5 text-amber-100/70 transition hover:border-amber-200/40 disabled:opacity-25"
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  onClick={() => moveEtape(index, 1)}
+                  disabled={index === etapes.length - 1}
+                  aria-label="Descendre l'étape"
+                  className="rounded border border-amber-200/20 p-0.5 text-amber-100/70 transition hover:border-amber-200/40 disabled:opacity-25"
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+              {e.maps_url && (
+                <a
+                  href={e.maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"
+                >
+                  🗺 Maps
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Theme preview */}

@@ -5,9 +5,18 @@ import type { GlobeBalade } from '@/components/map/BaladeGlobe'
 
 export const dynamic = 'force-dynamic'
 
+type ScoreMap = Record<string, boolean>
+
 interface SessionRow {
   balade_id: string
   total_score: number
+  enigme_scores: ScoreMap
+  medical_scores: ScoreMap
+  mission_scores: ScoreMap
+}
+
+function countTrue(map: ScoreMap | null | undefined): number {
+  return map ? Object.values(map).filter(Boolean).length : 0
 }
 
 export default async function DashboardPage() {
@@ -24,22 +33,41 @@ export default async function DashboardPage() {
 
   const { data: sessionData } = await supabase
     .from('balade_sessions')
-    .select('balade_id,total_score')
+    .select('balade_id,total_score,enigme_scores,medical_scores,mission_scores')
     .eq('user_id', user.id)
   const sessions = (sessionData ?? []) as SessionRow[]
 
-  const bestScore = new Map<string, number>()
+  const sessionByBalade = new Map<string, SessionRow>()
   for (const s of sessions) {
-    if (s.total_score > (bestScore.get(s.balade_id) ?? 0)) {
-      bestScore.set(s.balade_id, s.total_score)
+    const prev = sessionByBalade.get(s.balade_id)
+    if (!prev || s.total_score > prev.total_score) {
+      sessionByBalade.set(s.balade_id, s)
     }
   }
 
-  const items: GlobeBalade[] = balades.map((balade) => ({
-    balade,
-    score: bestScore.get(balade.id) ?? 0,
-    date: balade.created_at,
-  }))
+  const items: GlobeBalade[] = balades.map((balade) => {
+    const session = sessionByBalade.get(balade.id)
+    const medicalTotal = balade.etapes.filter((e) => e.medical_bonus).length
+    return {
+      balade,
+      score: session?.total_score ?? 0,
+      date: balade.created_at,
+      progress: {
+        enigmes: {
+          done: countTrue(session?.enigme_scores),
+          total: balade.etapes.length,
+        },
+        medical: {
+          done: countTrue(session?.medical_scores),
+          total: medicalTotal,
+        },
+        missions: {
+          done: countTrue(session?.mission_scores),
+          total: balade.etapes.length,
+        },
+      },
+    }
+  })
 
   return (
     <div>
