@@ -10,6 +10,14 @@ import {
 } from '@/lib/claude/generation-prompt'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { generateBaladeText } from '@/lib/ai/providers'
+import type { GeneratedBalade } from '@/lib/llm/generated'
+import {
+  REFINE_SYSTEM_PROMPT,
+  applyRefinePatch,
+  buildRefinePrompt,
+  refineMaxTokens,
+  shouldRefine,
+} from '@/lib/llm/refine'
 import type {
   AIProvider,
   Balade,
@@ -42,44 +50,6 @@ const SPECIALTIES: MedicalSpecialty[] = [
   'gastro',
   'urgences',
 ]
-
-/** Shape of the JSON the model is asked to return. */
-interface GeneratedBalade {
-  title: string
-  theme_color: Partial<ThemeColor>
-  estimated_duration_min: number
-  distance_km: number
-  story_context: string
-  prologue: string
-  epilogue: string
-  route_makes_sense: boolean
-  etapes: GeneratedEtape[]
-}
-interface GeneratedEtape {
-  order: number
-  location_name: string
-  lat: number
-  lng: number
-  story_text: string
-  direction_text: string
-  walk_minutes: number
-  action_mission: string
-  enigme: {
-    type: string
-    title: string
-    instruction: string
-    cipher_display?: string
-    hint: string
-    answer: string
-    answer_explanation: string
-  }
-  medical_bonus: {
-    specialty: string
-    question: string
-    hint?: string
-    answer: string
-  } | null
-}
 
 function asString(v: unknown, fallback = ''): string {
   return typeof v === 'string' ? v : fallback
@@ -333,10 +303,10 @@ export async function POST(request: Request) {
       ? settings.ai_model
       : 'claude-sonnet-4-6'
 
-  // 4. Generate the balade content.
+  // 4. Draft the balade content with the (cheap) primary model.
+  const generationId = crypto.randomUUID()
   let generated: GeneratedBalade
   try {
-    const generationId = crypto.randomUUID()
     const output = await generateBaladeText(
       { provider, apiKey, model, difficulty: req.difficulty, generationId },
       GENERATION_SYSTEM_PROMPT,
@@ -345,6 +315,7 @@ export async function POST(request: Request) {
     const parsed = parseAndValidateModelOutput(output.text)
     console.info('[LLM_GENERATION]', {
       generation_id: generationId,
+      stage: 'draft',
       provider,
       model,
       difficulty: req.difficulty,
@@ -369,6 +340,57 @@ export async function POST(request: Request) {
       { error: 'La génération a échoué. Vérifie ta clé API et réessaie.' },
       { status: 502 },
     )
+  }
+
+  // 4b. Optional refine pass: a stronger model re-checks key parts and returns
+  // only corrections. Failures here never block the (already valid) draft.
+  const refine = settings?.generation_pipeline?.refine
+  if (shouldRefine(refine, req.difficulty)) {
+    try {
+      const output = await generateBaladeText(
+        {
+          provider: refine.provider,
+          apiKey: refine.apiKey as string,
+          model: refine.model,
+          difficulty: req.difficulty,
+          generationId,
+          maxTokensOverride: refineMaxTokens(generated.etapes.length),
+        },
+        REFINE_SYSTEM_PROMPT,
+        buildRefinePrompt({
+          draft: generated,
+          targets: refine.targets,
+          city: req.city,
+          country: req.country,
+          difficulty: req.difficulty,
+        }),
+      )
+      const { balade, appliedFixes } = applyRefinePatch(
+        generated,
+        output.text,
+        refine.targets,
+      )
+      generated = balade
+      console.info('[LLM_GENERATION]', {
+        generation_id: generationId,
+        stage: 'refine',
+        provider: refine.provider,
+        model: refine.model,
+        difficulty: req.difficulty,
+        input_tokens: output.usage.inputTokens,
+        output_tokens: output.usage.outputTokens,
+        total_tokens: output.usage.totalTokens,
+        estimated_cost_usd: output.estimatedCostUsd,
+        latency_ms: output.latencyMs,
+        success: true,
+        targets: refine.targets,
+        applied_fixes: appliedFixes,
+        city: req.city,
+        route: req.country,
+      })
+    } catch (err) {
+      console.error('Refine pass failed (keeping draft):', err)
+    }
   }
 
   // 5. Assemble, render, and persist.

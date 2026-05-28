@@ -141,7 +141,14 @@ export async function getUserSettings(
 }
 
 export type UserSettingsUpdate = Partial<
-  Pick<UserSettings, 'ai_provider' | 'ai_model' | 'ai_api_key' | 'mapbox_token'>
+  Pick<
+    UserSettings,
+    | 'ai_provider'
+    | 'ai_model'
+    | 'ai_api_key'
+    | 'mapbox_token'
+    | 'generation_pipeline'
+  >
 > & { user_id: string }
 
 /** Inserts or updates the caller's settings row. */

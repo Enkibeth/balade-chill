@@ -12,6 +12,7 @@ export interface GenerationContext {
   model: string
   difficulty: 'facile' | 'moyen' | 'difficile' | 'boss'
   generationId: string
+  maxTokensOverride?: number
 }
 
 export interface LLMGenerationResult {
@@ -32,11 +33,13 @@ export async function generateBaladeText(
   user: string,
 ): Promise<LLMGenerationResult> {
   const startedAt = Date.now()
-  const maxTokens = getModelOutputBudget({
-    model: ctx.model,
-    difficulty: ctx.difficulty,
-    generationMode: ctx.difficulty === 'boss' ? 'segmented' : 'full',
-  })
+  const maxTokens =
+    ctx.maxTokensOverride ??
+    getModelOutputBudget({
+      model: ctx.model,
+      difficulty: ctx.difficulty,
+      generationMode: ctx.difficulty === 'boss' ? 'segmented' : 'full',
+    })
   if (ctx.provider === 'anthropic') {
     const anthropic = new Anthropic({ apiKey: ctx.apiKey })
     const stream = anthropic.messages.stream({
