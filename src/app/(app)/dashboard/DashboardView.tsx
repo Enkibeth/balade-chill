@@ -5,20 +5,26 @@ import dynamic from 'next/dynamic'
 import { BaladeSidebar } from './BaladeSidebar'
 import type { GlobeBalade } from '@/components/map/BaladeGlobe'
 
-// Mapbox GL touches `window`, so the globe is loaded client-side only.
+// Leaflet touches `window`, so the map is loaded client-side only.
 const BaladeGlobe = dynamic(
   () => import('@/components/map/BaladeGlobe').then((m) => m.BaladeGlobe),
   {
     ssr: false,
     loading: () => (
       <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl border border-amber-200/15 bg-black/40">
-        <p className="text-sm text-amber-100/40">Chargement du globe…</p>
+        <p className="text-sm text-amber-100/40">Chargement de la carte…</p>
       </div>
     ),
   },
 )
 
-export function DashboardView({ items }: { items: GlobeBalade[] }) {
+export function DashboardView({
+  items,
+  mapboxToken,
+}: {
+  items: GlobeBalade[]
+  mapboxToken: string | null
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(
     items[0]?.balade.id ?? null,
   )
@@ -30,6 +36,7 @@ export function DashboardView({ items }: { items: GlobeBalade[] }) {
           items={items}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          mapboxToken={mapboxToken}
         />
       </div>
       <div className="lg:col-span-2 lg:h-[640px]">

@@ -176,8 +176,8 @@ export function SettingsForm({
             </button>
           </div>
           <p className="mt-1 text-[11px] text-amber-100/35">
-            Utilisé uniquement pour l&apos;aperçu statique de validation. La
-            carte principale fonctionne sans token (tuiles OpenFreeMap).
+            Optionnel. La carte fonctionne sans token (tuiles CARTO). Avec un
+            token, elle utilise le rendu Mapbox + l&apos;aperçu de validation.
           </p>
         </div>
       </section>
