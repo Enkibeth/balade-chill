@@ -19,7 +19,8 @@ export default async function SettingsPage() {
         RÉGLAGES
       </h1>
       <p className="mb-6 text-sm text-amber-100/45">
-        Clés API personnelles — stockées avec un accès restreint à ton compte.
+        Clés API personnelles — requises pour générer, stockées avec un accès
+        restreint à ton compte (jamais partagées publiquement).
       </p>
       <SettingsForm userId={user.id} initial={settings} />
     </div>

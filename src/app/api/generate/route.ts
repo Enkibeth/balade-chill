@@ -135,6 +135,50 @@ function extractJson(text: string): GeneratedBalade {
   return parsed
 }
 
+type ParseErrorType =
+  | 'EMPTY_OUTPUT'
+  | 'NO_JSON_FOUND'
+  | 'INVALID_JSON'
+  | 'SCHEMA_VALIDATION_FAILED'
+  | 'TRUNCATED_OUTPUT'
+
+function hasBalancedCurlyBraces(text: string): boolean {
+  let depth = 0
+  for (const char of text) {
+    if (char === '{') depth += 1
+    if (char === '}') depth -= 1
+    if (depth < 0) return false
+  }
+  return depth === 0
+}
+
+function isLikelyTruncatedOutput(text: string): boolean {
+  const trimmed = text.trim()
+  if (!trimmed) return false
+  if (!trimmed.includes('{')) return false
+  return !trimmed.endsWith('}') || !hasBalancedCurlyBraces(trimmed)
+}
+function isValidGeneratedBalade(x: unknown): x is GeneratedBalade {
+  if (!x || typeof x !== 'object') return false
+  const b = x as GeneratedBalade
+  return typeof b.title === 'string' && Array.isArray(b.etapes) && b.etapes.length > 0
+}
+function parseAndValidateModelOutput(raw: string): { ok: true; data: GeneratedBalade } | { ok: false; errorType: ParseErrorType; details?: unknown } {
+  if (!raw?.trim()) return { ok: false, errorType: 'EMPTY_OUTPUT' }
+  if (isLikelyTruncatedOutput(raw)) {
+    return { ok: false, errorType: 'TRUNCATED_OUTPUT' }
+  }
+  try {
+    const extracted = extractJson(raw)
+    if (!isValidGeneratedBalade(extracted)) {
+      return { ok: false, errorType: 'SCHEMA_VALIDATION_FAILED' }
+    }
+    return { ok: true, data: extracted }
+  } catch (error) {
+    return { ok: false, errorType: raw.includes('{') ? 'INVALID_JSON' : 'NO_JSON_FOUND', details: String(error) }
+  }
+}
+
 function normalizeTheme(theme: Partial<ThemeColor> | undefined): ThemeColor {
   const isHex = (v: unknown): v is string =>
     typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v)
@@ -274,14 +318,12 @@ export async function POST(request: Request) {
   const apiKey =
     settings?.ai_api_key && settings.ai_api_key.length > 0
       ? settings.ai_api_key
-      : provider === 'anthropic'
-        ? process.env.ANTHROPIC_API_KEY
-        : undefined
+      : undefined
   if (!apiKey) {
     return NextResponse.json(
       {
         error:
-          'Aucune clé API configurée. Ajoute la tienne dans Réglages, ou définis ANTHROPIC_API_KEY côté serveur.',
+          'Aucune clé API personnelle configurée. Va dans Réglages et ajoute ta clé API.',
       },
       { status: 400 },
     )
@@ -294,12 +336,33 @@ export async function POST(request: Request) {
   // 4. Generate the balade content.
   let generated: GeneratedBalade
   try {
-    const text = await generateBaladeText(
-      { provider, apiKey, model },
+    const generationId = crypto.randomUUID()
+    const output = await generateBaladeText(
+      { provider, apiKey, model, difficulty: req.difficulty, generationId },
       GENERATION_SYSTEM_PROMPT,
       buildGenerationPrompt(req),
     )
-    generated = extractJson(text)
+    const parsed = parseAndValidateModelOutput(output.text)
+    console.info('[LLM_GENERATION]', {
+      generation_id: generationId,
+      provider,
+      model,
+      difficulty: req.difficulty,
+      input_tokens: output.usage.inputTokens,
+      output_tokens: output.usage.outputTokens,
+      total_tokens: output.usage.totalTokens,
+      estimated_cost_usd: output.estimatedCostUsd,
+      latency_ms: output.latencyMs,
+      success: parsed.ok,
+      error_type: parsed.ok ? null : parsed.errorType,
+      city: req.city,
+      route: req.country,
+      retry_count: 0,
+    })
+    if (!parsed.ok) {
+      throw new Error(parsed.errorType)
+    }
+    generated = parsed.data
   } catch (err) {
     console.error('Balade generation failed:', err)
     return NextResponse.json(

@@ -66,6 +66,11 @@ export function ValidationScreen({
     ;[clone[index], clone[target]] = [clone[target], clone[index]]
     setOrderedEtapes(clone.map((e, i) => ({ ...e, order: i + 1 })))
   }
+  function patchEtape(index: number, patch: Partial<(typeof etapes)[number]>) {
+    setOrderedEtapes((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, ...patch } : e)),
+    )
+  }
 
   async function handleStart() {
     setError(null)
@@ -163,12 +168,19 @@ export function ValidationScreen({
               {e.order}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-amber-100">
-                {e.location_name}
-              </p>
+              <input
+                value={e.location_name}
+                onChange={(ev) => patchEtape(i, { location_name: ev.target.value })}
+                className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
+              />
               <p className="text-[11px] text-amber-100/40">
                 {e.walk_minutes} min de marche
               </p>
+              <input
+                value={e.action_mission}
+                onChange={(ev) => patchEtape(i, { action_mission: ev.target.value })}
+                className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+              />
             </div>
             <div className="flex shrink-0 flex-col gap-1">
               <button
