@@ -146,7 +146,10 @@ export function SettingsForm({
       </section>
 
       <section className="space-y-3 border-t border-amber-200/10 pt-5">
-        <h2 className="text-sm font-semibold text-amber-100">Carte (Mapbox)</h2>
+        <h2 className="text-sm font-semibold text-amber-100">
+          Token Mapbox{' '}
+          <span className="font-normal text-amber-100/40">(optionnel)</span>
+        </h2>
         <div>
           <label className="mb-1 block text-xs text-amber-100/50">
             Token Mapbox public
@@ -173,7 +176,8 @@ export function SettingsForm({
             </button>
           </div>
           <p className="mt-1 text-[11px] text-amber-100/35">
-            account.mapbox.com → tokens. Sans token, la carte affiche un repli.
+            Utilisé uniquement pour l&apos;aperçu statique de validation. La
+            carte principale fonctionne sans token (tuiles OpenFreeMap).
           </p>
         </div>
       </section>
