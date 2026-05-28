@@ -43,10 +43,13 @@ export function ValidationScreen({
 }) {
   const router = useRouter()
   const [theme, setTheme] = useState<ThemeColor>(balade.theme_color)
+  const [orderedEtapes, setOrderedEtapes] = useState(
+    [...balade.etapes].sort((a, b) => a.order - b.order),
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const etapes = [...balade.etapes].sort((a, b) => a.order - b.order)
+  const etapes = orderedEtapes
   const hours = balade.estimated_duration_min / 60
   const tooLong = balade.estimated_duration_min > 180
   const mapUrl = staticMapUrl(balade, theme.primary, mapboxToken)
@@ -56,10 +59,24 @@ export function ValidationScreen({
     setTheme(others[Math.floor(Math.random() * others.length)])
   }
 
+  function moveEtape(index: number, delta: -1 | 1) {
+    const target = index + delta
+    if (target < 0 || target >= orderedEtapes.length) return
+    const clone = [...orderedEtapes]
+    ;[clone[index], clone[target]] = [clone[target], clone[index]]
+    setOrderedEtapes(clone.map((e, i) => ({ ...e, order: i + 1 })))
+  }
+  function patchEtape(index: number, patch: Partial<(typeof etapes)[number]>) {
+    setOrderedEtapes((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, ...patch } : e)),
+    )
+  }
+
   async function handleStart() {
     setError(null)
     setLoading(true)
     const themed: Balade = { ...balade, theme_color: theme }
+    themed.etapes = etapes.map((e, i) => ({ ...e, order: i + 1 }))
     const html = renderBaladeHtml(themed)
     const { error: updateError } = await createClient()
       .from('balades')
@@ -67,6 +84,7 @@ export function ValidationScreen({
         status: 'validated',
         theme_color: theme,
         html_content: html,
+        etapes: themed.etapes,
       })
       .eq('id', balade.id)
     if (updateError) {
@@ -138,7 +156,7 @@ export function ValidationScreen({
 
       {/* Ordered etape list */}
       <div className="space-y-2">
-        {etapes.map((e) => (
+        {etapes.map((e, i) => (
           <div
             key={e.id}
             className="flex items-center gap-3 rounded-xl border border-amber-200/12 bg-black/30 p-3"
@@ -150,12 +168,35 @@ export function ValidationScreen({
               {e.order}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-amber-100">
-                {e.location_name}
-              </p>
+              <input
+                value={e.location_name}
+                onChange={(ev) => patchEtape(i, { location_name: ev.target.value })}
+                className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
+              />
               <p className="text-[11px] text-amber-100/40">
                 {e.walk_minutes} min de marche
               </p>
+              <input
+                value={e.action_mission}
+                onChange={(ev) => patchEtape(i, { action_mission: ev.target.value })}
+                className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+              />
+            </div>
+            <div className="flex shrink-0 flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => moveEtape(i, -1)}
+                className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                onClick={() => moveEtape(i, 1)}
+                className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
+              >
+                ▼
+              </button>
             </div>
             {e.maps_url && (
               <a

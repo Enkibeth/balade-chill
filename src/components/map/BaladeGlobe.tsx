@@ -1,7 +1,7 @@
 'use client'
 
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -9,6 +9,7 @@ import {
   Popup,
   Polyline,
   useMap,
+  useMapEvents,
 } from 'react-leaflet'
 import L from 'leaflet'
 import type { Balade } from '@/types'
@@ -17,6 +18,14 @@ export interface GlobeBalade {
   balade: Balade
   score: number
   date: string
+  progress?: {
+    enigmesDone: number
+    enigmesTotal: number
+    medicineDone: number
+    medicineTotal: number
+    missionsDone: number
+    missionsTotal: number
+  }
 }
 
 function centroid(balade: Balade): { lat: number; lng: number } | null {
@@ -102,6 +111,15 @@ function FlyToSelected({
   return null
 }
 
+function FlyToUser({ position }: { position: [number, number] | null }) {
+  const map = useMap()
+  useMapEvents({})
+  useEffect(() => {
+    if (position) map.flyTo(position, 15, { duration: 1.2 })
+  }, [position, map])
+  return null
+}
+
 export function BaladeGlobe({
   items,
   selectedId,
@@ -113,6 +131,7 @@ export function BaladeGlobe({
   onSelect: (id: string) => void
   mapboxToken: string | null
 }) {
+  const [userPosition, setUserPosition] = useState<[number, number] | null>(null)
   const points = useMemo(
     () =>
       items
@@ -161,7 +180,19 @@ export function BaladeGlobe({
     : [48.8566, 2.3522]
 
   return (
-    <div className="h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15 bg-[#1a0f08]">
+    <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-amber-200/15 bg-[#1a0f08]">
+      <button
+        type="button"
+        onClick={() => {
+          if (!navigator.geolocation) return
+          navigator.geolocation.getCurrentPosition((pos) => {
+            setUserPosition([pos.coords.latitude, pos.coords.longitude])
+          })
+        }}
+        className="absolute right-3 top-3 z-[1000] rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-medium text-amber-950 shadow"
+      >
+        Me localiser
+      </button>
       <MapContainer
         center={center}
         zoom={points[0] ? 12 : 4}
@@ -182,6 +213,7 @@ export function BaladeGlobe({
           lat={selected?.lat}
           lng={selected?.lng}
         />
+        <FlyToUser position={userPosition} />
 
         {routeCoords.length >= 2 && (
           <Polyline
@@ -212,7 +244,15 @@ export function BaladeGlobe({
               <Popup>
                 <strong>{p.balade.title}</strong>
                 <br />
-                {new Date(p.date).toLocaleDateString('fr-FR')} · {p.score} pts
+                {p.balade.city} · {new Date(p.date).toLocaleDateString('fr-FR')}
+                <br />
+                Difficulté: {p.balade.difficulty}
+                <br />
+                Énigmes {p.progress?.enigmesDone ?? 0}/{p.progress?.enigmesTotal ?? 0} ·
+                Médecine {p.progress?.medicineDone ?? 0}/{p.progress?.medicineTotal ?? 0} ·
+                Missions {p.progress?.missionsDone ?? 0}/{p.progress?.missionsTotal ?? 0}
+                <br />
+                <a href={`/balade/${p.balade.id}`}>Ouvrir la balade</a>
               </Popup>
             </Marker>
           )
@@ -234,6 +274,14 @@ export function BaladeGlobe({
                 <Popup>{e.location_name}</Popup>
               </Marker>
             ))}
+        {userPosition && (
+          <Marker
+            position={userPosition}
+            icon={circleIcon('#3b82f6', '#93c5fd', 18, true)}
+          >
+            <Popup>Votre position</Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   )

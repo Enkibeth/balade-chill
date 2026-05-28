@@ -3,11 +3,22 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import { PROVIDERS } from './catalog'
 import type { AIProvider } from '@/types'
+import { estimateLLMCost } from '@/lib/llm/modelPricing'
+import { getModelOutputBudget } from '@/lib/llm/modelLimits'
 
 export interface GenerationContext {
   provider: AIProvider
   apiKey: string
   model: string
+  difficulty: 'facile' | 'moyen' | 'difficile' | 'boss'
+  generationId: string
+}
+
+export interface LLMGenerationResult {
+  text: string
+  usage: { inputTokens: number; outputTokens: number; totalTokens: number }
+  estimatedCostUsd: number
+  latencyMs: number
 }
 
 /**
@@ -19,12 +30,18 @@ export async function generateBaladeText(
   ctx: GenerationContext,
   system: string,
   user: string,
-): Promise<string> {
+): Promise<LLMGenerationResult> {
+  const startedAt = Date.now()
+  const maxTokens = getModelOutputBudget({
+    model: ctx.model,
+    difficulty: ctx.difficulty,
+    generationMode: ctx.difficulty === 'boss' ? 'segmented' : 'full',
+  })
   if (ctx.provider === 'anthropic') {
     const anthropic = new Anthropic({ apiKey: ctx.apiKey })
     const stream = anthropic.messages.stream({
       model: ctx.model,
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       system: [
         {
           type: 'text',
@@ -35,10 +52,22 @@ export async function generateBaladeText(
       messages: [{ role: 'user', content: user }],
     })
     const message = await stream.finalMessage()
-    return message.content
+    const text = message.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
       .map((b) => b.text)
       .join('')
+    const usage = {
+      inputTokens: message.usage.input_tokens,
+      outputTokens: message.usage.output_tokens,
+      totalTokens: message.usage.input_tokens + message.usage.output_tokens,
+    }
+    const estimatedCostUsd = estimateLLMCost({
+      provider: ctx.provider,
+      model: ctx.model,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+    })
+    return { text, usage, estimatedCostUsd, latencyMs: Date.now() - startedAt }
   }
 
   const baseURL = PROVIDERS[ctx.provider].baseURL
@@ -48,11 +77,27 @@ export async function generateBaladeText(
   })
   const response = await openai.chat.completions.create({
     model: ctx.model,
-    max_tokens: 8000,
+    max_tokens: maxTokens,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
   })
-  return response.choices[0]?.message?.content ?? ''
+  const usage = {
+    inputTokens: response.usage?.prompt_tokens ?? 0,
+    outputTokens: response.usage?.completion_tokens ?? 0,
+    totalTokens: response.usage?.total_tokens ?? 0,
+  }
+  const estimatedCostUsd = estimateLLMCost({
+    provider: ctx.provider,
+    model: ctx.model,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+  })
+  return {
+    text: response.choices[0]?.message?.content ?? '',
+    usage,
+    estimatedCostUsd,
+    latencyMs: Date.now() - startedAt,
+  }
 }
