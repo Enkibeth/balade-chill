@@ -134,13 +134,40 @@ function extractJson(text: string): GeneratedBalade {
   }
   return parsed
 }
+
+type ParseErrorType =
+  | 'EMPTY_OUTPUT'
+  | 'NO_JSON_FOUND'
+  | 'INVALID_JSON'
+  | 'SCHEMA_VALIDATION_FAILED'
+  | 'TRUNCATED_OUTPUT'
+
+function hasBalancedCurlyBraces(text: string): boolean {
+  let depth = 0
+  for (const char of text) {
+    if (char === '{') depth += 1
+    if (char === '}') depth -= 1
+    if (depth < 0) return false
+  }
+  return depth === 0
+}
+
+function isLikelyTruncatedOutput(text: string): boolean {
+  const trimmed = text.trim()
+  if (!trimmed) return false
+  if (!trimmed.includes('{')) return false
+  return !trimmed.endsWith('}') || !hasBalancedCurlyBraces(trimmed)
+}
 function isValidGeneratedBalade(x: unknown): x is GeneratedBalade {
   if (!x || typeof x !== 'object') return false
   const b = x as GeneratedBalade
   return typeof b.title === 'string' && Array.isArray(b.etapes) && b.etapes.length > 0
 }
-function parseAndValidateModelOutput(raw: string): { ok: true; data: GeneratedBalade } | { ok: false; errorType: string; details?: unknown } {
+function parseAndValidateModelOutput(raw: string): { ok: true; data: GeneratedBalade } | { ok: false; errorType: ParseErrorType; details?: unknown } {
   if (!raw?.trim()) return { ok: false, errorType: 'EMPTY_OUTPUT' }
+  if (isLikelyTruncatedOutput(raw)) {
+    return { ok: false, errorType: 'TRUNCATED_OUTPUT' }
+  }
   try {
     const extracted = extractJson(raw)
     if (!isValidGeneratedBalade(extracted)) {
