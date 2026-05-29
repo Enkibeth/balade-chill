@@ -253,6 +253,14 @@ export function BaladeGlobe({
                 Missions {p.progress?.missionsDone ?? 0}/{p.progress?.missionsTotal ?? 0}
                 <br />
                 <a href={`/balade/${p.balade.id}`}>Ouvrir la balade</a>
+                {' · '}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {"S'y rendre"}
+                </a>
               </Popup>
             </Marker>
           )
@@ -271,7 +279,19 @@ export function BaladeGlobe({
                   e.order,
                 )}
               >
-                <Popup>{e.location_name}</Popup>
+                <Popup>
+                  <strong>
+                    {e.order}. {e.location_name}
+                  </strong>
+                  <br />
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {"Lancer l'itinéraire"}
+                  </a>
+                </Popup>
               </Marker>
             ))}
         {userPosition && (

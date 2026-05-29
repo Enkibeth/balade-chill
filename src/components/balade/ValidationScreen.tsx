@@ -2,11 +2,33 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MapPin, Clock, AlertTriangle, Shuffle, Play, Pencil } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import {
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Shuffle,
+  Play,
+  Pencil,
+  Save,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { CipherBlock } from './CipherBlock'
 import type { Balade, ThemeColor } from '@/types'
+
+const RoutePreviewMap = dynamic(
+  () =>
+    import('@/components/map/RoutePreviewMap').then((m) => m.RoutePreviewMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center rounded-2xl border border-amber-200/15 bg-black/30 text-xs text-amber-100/40">
+        Chargement de la carte…
+      </div>
+    ),
+  },
+)
 
 const PALETTES: ThemeColor[] = [
   { name: 'Sépia & Or', primary: '#7a1c2e', secondary: '#b8860b', accent: '#c4757a', bg: '#1a0f08' },
@@ -17,29 +39,12 @@ const PALETTES: ThemeColor[] = [
   { name: 'Forêt Ancienne', primary: '#3d5a3a', secondary: '#bfa14a', accent: '#8fae7d', bg: '#0e120c' },
 ]
 
-function staticMapUrl(
-  balade: Balade,
-  color: string,
-  token: string | null,
-): string | null {
-  if (!token) return null
-  const pts = [...balade.etapes]
-    .sort((a, b) => a.order - b.order)
-    .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lng))
-  if (pts.length === 0) return null
-  const hex = color.replace('#', '')
-  const pins = pts
-    .map((e) => `pin-s-${e.order}+${hex}(${e.lng},${e.lat})`)
-    .join(',')
-  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pins}/auto/640x280@2x?access_token=${token}&padding=48`
-}
-
 export function ValidationScreen({
   balade,
-  mapboxToken,
+  editing = false,
 }: {
   balade: Balade
-  mapboxToken: string | null
+  editing?: boolean
 }) {
   const router = useRouter()
   const [theme, setTheme] = useState<ThemeColor>(balade.theme_color)
@@ -52,7 +57,6 @@ export function ValidationScreen({
   const etapes = orderedEtapes
   const hours = balade.estimated_duration_min / 60
   const tooLong = balade.estimated_duration_min > 180
-  const mapUrl = staticMapUrl(balade, theme.primary, mapboxToken)
 
   function regenerateTheme() {
     const others = PALETTES.filter((p) => p.name !== theme.name)
@@ -81,14 +85,18 @@ export function ValidationScreen({
     const { error: updateError } = await createClient()
       .from('balades')
       .update({
-        status: 'validated',
+        status: editing ? balade.status : 'validated',
         theme_color: theme,
         html_content: html,
         etapes: themed.etapes,
       })
       .eq('id', balade.id)
     if (updateError) {
-      setError("Impossible de valider la balade. Réessaie.")
+      setError(
+        editing
+          ? 'Impossible d’enregistrer les modifications. Réessaie.'
+          : 'Impossible de valider la balade. Réessaie.',
+      )
       setLoading(false)
       return
     }
@@ -100,7 +108,7 @@ export function ValidationScreen({
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
         <h1 className="font-mono text-xl tracking-[0.18em] text-amber-200">
-          VALIDATION DE L&apos;ITINÉRAIRE
+          {editing ? 'MODIFIER L’ITINÉRAIRE' : 'VALIDATION DE L’ITINÉRAIRE'}
         </h1>
         <p className="mt-1 text-sm text-amber-100/45">
           {balade.title} · {balade.city}
@@ -140,19 +148,8 @@ export function ValidationScreen({
         </div>
       )}
 
-      {/* Static map preview */}
-      {mapUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={mapUrl}
-          alt="Aperçu de l'itinéraire"
-          className="w-full rounded-2xl border border-amber-200/15"
-        />
-      ) : (
-        <div className="rounded-2xl border border-amber-200/15 bg-black/30 p-4 text-center text-xs text-amber-100/40">
-          Aperçu cartographique indisponible (token Mapbox manquant).
-        </div>
-      )}
+      {/* Free route preview (no token needed) */}
+      <RoutePreviewMap etapes={etapes} color={theme.secondary} />
 
       {/* Ordered etape list */}
       <div className="space-y-2">
@@ -171,6 +168,7 @@ export function ValidationScreen({
               <input
                 value={e.location_name}
                 onChange={(ev) => patchEtape(i, { location_name: ev.target.value })}
+                placeholder="Nom du lieu"
                 className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
               />
               <p className="text-[11px] text-amber-100/40">
@@ -179,8 +177,18 @@ export function ValidationScreen({
               <input
                 value={e.action_mission}
                 onChange={(ev) => patchEtape(i, { action_mission: ev.target.value })}
+                placeholder="Mission complice"
                 className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
               />
+              {editing && (
+                <textarea
+                  value={e.story_text}
+                  onChange={(ev) => patchEtape(i, { story_text: ev.target.value })}
+                  placeholder="Récit de l’étape"
+                  rows={2}
+                  className="mt-1 w-full resize-y rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+                />
+              )}
             </div>
             <div className="flex shrink-0 flex-col gap-1">
               <button
@@ -258,19 +266,27 @@ export function ValidationScreen({
 
       <div className="flex gap-3">
         <button
-          onClick={() => router.push('/generate')}
+          onClick={() =>
+            router.push(editing ? `/balade/${balade.id}` : '/generate')
+          }
           disabled={loading}
           className="inline-flex items-center gap-2 rounded-lg border border-amber-200/20 px-4 py-2.5 text-sm text-amber-100/70 transition hover:border-amber-200/40 disabled:opacity-40"
         >
-          <Pencil size={15} /> Modifier
+          <Pencil size={15} /> {editing ? 'Annuler' : 'Modifier'}
         </button>
         <button
           onClick={handleStart}
           disabled={loading}
           className="ml-auto inline-flex items-center gap-2 rounded-lg bg-amber-300 px-5 py-2.5 text-sm font-medium text-amber-950 transition hover:bg-amber-200 disabled:opacity-50"
         >
-          <Play size={16} />
-          {loading ? 'Validation…' : "Ça me semble bon — Démarrer l'aventure"}
+          {editing ? <Save size={16} /> : <Play size={16} />}
+          {editing
+            ? loading
+              ? 'Enregistrement…'
+              : 'Enregistrer les modifications'
+            : loading
+              ? 'Validation…'
+              : "Ça me semble bon — Démarrer l'aventure"}
         </button>
       </div>
     </div>

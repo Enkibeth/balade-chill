@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Flag, Cloud, CloudOff } from 'lucide-react'
+import Link from 'next/link'
+import { Flag, Cloud, CloudOff, Pencil } from 'lucide-react'
 import { useBaladeSession } from '@/hooks/useBaladeSession'
 import { OfflineDownloadButton } from '@/components/offline/OfflineDownloadButton'
 import { EtapeCard } from './EtapeCard'
@@ -106,8 +107,14 @@ export function BaladeRunner({
           {etapes.length} étapes · ~{Math.round(balade.estimated_duration_min)} min
           · {balade.distance_km} km
         </p>
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex items-center justify-center gap-3">
           <OfflineDownloadButton balade={balade} />
+          <Link
+            href={`/balade/${balade.id}?mode=edit`}
+            className="inline-flex items-center gap-2 rounded-lg border border-amber-200/20 px-3 py-1.5 text-xs text-amber-100/70 transition hover:border-amber-200/40"
+          >
+            <Pencil size={13} /> Éditer l’itinéraire
+          </Link>
         </div>
       </header>
 

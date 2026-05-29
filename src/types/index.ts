@@ -114,7 +114,7 @@ export interface GenerationRequest {
   special_instructions?: string
 }
 
-export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq'
+export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq' | 'google'
 
 /** Which parts of a draft balade the refine pass is allowed to rewrite. */
 export type RefineTarget = 'enigmes' | 'coherence' | 'prose'

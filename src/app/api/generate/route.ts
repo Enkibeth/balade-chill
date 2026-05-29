@@ -18,6 +18,7 @@ import {
   refineMaxTokens,
   shouldRefine,
 } from '@/lib/llm/refine'
+import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
 import type {
   AIProvider,
   Balade,
@@ -391,6 +392,25 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error('Refine pass failed (keeping draft):', err)
     }
+  }
+
+  // 4c. Free deterministic safety net: make sure mechanical ciphers really
+  // decode to their answer, auto-fixing the ones we can without any LLM call.
+  let cipherFixes = 0
+  generated.etapes = generated.etapes.map((etape) => {
+    const { enigme, fixed } = validateAndFixEnigme(etape.enigme)
+    if (fixed) cipherFixes += 1
+    return fixed ? { ...etape, enigme } : etape
+  })
+  if (cipherFixes > 0) {
+    console.info('[LLM_GENERATION]', {
+      generation_id: generationId,
+      stage: 'cipher_check',
+      difficulty: req.difficulty,
+      cipher_fixes: cipherFixes,
+      city: req.city,
+      route: req.country,
+    })
   }
 
   // 5. Assemble, render, and persist.

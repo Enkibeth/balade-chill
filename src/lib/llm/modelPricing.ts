@@ -10,6 +10,8 @@ export const MODEL_PRICING = {
   'openai:gpt-4-turbo': { input: 10, output: 30 },
   'groq:llama-3.3-70b': { input: 0.59, output: 0.79 },
   'groq:llama-3.1-8b': { input: 0.05, output: 0.08 },
+  'google:gemini-2.5-flash': { input: 0.3, output: 2.5 },
+  'google:gemini-2.5-flash-lite': { input: 0.1, output: 0.4 },
   'nvidia:free': { input: 0, output: 0 },
 } as const
 
@@ -31,6 +33,10 @@ function inferPricingKey(
   if (provider === 'groq') {
     if (m.includes('8b')) return 'groq:llama-3.1-8b'
     return 'groq:llama-3.3-70b'
+  }
+  if (provider === 'google') {
+    if (m.includes('lite')) return 'google:gemini-2.5-flash-lite'
+    return 'google:gemini-2.5-flash'
   }
   if (provider === 'nvidia') return 'nvidia:free'
   return null

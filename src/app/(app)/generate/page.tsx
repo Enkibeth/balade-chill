@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Loader2, Check } from 'lucide-react'
 import type { Difficulty, GenerationRequest } from '@/types'
 
 const DIFFICULTIES: { value: Difficulty; label: string; desc: string }[] = [
@@ -226,7 +227,9 @@ export default function GeneratePage() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 3 && loading && <GenerationProgress />}
+
+        {step === 3 && !loading && (
           <div className="space-y-3">
             <h2 className="text-lg text-amber-100">Confirmation</h2>
             <dl className="space-y-2 text-sm">
@@ -295,6 +298,67 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4 border-b border-amber-200/10 pb-2">
       <dt className="text-amber-100/45">{label}</dt>
       <dd className="text-right text-amber-100">{value}</dd>
+    </div>
+  )
+}
+
+const GEN_STAGES = [
+  { at: 0, label: 'Analyse de la ville et repérage des lieux' },
+  { at: 8, label: 'Conception de l’itinéraire et des étapes' },
+  { at: 20, label: 'Écriture du récit et des énigmes' },
+  { at: 38, label: 'Vérification et finalisation' },
+]
+
+function GenerationProgress() {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const activeIndex = GEN_STAGES.reduce(
+    (acc, s, i) => (elapsed >= s.at ? i : acc),
+    0,
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg text-amber-100">Génération en cours…</h2>
+        <span className="font-mono text-sm text-amber-100/40">{elapsed}s</span>
+      </div>
+      <ul className="space-y-2.5">
+        {GEN_STAGES.map((s, i) => {
+          const done = i < activeIndex
+          const active = i === activeIndex
+          return (
+            <li key={s.label} className="flex items-center gap-3 text-sm">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                {done ? (
+                  <Check size={16} className="text-emerald-400" />
+                ) : active ? (
+                  <Loader2 size={16} className="animate-spin text-amber-300" />
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-amber-200/20" />
+                )}
+              </span>
+              <span
+                className={
+                  done
+                    ? 'text-amber-100/45'
+                    : active
+                      ? 'text-amber-100'
+                      : 'text-amber-100/30'
+                }
+              >
+                {s.label}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="text-xs text-amber-100/35">
+        Durée estimée 30-90 s selon le modèle. Ne ferme pas cette page.
+      </p>
     </div>
   )
 }
