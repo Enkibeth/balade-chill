@@ -103,6 +103,23 @@ export interface BaladeSession {
   notes: string
 }
 
+export interface QuizOption {
+  id: string
+  label: string
+}
+
+export interface QuizQuestion {
+  id: string
+  label: string
+  options: QuizOption[]
+}
+
+/** A flat answer pair the backend can drop straight into the LLM prompt. */
+export interface QuizAnswer {
+  question_label: string
+  option_label: string
+}
+
 export interface GenerationRequest {
   city: string
   country: string
@@ -114,6 +131,8 @@ export interface GenerationRequest {
   special_instructions?: string
   /** Optional address that must be both the start and the end of a loop. */
   loop_address?: string
+  /** Optional answers to the pre-generation orientation quiz. */
+  quiz_answers?: QuizAnswer[]
 }
 
 export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq' | 'google'

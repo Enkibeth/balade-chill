@@ -90,7 +90,24 @@ function parseRequest(body: unknown): GenerationRequest | null {
     theme_preference: asString(b.theme_preference) || undefined,
     special_instructions: asString(b.special_instructions) || undefined,
     loop_address: asString(b.loop_address).trim() || undefined,
+    quiz_answers: parseQuizAnswers(b.quiz_answers),
   }
+}
+
+function parseQuizAnswers(raw: unknown) {
+  if (!Array.isArray(raw)) return undefined
+  const answers = raw
+    .map((a) => {
+      if (!a || typeof a !== 'object') return null
+      const r = a as Record<string, unknown>
+      const question_label = asString(r.question_label).trim()
+      const option_label = asString(r.option_label).trim()
+      return question_label && option_label
+        ? { question_label, option_label }
+        : null
+    })
+    .filter((x): x is { question_label: string; option_label: string } => x !== null)
+  return answers.length ? answers : undefined
 }
 
 /** Pulls a JSON object out of the model's text response. */
