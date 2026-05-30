@@ -34,23 +34,22 @@ Réponds UNIQUEMENT avec un objet JSON valide (premier caractère "{", dernier "
         "answer_explanation": string,  // décodage pas à pas correct
         "instruction": string          // optionnel
       },
-      "location_name": string,         // n'inclure que si le lieu/itinéraire est incohérent
+      "location_name": string,         // n'inclure que si le lieu est incohérent
       "direction_text": string,
       "lat": number,
-      "lng": number,
-      "story_text": string,            // n'inclure que pour améliorer la prose
-      "action_mission": string
+      "lng": number
     }
   ],
-  "story_context": string,             // optionnel, prose
-  "prologue": string,                  // optionnel, prose
-  "epilogue": string                   // optionnel, prose
+  "story_context": string,             // optionnel, prose globale
+  "prologue": string,                  // optionnel, prose globale
+  "epilogue": string                   // optionnel, prose globale
 }
 
 ## RÈGLES
 - N'inclus dans "fixes" QUE les étapes qui ont un vrai problème. Si tout est correct, renvoie {"fixes": []}.
 - Pour chaque étape, n'inclus QUE les champs que tu modifies. Ne recopie jamais un champ inchangé.
-- Ne change jamais le "order" ni le nombre d'étapes.`
+- Ne change jamais le "order" ni le nombre d'étapes.
+- La prose à réécrire (si demandée) est UNIQUEMENT story_context/prologue/epilogue. Ne réécris JAMAIS les "story_text" ou "action_mission" par étape — ils restent ceux du brouillon.`
 
 interface RefinePromptInput {
   draft: GeneratedBalade
@@ -89,10 +88,6 @@ export function buildRefinePrompt(input: RefinePromptInput): string {
       parts.lng = e.lng
       parts.direction_text = e.direction_text
     }
-    if (has('prose')) {
-      parts.story_text = e.story_text
-      parts.action_mission = e.action_mission
-    }
     return parts
   })
 
@@ -109,7 +104,7 @@ export function buildRefinePrompt(input: RefinePromptInput): string {
   }
   if (has('prose')) {
     checks.push(
-      `- PROSE : améliore uniquement les textes manifestement plats ou hors-ton (style roman policier romantique années 1920). Ne réécris pas ce qui est déjà bon.`,
+      `- PROSE (uniquement story_context, prologue, epilogue) : récris ces textes globaux dans un style roman policier romantique années 1920 si le brouillon est plat ou hors-ton. Ne touche pas aux textes par étape.`,
     )
   }
 
@@ -232,19 +227,6 @@ export function applyRefinePatch(
       }
       if (lng !== null) {
         etape.lng = lng
-        touched = true
-      }
-    }
-
-    if (has('prose')) {
-      const story = str(fix.story_text)
-      const mission = str(fix.action_mission)
-      if (story) {
-        etape.story_text = story
-        touched = true
-      }
-      if (mission) {
-        etape.action_mission = mission
         touched = true
       }
     }

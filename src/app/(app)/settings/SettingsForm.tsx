@@ -18,7 +18,7 @@ const inputClass =
 const REFINE_TARGETS: { value: RefineTarget; label: string; hint: string }[] = [
   { value: 'enigmes', label: 'Énigmes', hint: 'vérifie que le chiffrement donne la bonne réponse' },
   { value: 'coherence', label: 'Cohérence', hint: 'lieux réels, GPS plausibles, itinéraire marchable' },
-  { value: 'prose', label: 'Prose', hint: 'améliore les textes plats (sortie plus coûteuse)' },
+  { value: 'prose', label: 'Prose globale', hint: 'récrit prologue/épilogue/contexte uniquement (~1c)' },
 ]
 
 const DIFFICULTIES: Difficulty[] = ['facile', 'moyen', 'difficile', 'boss']

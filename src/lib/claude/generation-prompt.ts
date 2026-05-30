@@ -1,4 +1,21 @@
-import type { GenerationRequest } from '@/types'
+import type { Difficulty, EnigmeType, GenerationRequest } from '@/types'
+import type { GeocodedPlace } from '@/lib/llm/geocode'
+
+const ENIGME_TYPES_BY_DIFFICULTY: Record<Difficulty, EnigmeType[]> = {
+  facile: ['wordplay'],
+  moyen: ['cipher_caesar', 'math_code'],
+  difficile: ['polybe', 'cipher_reverse'],
+  boss: ['polybe', 'cipher_reverse', 'cipher_caesar', 'math_code', 'anagram'],
+}
+
+/** Round-robin enigme types so the model can't repeat the same one each étape. */
+export function rotateEnigmeTypes(
+  difficulty: Difficulty,
+  nbEtapes: number,
+): EnigmeType[] {
+  const allowed = ENIGME_TYPES_BY_DIFFICULTY[difficulty]
+  return Array.from({ length: nbEtapes }, (_, i) => allowed[i % allowed.length])
+}
 
 /**
  * Stable system instructions for balade generation. Kept constant so it can
@@ -86,7 +103,10 @@ Hugo et Éloïse sont en D5 : les questions médicales sont TOUJOURS de niveau D
 - Réponds dans la langue : français.`
 
 /** The per-request user message describing the balade to generate. */
-export function buildGenerationPrompt(req: GenerationRequest): string {
+export function buildGenerationPrompt(
+  req: GenerationRequest,
+  opts: { pin?: GeocodedPlace | null } = {},
+): string {
   const specialties =
     req.medical_specialties.length > 0
       ? req.medical_specialties.join(', ')
@@ -105,8 +125,36 @@ export function buildGenerationPrompt(req: GenerationRequest): string {
   if (req.theme_preference && req.theme_preference.trim()) {
     lines.push(`- Préférence de thème : ${req.theme_preference.trim()}`)
   }
+
+  // Force enigme variety: assign one allowed type per étape, round-robin.
+  const enigmeTypes = rotateEnigmeTypes(req.difficulty, req.nb_etapes)
+  lines.push('')
+  lines.push('Type d\'énigme imposé par étape (à respecter strictement) :')
+  enigmeTypes.forEach((t, i) => {
+    lines.push(`  - Étape ${i + 1} : "${t}"`)
+  })
+
+  // Important constraints go at the END — LLMs honor trailing rules best.
+  if (opts.pin) {
+    lines.push('')
+    lines.push('RÈGLE OBLIGATOIRE — point de départ/arrivée imposé :')
+    lines.push(
+      `  L'étape 1 ET l'étape ${req.nb_etapes} DOIVENT être situées à :`,
+    )
+    lines.push(`  "${opts.pin.displayName}"`)
+    lines.push(
+      `  Coordonnées exactes : lat=${opts.pin.lat}, lng=${opts.pin.lng}.`,
+    )
+    lines.push(
+      '  Reprends ces coordonnées telles quelles pour ces deux étapes (boucle).',
+    )
+  }
+
   if (req.special_instructions && req.special_instructions.trim()) {
-    lines.push(`- Instructions spéciales : ${req.special_instructions.trim()}`)
+    lines.push('')
+    lines.push(
+      `INSTRUCTIONS À RESPECTER : ${req.special_instructions.trim()}`,
+    )
   }
 
   lines.push('')
