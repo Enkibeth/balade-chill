@@ -37,6 +37,7 @@ export default function GeneratePage() {
   ])
   const [theme, setTheme] = useState('')
   const [specialInstructions, setSpecialInstructions] = useState('')
+  const [loopAddress, setLoopAddress] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,6 +59,7 @@ export default function GeneratePage() {
       nb_etapes: nbEtapes,
       theme_preference: theme.trim() || undefined,
       special_instructions: specialInstructions.trim() || undefined,
+      loop_address: loopAddress.trim() || undefined,
     }
     try {
       const res = await fetch('/api/generate', {
@@ -149,6 +151,22 @@ export default function GeneratePage() {
                 onChange={(e) => setNbEtapes(Number(e.target.value))}
                 className="w-full accent-amber-300"
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Adresse de départ/arrivée{' '}
+                <span className="text-amber-100/25">(optionnel)</span>
+              </label>
+              <input
+                value={loopAddress}
+                onChange={(e) => setLoopAddress(e.target.value)}
+                placeholder="2bis rue Henri Dunant, Paris"
+                className={inputClass}
+              />
+              <p className="mt-1 text-[11px] text-amber-100/35">
+                Si renseignée, l&apos;étape 1 et la dernière étape seront
+                forcées à cette adresse (boucle).
+              </p>
             </div>
           </div>
         )}

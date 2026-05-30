@@ -112,6 +112,8 @@ export interface GenerationRequest {
   nb_etapes: number
   theme_preference?: string
   special_instructions?: string
+  /** Optional address that must be both the start and the end of a loop. */
+  loop_address?: string
 }
 
 export type AIProvider = 'anthropic' | 'openai' | 'nvidia' | 'groq' | 'google'

@@ -19,6 +19,8 @@ import {
   shouldRefine,
 } from '@/lib/llm/refine'
 import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
+import { applyDistancesAndTime, haversineKm } from '@/lib/llm/routeMath'
+import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
 import type {
   AIProvider,
   Balade,
@@ -87,6 +89,7 @@ function parseRequest(body: unknown): GenerationRequest | null {
     nb_etapes: nbEtapes,
     theme_preference: asString(b.theme_preference) || undefined,
     special_instructions: asString(b.special_instructions) || undefined,
+    loop_address: asString(b.loop_address).trim() || undefined,
   }
 }
 
@@ -304,6 +307,10 @@ export async function POST(request: Request) {
       ? settings.ai_model
       : 'claude-sonnet-4-6'
 
+  // Optional: geocode the user-supplied loop start/end so we can anchor the
+  // prompt with exact coordinates (and force them in post-validation).
+  const pin = req.loop_address ? await geocodeAddress(req.loop_address) : null
+
   // 4. Draft the balade content with the (cheap) primary model.
   const generationId = crypto.randomUUID()
   let generated: GeneratedBalade
@@ -311,7 +318,7 @@ export async function POST(request: Request) {
     const output = await generateBaladeText(
       { provider, apiKey, model, difficulty: req.difficulty, generationId },
       GENERATION_SYSTEM_PROMPT,
-      buildGenerationPrompt(req),
+      buildGenerationPrompt(req, { pin }),
     )
     const parsed = parseAndValidateModelOutput(output.text)
     console.info('[LLM_GENERATION]', {
@@ -412,6 +419,43 @@ export async function POST(request: Request) {
       route: req.country,
     })
   }
+
+  // 4d. Force the start/end étape to sit on the user-pinned address when the
+  // model drifted by more than 200 m. Loop balades only.
+  if (pin) {
+    const sorted = [...generated.etapes].sort((a, b) => a.order - b.order)
+    const targets = [sorted[0], sorted[sorted.length - 1]].filter(
+      (e, i, arr) => arr.indexOf(e) === i,
+    )
+    let pinFixes = 0
+    const shortName = shortenDisplayName(pin.displayName)
+    for (const etape of targets) {
+      const drift =
+        Number.isFinite(etape.lat) && Number.isFinite(etape.lng)
+          ? haversineKm(etape.lat, etape.lng, pin.lat, pin.lng)
+          : Infinity
+      if (drift > 0.2) {
+        etape.lat = pin.lat
+        etape.lng = pin.lng
+        etape.location_name = shortName
+        pinFixes += 1
+      }
+    }
+    if (pinFixes > 0) {
+      console.info('[LLM_GENERATION]', {
+        generation_id: generationId,
+        stage: 'pin_start_end',
+        pin_fixes: pinFixes,
+        address: req.loop_address,
+      })
+    }
+  }
+
+  // 4e. Deterministic distance/time from the final coordinates, replacing the
+  // model's guesses. Free, accurate, removes a whole class of bugs.
+  const totals = applyDistancesAndTime(generated.etapes)
+  generated.distance_km = totals.distance_km
+  generated.estimated_duration_min = totals.estimated_duration_min
 
   // 5. Assemble, render, and persist.
   try {
