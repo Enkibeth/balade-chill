@@ -69,7 +69,9 @@ export default function GeneratePage() {
       .then(async (res) => {
         const data = await res.json().catch(() => null)
         if (cancelled) return
-        if (!res.ok || !data?.questions) {
+        if (data?.disabled) {
+          setQuizError('Questionnaire désactivé dans les réglages.')
+        } else if (!res.ok || !data?.questions) {
           setQuizError(data?.error ?? 'Quiz indisponible.')
         } else {
           setQuiz(data.questions as QuizQuestion[])

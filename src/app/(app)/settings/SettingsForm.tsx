@@ -71,16 +71,39 @@ export function SettingsForm({
   )
   const [showRefineKey, setShowRefineKey] = useState(false)
 
+  const initQuiz = initial?.generation_pipeline?.quiz
+  const [quizEnabled, setQuizEnabled] = useState(initQuiz?.enabled ?? true)
+  const [quizProvider, setQuizProvider] = useState<AIProvider>(
+    initQuiz?.provider ?? 'nvidia',
+  )
+  const [quizModel, setQuizModel] = useState<string>(
+    initQuiz?.model ?? PROVIDERS.nvidia.models[0].value,
+  )
+  const [quizApiKey, setQuizApiKey] = useState<string>(initQuiz?.apiKey ?? '')
+  const [showQuizKey, setShowQuizKey] = useState(false)
+
   const models = useMemo(() => PROVIDERS[provider].models, [provider])
   const refineModels = useMemo(
     () => PROVIDERS[refineProvider].models,
     [refineProvider],
+  )
+  const quizModels = useMemo(
+    () => PROVIDERS[quizProvider].models,
+    [quizProvider],
   )
 
   function handleRefineProviderChange(next: AIProvider) {
     setRefineProvider(next)
     if (!PROVIDERS[next].models.some((m) => m.value === refineModel)) {
       setRefineModel(PROVIDERS[next].models[0].value)
+    }
+    setSaved(false)
+  }
+
+  function handleQuizProviderChange(next: AIProvider) {
+    setQuizProvider(next)
+    if (!PROVIDERS[next].models.some((m) => m.value === quizModel)) {
+      setQuizModel(PROVIDERS[next].models[0].value)
     }
     setSaved(false)
   }
@@ -117,6 +140,12 @@ export function SettingsForm({
             apiKey: refineApiKey.trim() || null,
             targets: refineTargets,
             difficulties: refineDifficulties,
+          },
+          quiz: {
+            enabled: quizEnabled,
+            provider: quizProvider,
+            model: quizModel,
+            apiKey: quizApiKey.trim() || null,
           },
         },
       })
@@ -213,6 +242,115 @@ export function SettingsForm({
             {provider === 'google' && 'aistudio.google.com → API keys'}
           </p>
         </div>
+      </section>
+
+      <section className="space-y-3 border-t border-amber-200/10 pt-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-amber-100">
+            Questionnaire d’affinage{' '}
+            <span className="font-normal text-amber-100/40">
+              (avant génération)
+            </span>
+          </h2>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={quizEnabled}
+            onClick={() => {
+              setQuizEnabled((v) => !v)
+              markDirty()
+            }}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+              quizEnabled ? 'bg-amber-300' : 'bg-amber-100/15'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition ${
+                quizEnabled ? 'left-[22px]' : 'left-0.5'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-[11px] text-amber-100/40">
+          Génère 4-6 questions adaptées à la ville pour mieux orienter la
+          balade. À configurer indépendamment du modèle de brouillon.
+        </p>
+
+        {quizEnabled && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs text-amber-100/50">
+                  Fournisseur
+                </label>
+                <select
+                  value={quizProvider}
+                  onChange={(e) =>
+                    handleQuizProviderChange(e.target.value as AIProvider)
+                  }
+                  className={inputClass}
+                >
+                  {Object.entries(PROVIDERS).map(([key, info]) => (
+                    <option key={key} value={key}>
+                      {info.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-xs text-amber-100/50">
+                  Modèle
+                </label>
+                <select
+                  value={quizModel}
+                  onChange={(e) => {
+                    setQuizModel(e.target.value)
+                    markDirty()
+                  }}
+                  className={inputClass}
+                >
+                  {quizModels.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-amber-100/50">
+                Clé API ({PROVIDERS[quizProvider].label})
+              </label>
+              <div className="relative">
+                <input
+                  type={showQuizKey ? 'text' : 'password'}
+                  value={quizApiKey}
+                  onChange={(e) => {
+                    setQuizApiKey(e.target.value)
+                    markDirty()
+                  }}
+                  placeholder="sk-…"
+                  className={`${inputClass} pr-10`}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowQuizKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-amber-100/50 transition hover:text-amber-100"
+                  aria-label={showQuizKey ? 'Masquer' : 'Afficher'}
+                >
+                  {showQuizKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-amber-100/35">
+                Laisser vide pour réutiliser la clé du brouillon (uniquement
+                si même fournisseur).
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="space-y-3 border-t border-amber-200/10 pt-5">
