@@ -39,6 +39,11 @@ export const PROVIDERS: Record<AIProvider, ProviderInfo> = {
     label: 'NVIDIA NIM (gratuit)',
     baseURL: 'https://integrate.api.nvidia.com/v1',
     models: [
+      { value: 'z-ai/glm-5.1', label: 'GLM 5.1 (Z.AI) · gratuit (recommandé)' },
+      {
+        value: 'qwen/qwen3-coder-480b-a35b-instruct',
+        label: 'Qwen3 Coder 480B · gratuit',
+      },
       { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B · gratuit' },
       { value: 'meta/llama-3.1-405b-instruct', label: 'Llama 3.1 405B · gratuit' },
       {

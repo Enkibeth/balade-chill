@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Check } from 'lucide-react'
-import type { Difficulty, GenerationRequest } from '@/types'
+import type {
+  Difficulty,
+  GenerationRequest,
+  QuizAnswer,
+  QuizQuestion,
+} from '@/types'
 
 const DIFFICULTIES: { value: Difficulty; label: string; desc: string }[] = [
   { value: 'facile', label: 'Facile', desc: 'Jeux de mots, sans chiffrement' },
@@ -40,6 +45,57 @@ export default function GeneratePage() {
   const [loopAddress, setLoopAddress] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
+  const [quizLoading, setQuizLoading] = useState(false)
+  const [quizError, setQuizError] = useState<string | null>(null)
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (step !== 3 || quiz || quizLoading || quizError) return
+    let cancelled = false
+    setQuizLoading(true)
+    fetch('/api/generate-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        city: city.trim(),
+        country: country.trim(),
+        difficulty,
+        duration_target_min: duration,
+        nb_etapes: nbEtapes,
+        theme_preference: theme.trim() || undefined,
+      }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null)
+        if (cancelled) return
+        if (!res.ok || !data?.questions) {
+          setQuizError(data?.error ?? 'Quiz indisponible.')
+        } else {
+          setQuiz(data.questions as QuizQuestion[])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setQuizError('Quiz indisponible.')
+      })
+      .finally(() => {
+        if (!cancelled) setQuizLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    step,
+    quiz,
+    quizLoading,
+    quizError,
+    city,
+    country,
+    difficulty,
+    duration,
+    nbEtapes,
+    theme,
+  ])
 
   function toggleSpecialty(s: string) {
     setSpecialties((prev) =>
@@ -50,6 +106,18 @@ export default function GeneratePage() {
   async function handleGenerate() {
     setError(null)
     setLoading(true)
+    const quiz_answers: QuizAnswer[] = quiz
+      ? quiz
+          .map((q) => {
+            const chosen = q.options.find(
+              (o) => o.id === quizAnswers[q.id],
+            )
+            return chosen
+              ? { question_label: q.label, option_label: chosen.label }
+              : null
+          })
+          .filter((x): x is QuizAnswer => x !== null)
+      : []
     const payload: GenerationRequest = {
       city: city.trim(),
       country: country.trim(),
@@ -60,6 +128,7 @@ export default function GeneratePage() {
       theme_preference: theme.trim() || undefined,
       special_instructions: specialInstructions.trim() || undefined,
       loop_address: loopAddress.trim() || undefined,
+      quiz_answers: quiz_answers.length ? quiz_answers : undefined,
     }
     try {
       const res = await fetch('/api/generate', {
@@ -85,10 +154,10 @@ export default function GeneratePage() {
       <h1 className="mb-1 font-mono text-xl tracking-[0.2em] text-amber-200">
         NOUVELLE BALADE
       </h1>
-      <p className="mb-6 text-sm text-amber-100/45">Étape {step} sur 3</p>
+      <p className="mb-6 text-sm text-amber-100/45">Étape {step} sur 4</p>
 
       <div className="mb-6 flex gap-2">
-        {[1, 2, 3].map((s) => (
+        {[1, 2, 3, 4].map((s) => (
           <div
             key={s}
             className={`h-1 flex-1 rounded-full ${
@@ -245,9 +314,68 @@ export default function GeneratePage() {
           </div>
         )}
 
-        {step === 3 && loading && <GenerationProgress />}
+        {step === 3 && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg text-amber-100">Affinage</h2>
+              <p className="text-xs text-amber-100/40">
+                Quelques questions adaptées à {city || 'ta ville'} pour mieux
+                orienter la balade. Tu peux laisser des réponses vides.
+              </p>
+            </div>
 
-        {step === 3 && !loading && (
+            {quizLoading && (
+              <div className="flex items-center gap-3 rounded-lg border border-amber-200/15 bg-black/30 p-4 text-sm text-amber-100/70">
+                <Loader2 size={16} className="animate-spin text-amber-300" />
+                Préparation du questionnaire…
+              </div>
+            )}
+
+            {quizError && !quizLoading && (
+              <div className="rounded-lg border border-amber-200/15 bg-black/30 p-3 text-xs text-amber-100/60">
+                {quizError} Tu peux continuer sans répondre.
+              </div>
+            )}
+
+            {quiz && !quizLoading && (
+              <div className="space-y-4">
+                {quiz.map((q) => (
+                  <div key={q.id} className="space-y-2">
+                    <p className="text-sm text-amber-100">{q.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {q.options.map((o) => {
+                        const active = quizAnswers[q.id] === o.id
+                        return (
+                          <button
+                            key={o.id}
+                            type="button"
+                            onClick={() =>
+                              setQuizAnswers((prev) => ({
+                                ...prev,
+                                [q.id]: active ? '' : o.id,
+                              }))
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                              active
+                                ? 'border-amber-300/60 bg-amber-300/15 text-amber-100'
+                                : 'border-amber-200/15 text-amber-100/55 hover:border-amber-200/35'
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 4 && loading && <GenerationProgress />}
+
+        {step === 4 && !loading && (
           <div className="space-y-3">
             <h2 className="text-lg text-amber-100">Confirmation</h2>
             <dl className="space-y-2 text-sm">
@@ -268,6 +396,15 @@ export default function GeneratePage() {
               {specialInstructions && (
                 <Row label="Instructions" value={specialInstructions} />
               )}
+              {loopAddress && <Row label="Boucle" value={loopAddress} />}
+              {quiz && Object.values(quizAnswers).filter(Boolean).length > 0 && (
+                <Row
+                  label="Affinage"
+                  value={`${
+                    Object.values(quizAnswers).filter(Boolean).length
+                  } réponse(s)`}
+                />
+              )}
             </dl>
             <p className="pt-2 text-xs text-amber-100/40">
               La génération prend environ 30 secondes.
@@ -287,7 +424,7 @@ export default function GeneratePage() {
               Retour
             </button>
           )}
-          {step < 3 && (
+          {step < 4 && (
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 && !city.trim()}
@@ -296,7 +433,7 @@ export default function GeneratePage() {
               Continuer
             </button>
           )}
-          {step === 3 && (
+          {step === 4 && (
             <button
               onClick={handleGenerate}
               disabled={loading || !city.trim()}

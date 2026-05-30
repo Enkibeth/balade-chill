@@ -126,6 +126,14 @@ export function buildGenerationPrompt(
     lines.push(`- Préférence de thème : ${req.theme_preference.trim()}`)
   }
 
+  if (req.quiz_answers && req.quiz_answers.length > 0) {
+    lines.push('')
+    lines.push('Préférences détaillées (réponses du joueur, à respecter) :')
+    for (const a of req.quiz_answers) {
+      lines.push(`- ${a.question_label} → ${a.option_label}`)
+    }
+  }
+
   // Force enigme variety: assign one allowed type per étape, round-robin.
   const enigmeTypes = rotateEnigmeTypes(req.difficulty, req.nb_etapes)
   lines.push('')
