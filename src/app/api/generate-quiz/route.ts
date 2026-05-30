@@ -61,18 +61,41 @@ export async function POST(request: Request) {
   }
 
   const settings = await getUserSettings(supabase, user.id)
-  const provider: AIProvider = settings?.ai_provider ?? 'anthropic'
-  const apiKey = settings?.ai_api_key?.length ? settings.ai_api_key : undefined
+  const quizCfg = settings?.generation_pipeline?.quiz
+
+  // Honor an explicit "disabled" flag from settings.
+  if (quizCfg && quizCfg.enabled === false) {
+    return NextResponse.json({ disabled: true })
+  }
+
+  // Quiz model resolution: dedicated quiz config wins, otherwise fall back to
+  // the draft model (ai_*). The quiz API key may be omitted when the quiz uses
+  // the same provider as the draft — we reuse the draft key in that case.
+  const useQuizCfg = Boolean(quizCfg && quizCfg.model)
+  const provider: AIProvider = useQuizCfg
+    ? quizCfg!.provider
+    : (settings?.ai_provider ?? 'anthropic')
+  const model = useQuizCfg
+    ? quizCfg!.model
+    : settings?.ai_model && settings.ai_model.length > 0
+      ? settings.ai_model
+      : 'claude-sonnet-4-6'
+  let apiKey: string | undefined
+  if (useQuizCfg) {
+    if (quizCfg!.apiKey) {
+      apiKey = quizCfg!.apiKey
+    } else if (quizCfg!.provider === settings?.ai_provider) {
+      apiKey = settings?.ai_api_key ?? undefined
+    }
+  } else {
+    apiKey = settings?.ai_api_key?.length ? settings.ai_api_key : undefined
+  }
   if (!apiKey) {
     return NextResponse.json(
       { error: 'Aucune clé API personnelle configurée.' },
       { status: 400 },
     )
   }
-  const model =
-    settings?.ai_model && settings.ai_model.length > 0
-      ? settings.ai_model
-      : 'claude-sonnet-4-6'
 
   try {
     const output = await generateBaladeText(

@@ -44,6 +44,10 @@ export const PROVIDERS: Record<AIProvider, ProviderInfo> = {
         value: 'qwen/qwen3-coder-480b-a35b-instruct',
         label: 'Qwen3 Coder 480B · gratuit',
       },
+      {
+        value: 'mistralai/mistral-nemotron',
+        label: 'Mistral Nemotron · gratuit',
+      },
       { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B · gratuit' },
       { value: 'meta/llama-3.1-405b-instruct', label: 'Llama 3.1 405B · gratuit' },
       {

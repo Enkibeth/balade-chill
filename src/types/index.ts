@@ -155,8 +155,18 @@ export interface RefineConfig {
   difficulties: Difficulty[]
 }
 
+/** Per-user override for which model runs the pre-generation orientation quiz. */
+export interface QuizModelConfig {
+  enabled: boolean
+  provider: AIProvider
+  model: string
+  apiKey: string | null
+}
+
 export interface GenerationPipeline {
   refine: RefineConfig
+  /** Optional override. If absent, the quiz uses the draft (ai_*) model. */
+  quiz?: QuizModelConfig
 }
 
 export interface UserSettings {
