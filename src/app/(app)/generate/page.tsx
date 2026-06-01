@@ -53,10 +53,15 @@ export default function GeneratePage() {
   useEffect(() => {
     if (step !== 3 || quiz || quizLoading || quizError) return
     let cancelled = false
+    // Free providers (NVIDIA NIM…) can hang or rate-limit. Without a timeout the
+    // spinner spins forever; abort after 45s and let the user skip the step.
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 45000)
     setQuizLoading(true)
     fetch('/api/generate-quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         city: city.trim(),
         country: country.trim(),
@@ -77,14 +82,22 @@ export default function GeneratePage() {
           setQuiz(data.questions as QuizQuestion[])
         }
       })
-      .catch(() => {
-        if (!cancelled) setQuizError('Quiz indisponible.')
+      .catch((err) => {
+        if (cancelled) return
+        setQuizError(
+          err?.name === 'AbortError'
+            ? 'Le questionnaire met trop de temps (modèle lent). Tu peux continuer sans répondre.'
+            : 'Quiz indisponible.',
+        )
       })
       .finally(() => {
+        clearTimeout(timeout)
         if (!cancelled) setQuizLoading(false)
       })
     return () => {
       cancelled = true
+      clearTimeout(timeout)
+      controller.abort()
     }
   }, [
     step,

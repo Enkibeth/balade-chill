@@ -20,6 +20,7 @@ import {
 } from '@/lib/llm/refine'
 import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
 import { applyDistancesAndTime, haversineKm } from '@/lib/llm/routeMath'
+import { validateEtapeGeography } from '@/lib/llm/geoValidate'
 import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
 import type {
   AIProvider,
@@ -465,6 +466,54 @@ export async function POST(request: Request) {
         pin_fixes: pinFixes,
         address: req.loop_address,
       })
+    }
+  }
+
+  // 4d-bis. Geographic sanity net. The balade distance is derived purely from
+  // the étape coordinates, so a single hallucinated lat/lng (common with weak
+  // free models) silently yields an absurd 300-600 km "walk" or étapes nowhere
+  // near the requested city. Anchor on the user pin if present, otherwise on the
+  // geocoded city centre, and reject the draft when coordinates are incoherent
+  // rather than persisting a broken itinerary.
+  const center = pin ?? (await geocodeAddress(`${req.city}, ${req.country}`))
+  if (center) {
+    const geo = validateEtapeGeography(generated.etapes, center, {
+      durationTargetMin: req.duration_target_min,
+    })
+    if (!geo.ok) {
+      console.warn('[LLM_GENERATION]', {
+        generation_id: generationId,
+        stage: 'geo_validation',
+        provider,
+        model,
+        difficulty: req.difficulty,
+        success: false,
+        reason: geo.reason,
+        offending_order: geo.offendingOrder,
+        route_km: geo.routeKm,
+        max_leg_km: geo.maxLegKm,
+        max_distance_from_center_km: geo.maxDistanceFromCenterKm,
+        budget_km: geo.budgetKm,
+        duration_target_min: req.duration_target_min,
+        city: req.city,
+        route: req.country,
+      })
+      const detail =
+        geo.reason === 'leg_too_long'
+          ? `un trajet de ${geo.maxLegKm} km entre deux étapes`
+          : geo.reason === 'far_from_center'
+            ? `une étape à ${geo.maxDistanceFromCenterKm} km de ${req.city}`
+            : `un parcours total de ${geo.routeKm} km`
+      return NextResponse.json(
+        {
+          error:
+            `L'itinéraire généré n'est pas faisable à pied : ${detail} ` +
+            `(au-delà des ~${geo.budgetKm} km marchables en ${req.duration_target_min} min). ` +
+            `Le modèle a sans doute inventé des coordonnées GPS. Choisis un modèle plus ` +
+            `fiable dans Réglages (OpenAI GPT-4o mini ou Google Gemini Flash) puis réessaie.`,
+        },
+        { status: 502 },
+      )
     }
   }
 

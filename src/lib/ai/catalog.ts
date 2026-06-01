@@ -30,8 +30,12 @@ export const PROVIDERS: Record<AIProvider, ProviderInfo> = {
   openai: {
     label: 'OpenAI',
     models: [
+      { value: 'gpt-4o-mini', label: 'GPT-4o mini · 0,6 $/M (recommandé brouillon)' },
+      { value: 'gpt-4.1-nano', label: 'GPT-4.1 nano · 0,4 $/M (le moins cher)' },
+      { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini · 1,6 $/M' },
+      { value: 'gpt-4.1', label: 'GPT-4.1 · 8 $/M' },
       { value: 'gpt-4o', label: 'GPT-4o · 10 $/M' },
-      { value: 'gpt-4o-mini', label: 'GPT-4o mini · 0,6 $/M' },
+      { value: 'o4-mini', label: 'o4-mini · raisonnement · 4,4 $/M' },
       { value: 'gpt-4-turbo', label: 'GPT-4 Turbo · 30 $/M' },
     ],
   },
