@@ -477,7 +477,9 @@ export async function POST(request: Request) {
   // rather than persisting a broken itinerary.
   const center = pin ?? (await geocodeAddress(`${req.city}, ${req.country}`))
   if (center) {
-    const geo = validateEtapeGeography(generated.etapes, center)
+    const geo = validateEtapeGeography(generated.etapes, center, {
+      durationTargetMin: req.duration_target_min,
+    })
     if (!geo.ok) {
       console.warn('[LLM_GENERATION]', {
         generation_id: generationId,
@@ -488,18 +490,27 @@ export async function POST(request: Request) {
         success: false,
         reason: geo.reason,
         offending_order: geo.offendingOrder,
-        max_distance_from_center_km: geo.maxDistanceFromCenterKm,
+        route_km: geo.routeKm,
         max_leg_km: geo.maxLegKm,
+        max_distance_from_center_km: geo.maxDistanceFromCenterKm,
+        budget_km: geo.budgetKm,
+        duration_target_min: req.duration_target_min,
         city: req.city,
         route: req.country,
       })
+      const detail =
+        geo.reason === 'leg_too_long'
+          ? `un trajet de ${geo.maxLegKm} km entre deux étapes`
+          : geo.reason === 'far_from_center'
+            ? `une étape à ${geo.maxDistanceFromCenterKm} km de ${req.city}`
+            : `un parcours total de ${geo.routeKm} km`
       return NextResponse.json(
         {
           error:
-            `L'itinéraire généré est incohérent : des étapes tombent loin de ${req.city} ` +
-            `(jusqu'à ${geo.maxDistanceFromCenterKm} km du centre). Le modèle a sans doute ` +
-            `inventé des coordonnées GPS. Choisis un modèle plus fiable dans Réglages ` +
-            `(OpenAI GPT-4o mini ou Google Gemini Flash) puis réessaie.`,
+            `L'itinéraire généré n'est pas faisable à pied : ${detail} ` +
+            `(au-delà des ~${geo.budgetKm} km marchables en ${req.duration_target_min} min). ` +
+            `Le modèle a sans doute inventé des coordonnées GPS. Choisis un modèle plus ` +
+            `fiable dans Réglages (OpenAI GPT-4o mini ou Google Gemini Flash) puis réessaie.`,
         },
         { status: 502 },
       )
