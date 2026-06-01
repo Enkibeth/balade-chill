@@ -167,6 +167,13 @@ export interface GenerationPipeline {
   refine: RefineConfig
   /** Optional override. If absent, the quiz uses the draft (ai_*) model. */
   quiz?: QuizModelConfig
+  /**
+   * Draft API keys remembered per provider. Lets the settings UI keep a key
+   * you already entered (e.g. NVIDIA) when you switch the draft provider to
+   * another one, instead of wiping the field. The active provider's key is
+   * still mirrored into `ai_api_key` for the server to read.
+   */
+  draft_keys?: Partial<Record<AIProvider, string>>
 }
 
 export interface UserSettings {

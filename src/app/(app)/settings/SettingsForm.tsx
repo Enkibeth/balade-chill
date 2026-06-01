@@ -37,12 +37,33 @@ export function SettingsForm({
   initial: UserSettings | null
 }) {
   const [provider, setProvider] = useState<AIProvider>(
-    initial?.ai_provider ?? 'anthropic',
+    initial?.ai_provider ?? 'openai',
   )
   const [model, setModel] = useState<string>(
-    initial?.ai_model ?? PROVIDERS.anthropic.models[0].value,
+    initial?.ai_model ?? PROVIDERS.openai.models[0].value,
   )
-  const [apiKey, setApiKey] = useState<string>(initial?.ai_api_key ?? '')
+  // Draft API keys remembered per provider, so switching provider doesn't wipe
+  // a key you already typed (e.g. your NVIDIA key). The visible field is just
+  // the entry for the currently selected provider.
+  const [keyByProvider, setKeyByProvider] = useState<Record<string, string>>(
+    () => {
+      const stored = initial?.generation_pipeline?.draft_keys
+      if (stored && typeof stored === 'object') {
+        return Object.fromEntries(
+          Object.entries(stored).filter(([, v]) => typeof v === 'string'),
+        ) as Record<string, string>
+      }
+      if (initial?.ai_provider && initial?.ai_api_key) {
+        return { [initial.ai_provider]: initial.ai_api_key }
+      }
+      return {}
+    },
+  )
+  const apiKey = keyByProvider[provider] ?? ''
+  function handleDraftKeyChange(value: string) {
+    setKeyByProvider((prev) => ({ ...prev, [provider]: value }))
+    setSaved(false)
+  }
   const [mapboxToken, setMapboxToken] = useState<string>(
     initial?.mapbox_token ?? '',
   )
@@ -53,21 +74,21 @@ export function SettingsForm({
   const [error, setError] = useState<string | null>(null)
 
   const initRefine = initial?.generation_pipeline?.refine
-  const [refineEnabled, setRefineEnabled] = useState(initRefine?.enabled ?? false)
+  const [refineEnabled, setRefineEnabled] = useState(initRefine?.enabled ?? true)
   const [refineProvider, setRefineProvider] = useState<AIProvider>(
     initRefine?.provider ?? 'anthropic',
   )
   const [refineModel, setRefineModel] = useState<string>(
-    initRefine?.model ?? PROVIDERS.anthropic.models[0].value,
+    initRefine?.model ?? 'claude-sonnet-4-6',
   )
   const [refineApiKey, setRefineApiKey] = useState<string>(
     initRefine?.apiKey ?? '',
   )
   const [refineTargets, setRefineTargets] = useState<RefineTarget[]>(
-    initRefine?.targets ?? ['enigmes', 'coherence'],
+    initRefine?.targets ?? ['enigmes', 'coherence', 'prose'],
   )
   const [refineDifficulties, setRefineDifficulties] = useState<Difficulty[]>(
-    initRefine?.difficulties ?? ['difficile', 'boss'],
+    initRefine?.difficulties ?? ['facile', 'moyen', 'difficile', 'boss'],
   )
   const [showRefineKey, setShowRefineKey] = useState(false)
 
@@ -126,6 +147,13 @@ export function SettingsForm({
     setSaved(false)
     setSaving(true)
     try {
+      // Persist every per-provider key we know about (trimmed, non-empty), so
+      // switching providers later restores the right key.
+      const draftKeys = Object.fromEntries(
+        Object.entries({ ...keyByProvider, [provider]: apiKey })
+          .map(([p, k]) => [p, (k ?? '').trim()])
+          .filter(([, k]) => k.length > 0),
+      ) as Partial<Record<AIProvider, string>>
       await upsertUserSettings(createClient(), {
         user_id: userId,
         ai_provider: provider,
@@ -133,6 +161,7 @@ export function SettingsForm({
         ai_api_key: apiKey.trim() || null,
         mapbox_token: mapboxToken.trim() || null,
         generation_pipeline: {
+          draft_keys: draftKeys,
           refine: {
             enabled: refineEnabled,
             provider: refineProvider,
@@ -214,10 +243,7 @@ export function SettingsForm({
             <input
               type={showApiKey ? 'text' : 'password'}
               value={apiKey}
-              onChange={(e) => {
-                setApiKey(e.target.value)
-                setSaved(false)
-              }}
+              onChange={(e) => handleDraftKeyChange(e.target.value)}
               placeholder="sk-…"
               className={`${inputClass} pr-10`}
               autoComplete="off"
@@ -240,6 +266,10 @@ export function SettingsForm({
               'build.nvidia.com → Generate API Key (gratuit)'}
             {provider === 'groq' && 'console.groq.com → API Keys (gratuit)'}
             {provider === 'google' && 'aistudio.google.com → API keys'}
+          </p>
+          <p className="mt-1 text-[11px] text-amber-100/35">
+            Chaque clé est mémorisée par fournisseur : changer de fournisseur
+            n&apos;efface pas la clé précédente (ex. ta clé NVIDIA).
           </p>
         </div>
       </section>
