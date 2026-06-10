@@ -488,6 +488,9 @@ export async function POST(request: Request) {
       durationTargetMin: req.duration_target_min,
     })
     if (!geo.ok) {
+      // We no longer reject the whole balade when the itinerary is too spread
+      // out. The draft is kept and the user fixes the offending étape(s)
+      // afterwards (regenerate or edit the location) from the validation screen.
       console.warn('[LLM_GENERATION]', {
         generation_id: generationId,
         stage: 'geo_validation',
@@ -495,6 +498,7 @@ export async function POST(request: Request) {
         model,
         difficulty: req.difficulty,
         success: false,
+        kept_draft: true,
         reason: geo.reason,
         offending_order: geo.offendingOrder,
         route_km: geo.routeKm,
@@ -505,22 +509,6 @@ export async function POST(request: Request) {
         city: req.city,
         route: req.country,
       })
-      const detail =
-        geo.reason === 'leg_too_long'
-          ? `un trajet de ${geo.maxLegKm} km entre deux étapes`
-          : geo.reason === 'far_from_center'
-            ? `une étape à ${geo.maxDistanceFromCenterKm} km de ${req.city}`
-            : `un parcours total de ${geo.routeKm} km`
-      return NextResponse.json(
-        {
-          error:
-            `L'itinéraire généré n'est pas faisable à pied : ${detail} ` +
-            `(au-delà des ~${geo.budgetKm} km marchables en ${req.duration_target_min} min). ` +
-            `Le modèle a sans doute inventé des coordonnées GPS. Choisis un modèle plus ` +
-            `fiable dans Réglages (OpenAI GPT-4o mini ou Google Gemini Flash) puis réessaie.`,
-        },
-        { status: 502 },
-      )
     }
   }
 

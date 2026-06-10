@@ -1,5 +1,3 @@
-import type { GeneratedEtape } from './generated'
-
 /** Great-circle distance in km between two GPS points. */
 export function haversineKm(
   lat1: number,
@@ -90,7 +88,9 @@ export function computeWalkBudget(
  * distance/duration with values computed deterministically from the étape
  * coordinates. Mutates the étape objects' walk_minutes in place.
  */
-export function applyDistancesAndTime(etapes: GeneratedEtape[]): {
+export function applyDistancesAndTime<
+  T extends { order: number; lat: number; lng: number; walk_minutes: number },
+>(etapes: T[]): {
   distance_km: number
   estimated_duration_min: number
 } {

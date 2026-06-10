@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
-import { Play } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Play, Trash2 } from 'lucide-react'
 import type { GlobeBalade } from '@/components/map/BaladeGlobe'
 
 const DIFF_LABEL: Record<string, string> = {
@@ -16,11 +16,17 @@ export function BaladeSidebar({
   items,
   selectedId,
   onSelect,
+  onDelete,
+  deletingId,
 }: {
   items: GlobeBalade[]
   selectedId: string | null
   onSelect: (id: string) => void
+  onDelete: (id: string) => void
+  deletingId: string | null
 }) {
+  // Two-step confirm so a single tap never destroys a balade.
+  const [confirmId, setConfirmId] = useState<string | null>(null)
   const sorted = useMemo(
     () =>
       [...items].sort(
@@ -101,12 +107,54 @@ export function BaladeSidebar({
                 <span>{DIFF_LABEL[b.difficulty] ?? b.difficulty}</span>
               </div>
               {active && (
-                <Link
-                  href={`/balade/${b.id}`}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-medium text-amber-950"
-                >
-                  <Play size={12} /> Ouvrir la balade
-                </Link>
+                <div className="mt-2 flex items-center gap-2">
+                  <Link
+                    href={`/balade/${b.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-medium text-amber-950"
+                  >
+                    <Play size={12} /> Ouvrir la balade
+                  </Link>
+                  {confirmId === b.id ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(ev) => {
+                          ev.stopPropagation()
+                          onDelete(b.id)
+                          setConfirmId(null)
+                        }}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-rose-500/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-500"
+                      >
+                        {deletingId === b.id ? 'Suppression…' : 'Confirmer'}
+                      </span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(ev) => {
+                          ev.stopPropagation()
+                          setConfirmId(null)
+                        }}
+                        className="cursor-pointer rounded-lg border border-amber-200/20 px-2.5 py-1.5 text-xs text-amber-100/70"
+                      >
+                        Annuler
+                      </span>
+                    </span>
+                  ) : (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="Supprimer cette balade"
+                      onClick={(ev) => {
+                        ev.stopPropagation()
+                        setConfirmId(b.id)
+                      }}
+                      className="ml-auto inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-rose-400/30 px-2.5 py-1.5 text-xs text-rose-300/80 transition hover:border-rose-400/60 hover:text-rose-200"
+                    >
+                      <Trash2 size={13} /> Supprimer
+                    </span>
+                  )}
+                </div>
               )}
             </button>
           )
