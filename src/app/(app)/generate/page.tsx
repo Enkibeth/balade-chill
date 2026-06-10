@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Check } from 'lucide-react'
 import type {
@@ -49,15 +49,25 @@ export default function GeneratePage() {
   const [quizLoading, setQuizLoading] = useState(false)
   const [quizError, setQuizError] = useState<string | null>(null)
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
+  // Tracks whether a quiz has already loaded, so re-entering step 3 (e.g. via
+  // the Retour button) keeps it instead of re-fetching. A ref — not state —
+  // because it must not be a dependency of the fetch effect.
+  const quizLoadedRef = useRef(false)
 
+  // Fetch the orientation quiz when the user reaches step 3. The effect must
+  // depend ONLY on `step` and the balade inputs — never on the state it sets
+  // (quizLoading/quizError/quiz). Including those would re-run the effect the
+  // instant setQuizLoading(true) fires, whose cleanup aborts the in-flight
+  // fetch and leaves the spinner stuck forever (the original "charge sans fin").
   useEffect(() => {
-    if (step !== 3 || quiz || quizLoading || quizError) return
+    if (step !== 3 || quizLoadedRef.current) return
     let cancelled = false
-    // Free providers (NVIDIA NIM…) can hang or rate-limit. Without a timeout the
-    // spinner spins forever; abort after 45s and let the user skip the step.
+    // Free/slow providers can hang or rate-limit. Without a timeout the spinner
+    // spins forever; abort after 45s and let the user skip the step.
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 45000)
     setQuizLoading(true)
+    setQuizError(null)
     fetch('/api/generate-quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,6 +89,7 @@ export default function GeneratePage() {
         } else if (!res.ok || !data?.questions) {
           setQuizError(data?.error ?? 'Quiz indisponible.')
         } else {
+          quizLoadedRef.current = true
           setQuiz(data.questions as QuizQuestion[])
         }
       })
@@ -91,26 +102,16 @@ export default function GeneratePage() {
         )
       })
       .finally(() => {
+        if (cancelled) return
         clearTimeout(timeout)
-        if (!cancelled) setQuizLoading(false)
+        setQuizLoading(false)
       })
     return () => {
       cancelled = true
       clearTimeout(timeout)
       controller.abort()
     }
-  }, [
-    step,
-    quiz,
-    quizLoading,
-    quizError,
-    city,
-    country,
-    difficulty,
-    duration,
-    nbEtapes,
-    theme,
-  ])
+  }, [step, city, country, difficulty, duration, nbEtapes, theme])
 
   function toggleSpecialty(s: string) {
     setSpecialties((prev) =>
