@@ -47,8 +47,31 @@ function polybeGrid(): string {
   return `<div class="polybe-grid"><table>${head}${body}</table></div>`
 }
 
+const MORSE_CHART: Array<[string, string]> = [
+  ['A', '.-'], ['B', '-...'], ['C', '-.-.'], ['D', '-..'], ['E', '.'],
+  ['F', '..-.'], ['G', '--.'], ['H', '....'], ['I', '..'], ['J', '.---'],
+  ['K', '-.-'], ['L', '.-..'], ['M', '--'], ['N', '-.'], ['O', '---'],
+  ['P', '.--.'], ['Q', '--.-'], ['R', '.-.'], ['S', '...'], ['T', '-'],
+  ['U', '..-'], ['V', '...-'], ['W', '.--'], ['X', '-..-'], ['Y', '-.--'],
+  ['Z', '--..'],
+]
+
+function morseChart(): string {
+  const cells = MORSE_CHART.map(
+    ([letter, code]) =>
+      `<span class="morse-cell"><b>${letter}</b> ${code}</span>`,
+  ).join('')
+  return `<div class="morse-chart">${cells}</div>`
+}
+
+function enigmeAid(type: Enigme['type']): string {
+  if (type === 'polybe') return polybeGrid()
+  if (type === 'morse') return morseChart()
+  return ''
+}
+
 function renderEnigme(enigme: Enigme, order: number): string {
-  const grid = enigme.type === 'polybe' ? polybeGrid() : ''
+  const grid = enigmeAid(enigme.type)
   return `
       <div class="enigme-block">
         <div class="difficulty-tag">${esc(DIFFICULTY_LABEL[enigme.difficulty] ?? enigme.difficulty)}</div>
@@ -203,6 +226,9 @@ export function renderBaladeHtml(balade: Balade): string {
   .polybe-grid table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--cipher-bg); }
   .polybe-grid th { background: rgba(74,222,128,0.15); color: var(--cipher-green); padding: 6px; text-align: center; border: 1px solid rgba(74,222,128,0.2); }
   .polybe-grid td { color: rgba(245,239,224,0.6); padding: 6px; text-align: center; border: 1px solid rgba(74,222,128,0.1); }
+  .morse-chart { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 2px 10px; margin: 14px auto; max-width: 340px; background: var(--cipher-bg); border: 1px solid rgba(74,222,128,0.2); padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .morse-chart .morse-cell { color: rgba(245,239,224,0.6); white-space: nowrap; }
+  .morse-chart .morse-cell b { color: var(--cipher-green); font-weight: 700; }
   .med-block { border: 1.5px solid var(--teal); padding: 20px; margin-bottom: 16px; background: rgba(26,107,107,0.04); }
   .med-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .med-title::after { content: ''; flex: 1; height: 1px; background: rgba(26,107,107,0.2); }

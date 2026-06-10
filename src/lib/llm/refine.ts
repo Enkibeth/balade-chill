@@ -60,9 +60,10 @@ interface RefinePromptInput {
 }
 
 const DIFFICULTY_RULES: Record<Difficulty, string> = {
-  facile: 'uniquement "wordplay" (aucun chiffrement)',
-  moyen: '"cipher_caesar" ou "math_code"',
-  difficile: '"polybe" ou "cipher_reverse"',
+  facile:
+    'jeux de langage uniquement ("wordplay", "charade", "riddle", "rebus", "acrostiche"), aucun chiffrement',
+  moyen: '"cipher_caesar", "a1z26", "morse", "anagram" ou "math_code"',
+  difficile: '"polybe", "cipher_reverse", "vigenere" ou "morse"',
   boss: 'énigmes multi-étapes combinant plusieurs chiffrements',
 }
 

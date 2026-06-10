@@ -8,6 +8,15 @@ const POLYBE_ROWS = [
   ['U', 'V', 'W', 'X', 'Y/Z'],
 ]
 
+const MORSE_CHART: Array<[string, string]> = [
+  ['A', '.-'], ['B', '-...'], ['C', '-.-.'], ['D', '-..'], ['E', '.'],
+  ['F', '..-.'], ['G', '--.'], ['H', '....'], ['I', '..'], ['J', '.---'],
+  ['K', '-.-'], ['L', '.-..'], ['M', '--'], ['N', '-.'], ['O', '---'],
+  ['P', '.--.'], ['Q', '--.-'], ['R', '.-.'], ['S', '...'], ['T', '-'],
+  ['U', '..-'], ['V', '...-'], ['W', '.--'], ['X', '-..-'], ['Y', '-.--'],
+  ['Z', '--..'],
+]
+
 /** Monospace green-on-dark display of an encoded puzzle, matching the
  *  "Le Secret d'Amalia" cipher aesthetic. Renders the Polybe grid too. */
 export function CipherBlock({
@@ -50,6 +59,15 @@ export function CipherBlock({
             ))}
           </tbody>
         </table>
+      )}
+      {type === 'morse' && (
+        <div className="mx-auto mb-3 grid max-w-[320px] grid-cols-4 gap-x-2 gap-y-0.5 font-mono text-[10px] text-emerald-200/70 sm:grid-cols-6">
+          {MORSE_CHART.map(([letter, code]) => (
+            <span key={letter} className="whitespace-nowrap">
+              <span className="text-emerald-300">{letter}</span> {code}
+            </span>
+          ))}
+        </div>
       )}
       <p className="mb-1.5 text-center font-mono text-[9px] uppercase tracking-[0.3em] text-emerald-400/40">
         message chiffré

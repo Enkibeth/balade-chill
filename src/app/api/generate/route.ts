@@ -46,6 +46,13 @@ const ENIGME_TYPES: EnigmeType[] = [
   'polybe',
   'wordplay',
   'anagram',
+  'morse',
+  'a1z26',
+  'vigenere',
+  'charade',
+  'rebus',
+  'acrostiche',
+  'riddle',
 ]
 const SPECIALTIES: MedicalSpecialty[] = [
   'cardiologie',
