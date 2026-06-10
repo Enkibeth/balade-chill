@@ -129,6 +129,22 @@ Le type imposé par étape (voir le message ci-dessous) prime : respecte-le stri
 
 RÈGLE ABSOLUE : pour tout type chiffré, "cipher_display" doit réellement encoder "answer". Le décodage décrit dans "answer_explanation" doit produire exactement "answer". Vérifie ton chiffrement caractère par caractère avant de répondre. Pour "vigenere", le mot-clé utilisé doit apparaître dans "instruction". Pour les jeux de langage, "answer" est le mot/lieu à trouver et "cipher_display" contient l'énoncé du jeu.
 
+## EXEMPLES DE FORMAT (contenu attendu de "cipher_display", puis la "answer" correspondante)
+Reproduis EXACTEMENT ces formats d'encodage selon le type imposé :
+- wordplay   → « Je coule sans jambes et chante sans voix ; on jette des pièces dans mon bassin. » ⇒ answer "FONTAINE"
+- charade    → « Mon premier transporte les écoliers ; mon second est une boisson chaude qu'on infuse ; mon tout se déplie pour ne pas se perdre en ville. » ⇒ answer "CARTE" (CAR + THÉ)
+- riddle     → « Sans bouche, je donne le rythme de la ville ; mes aiguilles avancent sans jamais marcher. » ⇒ answer "HORLOGE"
+- rebus      → « la lettre P, la lettre A, puis l'image d'un bol de riz » ⇒ answer "PARIS" (P + A + RIZ)
+- acrostiche → 5 courts vers dont les INITIALES, lues de haut en bas, épellent la réponse (S, E, I, N, E) ⇒ answer "SEINE"
+- cipher_caesar (décalage de 3 vers l'avant) → « WRXU » ⇒ answer "TOUR"
+- cipher_reverse (A↔Z, B↔Y…)               → « KLMG » ⇒ answer "PONT"
+- anagram (lettres mélangées)               → « ERVUOL » ⇒ answer "LOUVRE"
+- a1z26 (A=1 … Z=26, séparés par des tirets) → « 16-15-14-20 » ⇒ answer "PONT"
+- morse (espace entre lettres, "/" entre mots) → « --. .- .-. . » ⇒ answer "GARE"
+- polybe (chaque lettre = ligne puis colonne)  → « 22 11 43 15 » ⇒ answer "GARE"
+- vigenere (mot-clé annoncé dans l'instruction, ici AMOUR) → « PABN » ⇒ answer "PONT"
+- math_code (le calcul va dans "instruction", le résultat est la réponse) → instruction « Combien font 6 × 7 ? » ⇒ answer "42"
+
 ## QUESTIONS MÉDICALES BONUS
 Hugo et Éloïse sont en D5 : les questions médicales sont TOUJOURS de niveau D5, exigeantes, même quand la difficulté de la balade est "facile" ("facile" ne réduit jamais le niveau médical).
 - Inclure au moins une question piège d'ECG OU de prise en charge d'AVC dans chaque balade.
