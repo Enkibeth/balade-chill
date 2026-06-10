@@ -1,5 +1,6 @@
 import type { Difficulty, EnigmeType, GenerationRequest } from '@/types'
 import type { GeocodedPlace } from '@/lib/llm/geocode'
+import { computeWalkBudget } from '@/lib/llm/routeMath'
 
 const ENIGME_TYPES_BY_DIFFICULTY: Record<Difficulty, EnigmeType[]> = {
   // "facile" = jeux de langage, aucun chiffrement à décoder.
@@ -134,6 +135,14 @@ Hugo et Éloïse sont en D5 : les questions médicales sont TOUJOURS de niveau D
 - Le raisonnement clinique attendu doit figurer en entier dans "answer".
 - Privilégie cardiologie et neurologie, complète avec les spécialités demandées.
 
+## DISTANCES & MARCHABILITÉ (RÈGLE CRITIQUE)
+La balade se fait INTÉGRALEMENT à pied. L'erreur la plus fréquente — et rédhibitoire — est de choisir des lieux trop éloignés : le parcours devient infaisable dans le temps imparti et la balade est AUTOMATIQUEMENT REJETÉE.
+- La distance totale à pied (somme des tronçons entre étapes consécutives) doit tenir dans le budget de marche de la durée demandée (≈ 5 km/h, sachant qu'une partie du temps est passée sur place à résoudre les énigmes). Le message ci-dessous te donne les plafonds chiffrés exacts à respecter.
+- Choisis des lieux RÉELLEMENT proches les uns des autres : deux étapes consécutives doivent être à quelques minutes de marche, jamais à l'autre bout de la ville.
+- Toutes les étapes tiennent dans un même quartier / périmètre restreint autour du point de départ. Mieux vaut des lieux moins célèbres mais proches que des monuments dispersés.
+- AVANT DE RÉPONDRE : estime la distance (à vol d'oiseau) entre chaque paire d'étapes consécutives, additionne-les, et vérifie que le total respecte le plafond. Si ça dépasse, RAPPROCHE les lieux jusqu'à rentrer dans le budget.
+- Coordonnées GPS exactes : une seule coordonnée erronée gonfle artificiellement la distance et fait échouer la validation.
+
 ## CONTRAINTES GÉNÉRALES
 - Coordonnées GPS réelles et exactes pour la ville demandée ; les lieux doivent exister.
 - L'itinéraire doit être logiquement marchable, étapes ordonnées géographiquement.
@@ -196,6 +205,24 @@ export function buildGenerationPrompt(
       '  Reprends ces coordonnées telles quelles pour ces deux étapes (boucle).',
     )
   }
+
+  // Concrete, computed distance ceilings — same budget the validator enforces.
+  // Trailing position + exact numbers make even strong models keep stops close.
+  const budget = computeWalkBudget(req.duration_target_min, req.nb_etapes)
+  lines.push('')
+  lines.push('CONTRAINTE DE DISTANCE (impérative — balade entièrement à pied) :')
+  lines.push(
+    `  - Distance totale à pied sur tout le parcours : ≤ ~${budget.targetWalkKm} km.`,
+  )
+  lines.push(
+    `  - Entre deux étapes consécutives : ≤ ~${budget.maxLegWalkKm} km (≈ ${budget.maxLegWalkMin} min de marche).`,
+  )
+  lines.push(
+    `  - Toutes les étapes dans un rayon d'environ ${budget.radiusWalkKm} km autour du point de départ.`,
+  )
+  lines.push(
+    '  Additionne les distances entre étapes avant de répondre ; si le total dépasse, rapproche les lieux jusqu\'à rentrer dans le budget.',
+  )
 
   if (req.special_instructions && req.special_instructions.trim()) {
     lines.push('')
