@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Loader2, Check } from 'lucide-react'
+import { useGeneration } from '@/components/generation/GenerationProvider'
 import type {
   Difficulty,
   GenerationRequest,
@@ -29,7 +30,7 @@ const inputClass =
   'w-full rounded-lg border border-amber-200/15 bg-black/40 px-3 py-2 text-sm text-amber-50 outline-none focus:border-amber-300/50'
 
 export default function GeneratePage() {
-  const router = useRouter()
+  const { start, job, isRunning } = useGeneration()
   const [step, setStep] = useState(1)
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('France')
@@ -43,8 +44,11 @@ export default function GeneratePage() {
   const [theme, setTheme] = useState('')
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [loopAddress, setLoopAddress] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Generation now runs in a global background context (see GenerationProvider)
+  // so it survives the user navigating away. The page just reflects its state.
+  const loading = isRunning
+  const justFinished = job?.status === 'done'
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
   const [quizLoading, setQuizLoading] = useState(false)
   const [quizError, setQuizError] = useState<string | null>(null)
@@ -119,9 +123,8 @@ export default function GeneratePage() {
     )
   }
 
-  async function handleGenerate() {
+  function handleGenerate() {
     setError(null)
-    setLoading(true)
     const quiz_answers: QuizAnswer[] = quiz
       ? quiz
           .map((q) => {
@@ -146,22 +149,12 @@ export default function GeneratePage() {
       loop_address: loopAddress.trim() || undefined,
       quiz_answers: quiz_answers.length ? quiz_answers : undefined,
     }
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'La génération a échoué.')
-        setLoading(false)
-        return
-      }
-      router.push(`/balade/${data.balade_id}?mode=preview`)
-    } catch {
-      setError('Erreur réseau. Vérifie ta connexion.')
-      setLoading(false)
+    // Fire-and-forget: the global provider owns the request from here, so it
+    // keeps running even if the user leaves this page. The floating indicator
+    // tracks progress and links to the result when it's ready.
+    const ok = start(payload)
+    if (!ok) {
+      setError('Une génération est déjà en cours. Patiente qu’elle se termine.')
     }
   }
 
@@ -391,7 +384,25 @@ export default function GeneratePage() {
 
         {step === 4 && loading && <GenerationProgress />}
 
-        {step === 4 && !loading && (
+        {step === 4 && justFinished && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Check size={20} className="text-emerald-400" />
+              <h2 className="text-lg text-amber-100">Balade prête !</h2>
+            </div>
+            <p className="text-sm text-amber-100/55">
+              Ta balade a été générée pendant que tu pouvais faire autre chose.
+            </p>
+            <Link
+              href={`/balade/${job?.baladeId}?mode=preview`}
+              className="inline-block rounded-lg bg-amber-300 px-5 py-2 text-sm font-medium text-amber-950 transition hover:bg-amber-200"
+            >
+              Voir la balade
+            </Link>
+          </div>
+        )}
+
+        {step === 4 && !loading && !justFinished && (
           <div className="space-y-3">
             <h2 className="text-lg text-amber-100">Confirmation</h2>
             <dl className="space-y-2 text-sm">
@@ -455,7 +466,11 @@ export default function GeneratePage() {
               disabled={loading || !city.trim()}
               className="ml-auto rounded-lg bg-amber-300 px-5 py-2 text-sm font-medium text-amber-950 transition hover:bg-amber-200 disabled:opacity-50"
             >
-              {loading ? 'Génération en cours…' : 'Générer la balade'}
+              {loading
+                ? 'Génération en cours…'
+                : justFinished
+                  ? 'Générer une autre'
+                  : 'Générer la balade'}
             </button>
           )}
         </div>
@@ -528,7 +543,8 @@ function GenerationProgress() {
         })}
       </ul>
       <p className="text-xs text-amber-100/35">
-        Durée estimée 30-90 s selon le modèle. Ne ferme pas cette page.
+        Durée estimée 30-90 s selon le modèle. Tu peux changer de page ou faire
+        autre chose : la génération continue en arrière-plan.
       </p>
     </div>
   )
