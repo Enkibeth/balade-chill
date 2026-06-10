@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import {
@@ -11,11 +11,19 @@ import {
   Play,
   Pencil,
   Save,
+  Sparkles,
+  Navigation,
+  Loader2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
+import { applyDistancesAndTime } from '@/lib/llm/routeMath'
 import { CipherBlock } from './CipherBlock'
-import type { Balade, ThemeColor } from '@/types'
+import type { Balade, Etape, ThemeColor } from '@/types'
+
+// A walk of ~30 min (~2.5 km) between two stops is long for a city stroll —
+// flag it so the user can bring that étape closer.
+const FAR_WALK_MIN = 30
 
 const RoutePreviewMap = dynamic(
   () =>
@@ -53,10 +61,23 @@ export function ValidationScreen({
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Per-étape async action in flight: { id, kind }.
+  const [busy, setBusy] = useState<{ id: string; kind: 'ai' | 'geo' } | null>(
+    null,
+  )
+
+  // Distances/time recomputed live from the current coordinates, so editing or
+  // regenerating an étape immediately updates the metrics and the "far" flags.
+  const metrics = useMemo(() => {
+    const clone = orderedEtapes.map((e) => ({ ...e }))
+    const totals = applyDistancesAndTime(clone)
+    return { walk: clone.map((e) => e.walk_minutes), ...totals }
+  }, [orderedEtapes])
 
   const etapes = orderedEtapes
-  const hours = balade.estimated_duration_min / 60
-  const tooLong = balade.estimated_duration_min > 180
+  const hours = metrics.estimated_duration_min / 60
+  const tooLong = metrics.estimated_duration_min > 180
+  const farCount = metrics.walk.filter((m) => m >= FAR_WALK_MIN).length
 
   function regenerateTheme() {
     const others = PALETTES.filter((p) => p.name !== theme.name)
@@ -76,11 +97,109 @@ export function ValidationScreen({
     )
   }
 
+  // Replace a single étape with a fresh, real place close to its neighbours.
+  async function regenerateEtape(index: number) {
+    const e = orderedEtapes[index]
+    setError(null)
+    setBusy({ id: e.id, kind: 'ai' })
+    try {
+      const prev = orderedEtapes[index - 1]
+      const next = orderedEtapes[index + 1]
+      const res = await fetch('/api/etape/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          city: balade.city,
+          country: balade.country,
+          difficulty: balade.difficulty,
+          order: e.order,
+          enigme_type: e.enigme.type,
+          avoid: e.location_name,
+          wants_medical: Boolean(e.medical_bonus),
+          specialties: balade.medical_specs,
+          prev: prev
+            ? { location_name: prev.location_name, lat: prev.lat, lng: prev.lng }
+            : null,
+          next: next
+            ? { location_name: next.location_name, lat: next.lat, lng: next.lng }
+            : null,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.etape) {
+        setError(data?.error ?? 'Régénération impossible. Réessaie.')
+        return
+      }
+      const n = data.etape as Partial<Etape>
+      patchEtape(index, {
+        location_name: n.location_name ?? e.location_name,
+        lat: n.lat ?? e.lat,
+        lng: n.lng ?? e.lng,
+        maps_url: n.maps_url ?? e.maps_url,
+        story_text: n.story_text ?? e.story_text,
+        direction_text: n.direction_text ?? e.direction_text,
+        action_mission: n.action_mission ?? e.action_mission,
+        enigme: n.enigme ?? e.enigme,
+        medical_bonus: n.medical_bonus ?? e.medical_bonus,
+      })
+    } catch {
+      setError('Erreur réseau pendant la régénération.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Geocode the étape's typed location name to real coordinates (manual fix).
+  async function geocodeEtape(index: number) {
+    const e = orderedEtapes[index]
+    if (!e.location_name.trim()) {
+      setError('Saisis d’abord un nom de lieu pour cette étape.')
+      return
+    }
+    setError(null)
+    setBusy({ id: e.id, kind: 'geo' })
+    try {
+      const res = await fetch('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: e.location_name,
+          city: balade.city,
+          country: balade.country,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.lat == null) {
+        setError(data?.error ?? 'Lieu introuvable.')
+        return
+      }
+      patchEtape(index, {
+        lat: data.lat,
+        lng: data.lng,
+        location_name: data.displayName ?? e.location_name,
+        maps_url: `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`,
+      })
+    } catch {
+      setError('Erreur réseau pendant le géocodage.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function handleStart() {
     setError(null)
     setLoading(true)
-    const themed: Balade = { ...balade, theme_color: theme }
-    themed.etapes = etapes.map((e, i) => ({ ...e, order: i + 1 }))
+    const reordered = etapes.map((e, i) => ({ ...e, order: i + 1 }))
+    // Recompute walk times + totals from the (possibly edited) coordinates so
+    // what we persist matches the itinerary actually shown.
+    const totals = applyDistancesAndTime(reordered)
+    const themed: Balade = {
+      ...balade,
+      theme_color: theme,
+      etapes: reordered,
+      distance_km: totals.distance_km,
+      estimated_duration_min: totals.estimated_duration_min,
+    }
     const html = renderBaladeHtml(themed)
     const { error: updateError } = await createClient()
       .from('balades')
@@ -88,7 +207,9 @@ export function ValidationScreen({
         status: editing ? balade.status : 'validated',
         theme_color: theme,
         html_content: html,
-        etapes: themed.etapes,
+        etapes: reordered,
+        distance_km: totals.distance_km,
+        estimated_duration_min: totals.estimated_duration_min,
       })
       .eq('id', balade.id)
     if (updateError) {
@@ -119,7 +240,7 @@ export function ValidationScreen({
         <div className="flex-1 rounded-xl border border-amber-200/12 bg-black/30 p-3 text-center">
           <Clock size={16} className="mx-auto mb-1 text-amber-300" />
           <p className="text-lg text-amber-100">
-            ~{Math.round(balade.estimated_duration_min)} min
+            ~{Math.round(metrics.estimated_duration_min)} min
           </p>
           <p className="text-[10px] uppercase tracking-wider text-amber-100/40">
             Durée
@@ -127,7 +248,7 @@ export function ValidationScreen({
         </div>
         <div className="flex-1 rounded-xl border border-amber-200/12 bg-black/30 p-3 text-center">
           <MapPin size={16} className="mx-auto mb-1 text-amber-300" />
-          <p className="text-lg text-amber-100">{balade.distance_km} km</p>
+          <p className="text-lg text-amber-100">{metrics.distance_km} km</p>
           <p className="text-[10px] uppercase tracking-wider text-amber-100/40">
             Distance
           </p>
@@ -148,76 +269,143 @@ export function ValidationScreen({
         </div>
       )}
 
+      {farCount > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-rose-400/40 bg-rose-500/10 px-4 py-2.5 text-sm text-rose-200">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            {farCount === 1
+              ? 'Une étape est éloignée à pied'
+              : `${farCount} étapes sont éloignées à pied`}{' '}
+            (marquée{farCount > 1 ? 's' : ''} ci-dessous). Utilise « Rapprocher »
+            pour la régénérer plus près, ou modifie le lieu puis « Géolocaliser ».
+          </span>
+        </div>
+      )}
+
       {/* Free route preview (no token needed) */}
       <RoutePreviewMap etapes={etapes} color={theme.secondary} />
 
       {/* Ordered etape list */}
       <div className="space-y-2">
-        {etapes.map((e, i) => (
-          <div
-            key={e.id}
-            className="flex items-center gap-3 rounded-xl border border-amber-200/12 bg-black/30 p-3"
-          >
-            <span
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: theme.primary }}
+        {etapes.map((e, i) => {
+          const walk = metrics.walk[i] ?? e.walk_minutes
+          const far = walk >= FAR_WALK_MIN
+          const aiBusy = busy?.id === e.id && busy.kind === 'ai'
+          const geoBusy = busy?.id === e.id && busy.kind === 'geo'
+          const anyBusy = busy !== null
+          return (
+            <div
+              key={e.id}
+              className={`flex flex-col gap-2 rounded-xl border bg-black/30 p-3 ${
+                far
+                  ? 'border-rose-400/40'
+                  : 'border-amber-200/12'
+              }`}
             >
-              {e.order}
-            </span>
-            <div className="min-w-0 flex-1">
-              <input
-                value={e.location_name}
-                onChange={(ev) => patchEtape(i, { location_name: ev.target.value })}
-                placeholder="Nom du lieu"
-                className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
-              />
-              <p className="text-[11px] text-amber-100/40">
-                {e.walk_minutes} min de marche
-              </p>
-              <input
-                value={e.action_mission}
-                onChange={(ev) => patchEtape(i, { action_mission: ev.target.value })}
-                placeholder="Mission complice"
-                className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
-              />
-              {editing && (
-                <textarea
-                  value={e.story_text}
-                  onChange={(ev) => patchEtape(i, { story_text: ev.target.value })}
-                  placeholder="Récit de l’étape"
-                  rows={2}
-                  className="mt-1 w-full resize-y rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
-                />
-              )}
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                  style={{ backgroundColor: theme.primary }}
+                >
+                  {e.order}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <input
+                    value={e.location_name}
+                    onChange={(ev) =>
+                      patchEtape(i, { location_name: ev.target.value })
+                    }
+                    placeholder="Nom du lieu"
+                    className="w-full rounded bg-black/20 px-2 py-1 text-sm text-amber-100"
+                  />
+                  <p className="flex items-center gap-1.5 text-[11px] text-amber-100/40">
+                    {walk} min de marche
+                    {far && (
+                      <span className="rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-medium text-rose-200">
+                        éloignée
+                      </span>
+                    )}
+                  </p>
+                  <input
+                    value={e.action_mission}
+                    onChange={(ev) =>
+                      patchEtape(i, { action_mission: ev.target.value })
+                    }
+                    placeholder="Mission complice"
+                    className="mt-1 w-full rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+                  />
+                  {editing && (
+                    <textarea
+                      value={e.story_text}
+                      onChange={(ev) =>
+                        patchEtape(i, { story_text: ev.target.value })
+                      }
+                      placeholder="Récit de l’étape"
+                      rows={2}
+                      className="mt-1 w-full resize-y rounded bg-black/20 px-2 py-1 text-[11px] text-amber-100/70"
+                    />
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveEtape(i, -1)}
+                    className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveEtape(i, 1)}
+                    className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
+                  >
+                    ▼
+                  </button>
+                </div>
+                {e.maps_url && (
+                  <a
+                    href={e.maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"
+                  >
+                    🗺 Maps
+                  </a>
+                )}
+              </div>
+
+              {/* Per-étape fixes: regenerate closer (AI) or geocode the typed name */}
+              <div className="flex flex-wrap gap-2 pl-10">
+                <button
+                  type="button"
+                  onClick={() => regenerateEtape(i)}
+                  disabled={anyBusy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200/20 px-2.5 py-1 text-[11px] text-amber-100/80 transition hover:border-amber-200/45 disabled:opacity-40"
+                >
+                  {aiBusy ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                  {aiBusy ? 'Régénération…' : 'Rapprocher (IA)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => geocodeEtape(i)}
+                  disabled={anyBusy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200/20 px-2.5 py-1 text-[11px] text-amber-100/80 transition hover:border-amber-200/45 disabled:opacity-40"
+                >
+                  {geoBusy ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Navigation size={12} />
+                  )}
+                  {geoBusy ? 'Géocodage…' : 'Géolocaliser le lieu'}
+                </button>
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col gap-1">
-              <button
-                type="button"
-                onClick={() => moveEtape(i, -1)}
-                className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                onClick={() => moveEtape(i, 1)}
-                className="rounded border border-amber-200/20 px-1.5 py-0.5 text-xs text-amber-100/80"
-              >
-                ▼
-              </button>
-            </div>
-            {e.maps_url && (
-              <a
-                href={e.maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"
-              >
-                🗺 Maps
-              </a>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Theme preview */}
