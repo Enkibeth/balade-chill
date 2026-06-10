@@ -2,18 +2,46 @@ import type { Difficulty, EnigmeType, GenerationRequest } from '@/types'
 import type { GeocodedPlace } from '@/lib/llm/geocode'
 
 const ENIGME_TYPES_BY_DIFFICULTY: Record<Difficulty, EnigmeType[]> = {
-  facile: ['wordplay'],
-  moyen: ['cipher_caesar', 'math_code'],
-  difficile: ['polybe', 'cipher_reverse'],
-  boss: ['polybe', 'cipher_reverse', 'cipher_caesar', 'math_code', 'anagram'],
+  // "facile" = jeux de langage, aucun chiffrement à décoder.
+  facile: ['wordplay', 'charade', 'riddle', 'rebus', 'acrostiche'],
+  // "moyen" = substitutions légères et petits calculs.
+  moyen: ['cipher_caesar', 'math_code', 'a1z26', 'morse', 'anagram'],
+  // "difficile" = chiffrements plus exigeants.
+  difficile: ['polybe', 'cipher_reverse', 'vigenere', 'morse'],
+  // "boss" = tout le répertoire, enchaîné.
+  boss: [
+    'polybe',
+    'cipher_reverse',
+    'cipher_caesar',
+    'vigenere',
+    'math_code',
+    'anagram',
+    'a1z26',
+    'morse',
+  ],
 }
 
-/** Round-robin enigme types so the model can't repeat the same one each étape. */
+/** Fisher-Yates shuffle on a copy — used to vary the enigme order per balade. */
+function shuffle<T>(arr: readonly T[]): T[] {
+  const out = [...arr]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+/**
+ * Assigns one allowed enigme type per étape. The pool is shuffled first so two
+ * balades of the same difficulty don't open with the same puzzle, then walked
+ * round-robin so consecutive étapes never repeat a type (until the pool is
+ * exhausted).
+ */
 export function rotateEnigmeTypes(
   difficulty: Difficulty,
   nbEtapes: number,
 ): EnigmeType[] {
-  const allowed = ENIGME_TYPES_BY_DIFFICULTY[difficulty]
+  const allowed = shuffle(ENIGME_TYPES_BY_DIFFICULTY[difficulty])
   return Array.from({ length: nbEtapes }, (_, i) => allowed[i % allowed.length])
 }
 
@@ -74,20 +102,31 @@ Tu réponds UNIQUEMENT avec un objet JSON valide. Aucun texte avant, aucun texte
 }
 
 ## TYPES D'ÉNIGMES AUTORISÉS
-- "wordplay"        : jeu de mots, devinette, charade — sans chiffrement
+Jeux de langage (pas de chiffrement — mets l'énoncé du jeu dans "cipher_display") :
+- "wordplay"        : jeu de mots ou devinette courte
+- "charade"         : charade classique ("Mon premier… mon deuxième… mon tout…")
+- "riddle"          : devinette poétique / énigme à deviner
+- "rebus"           : rébus décrit en toutes lettres (sons et images)
+- "acrostiche"      : petit poème dont l'initiale de chaque vers épelle la réponse
+Chiffrements et codes (le code va dans "cipher_display") :
 - "cipher_caesar"   : chiffre de César (décalage de lettres)
-- "math_code"       : code obtenu par un petit calcul
 - "cipher_reverse"  : alphabet inversé (A<->Z, B<->Y...)
-- "polybe"          : carré de Polybe (coordonnées chiffrées)
+- "math_code"       : code obtenu par un petit calcul
 - "anagram"         : anagramme à remettre dans l'ordre
+- "morse"           : code Morse (points et traits, espace entre lettres, "/" entre mots)
+- "a1z26"           : substitution A1Z26 (A=1, B=2, …, Z=26), nombres séparés par des tirets
+- "polybe"          : carré de Polybe (coordonnées chiffrées)
+- "vigenere"        : chiffre de Vigenère — DONNE TOUJOURS le mot-clé dans "instruction"
 
 ## DIFFICULTÉ DES ÉNIGMES (selon le niveau demandé)
-- "facile"    : uniquement "wordplay", aucun chiffrement
-- "moyen"     : "cipher_caesar" ou "math_code"
-- "difficile" : "polybe" ou "cipher_reverse"
-- "boss"      : énigmes multi-étapes combinant plusieurs chiffrements
+- "facile"    : uniquement des jeux de langage ("wordplay", "charade", "riddle", "rebus", "acrostiche"), aucun chiffrement
+- "moyen"     : substitutions légères ("cipher_caesar", "a1z26", "morse", "anagram") ou "math_code"
+- "difficile" : chiffrements exigeants ("polybe", "cipher_reverse", "vigenere", "morse")
+- "boss"      : tout le répertoire, énigmes plus longues combinant plusieurs chiffrements
 
-RÈGLE ABSOLUE : "cipher_display" doit réellement encoder "answer". Le décodage décrit dans "answer_explanation" doit produire exactement "answer". Vérifie ton chiffrement caractère par caractère avant de répondre.
+Le type imposé par étape (voir le message ci-dessous) prime : respecte-le strictement, ne le remplace jamais par un autre.
+
+RÈGLE ABSOLUE : pour tout type chiffré, "cipher_display" doit réellement encoder "answer". Le décodage décrit dans "answer_explanation" doit produire exactement "answer". Vérifie ton chiffrement caractère par caractère avant de répondre. Pour "vigenere", le mot-clé utilisé doit apparaître dans "instruction". Pour les jeux de langage, "answer" est le mot/lieu à trouver et "cipher_display" contient l'énoncé du jeu.
 
 ## QUESTIONS MÉDICALES BONUS
 Hugo et Éloïse sont en D5 : les questions médicales sont TOUJOURS de niveau D5, exigeantes, même quand la difficulté de la balade est "facile" ("facile" ne réduit jamais le niveau médical).

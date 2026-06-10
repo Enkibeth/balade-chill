@@ -7,6 +7,13 @@ export type EnigmeType =
   | 'polybe'
   | 'wordplay'
   | 'anagram'
+  | 'morse'
+  | 'a1z26'
+  | 'vigenere'
+  | 'charade'
+  | 'rebus'
+  | 'acrostiche'
+  | 'riddle'
 
 export type ThemeColor = {
   primary: string
