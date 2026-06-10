@@ -1,5 +1,5 @@
 import 'server-only'
-import { haversineKm } from './routeMath'
+import { computeWalkBudget, haversineKm } from './routeMath'
 import type { GeneratedEtape } from './generated'
 
 export interface GeoValidationResult {
@@ -11,19 +11,6 @@ export interface GeoValidationResult {
   budgetKm: number
   offendingOrder?: number
 }
-
-// Kept in sync with routeMath so the budget matches how distance/time are
-// actually computed downstream.
-const WALK_SPEED_KMH = 5
-const URBAN_DETOUR = 1.3
-const ON_SITE_MIN = 10
-// Headroom for occasional bike/transit hops + model imprecision, while still
-// catching anything that clearly isn't doable on foot in the target time.
-const TOLERANCE = 1.75
-// A single walking leg beyond this (~75 min on foot) is treated as a jump, not
-// a stroll — almost always a hallucinated coordinate.
-const LEG_HARD_CAP_KM = 6
-const MIN_TOTAL_KM = 1.5
 
 /**
  * Checks that an itinerary is plausibly *walkable* in the requested time.
@@ -43,14 +30,10 @@ export function validateEtapeGeography(
 ): GeoValidationResult {
   const sorted = [...etapes].sort((a, b) => a.order - b.order)
 
-  // Minutes actually spent moving (the rest is spent on-site solving énigmes).
-  const movingMin = Math.max(15, opts.durationTargetMin - ON_SITE_MIN * sorted.length)
-  const walkableKm = (movingMin / 60) * WALK_SPEED_KMH
-  // Legs below are crow-flies; real walking is ~1.3x longer, so convert the
-  // walkable distance back into a crow-flies budget before comparing.
-  const budgetKm = Math.max(MIN_TOTAL_KM, (walkableKm / URBAN_DETOUR) * TOLERANCE)
-  const legCap = Math.min(LEG_HARD_CAP_KM, Math.max(2, budgetKm))
-  const centerCap = Math.max(budgetKm, legCap) * 1.5 + 1
+  // Same budget the generation prompt is built from, so the model is asked to
+  // respect exactly what this gate enforces.
+  const { budgetKm, legCapKm: legCap, centerCapKm: centerCap } =
+    computeWalkBudget(opts.durationTargetMin, sorted.length)
 
   let routeKm = 0
   let maxLeg = 0
