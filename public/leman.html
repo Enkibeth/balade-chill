@@ -162,12 +162,12 @@ footer{background:var(--nuit);color:#7E97AA;text-align:center;font-family:var(--
 footer b{color:#D7E4ED}
 
 /* ---------- FEUILLE D'IMPRESSION ---------- */
-#print-sheet{display:none}
+#print-sheet,#print-timeline{display:none}
 @media print{
   @page{size:A4;margin:11mm}
-  body>*:not(#print-sheet){display:none!important}
+  body:not(.pt-timeline)>*:not(#print-sheet){display:none!important}
   body{background:#fff;color:#000}
-  #print-sheet{display:block;font-size:9pt;line-height:1.32}
+  body:not(.pt-timeline) #print-sheet{display:block;font-size:9pt;line-height:1.32}
   #print-sheet h1{font-family:var(--display);font-size:17pt;font-weight:800;margin-bottom:1mm}
   #print-sheet .psub{font-family:var(--mono);font-size:7.5pt;color:#444;margin-bottom:4mm}
   #print-sheet h2{font-family:var(--display);font-size:11pt;margin:4mm 0 1.5mm;padding-bottom:.8mm;border-bottom:1.2pt solid #000;break-after:avoid}
@@ -181,6 +181,24 @@ footer b{color:#D7E4ED}
   .pitem .pu{font-family:var(--mono);font-size:7pt;color:#555}
   .pno{font-size:8pt;color:#555}
   #print-sheet .pfoot{margin-top:4mm;padding-top:1.5mm;border-top:.8pt solid #999;font-family:var(--mono);font-size:7pt;color:#555}
+
+  /* ----- TIMELINE EN COULEUR · A4 PAYSAGE ----- */
+  body.pt-timeline>*:not(#print-timeline){display:none!important}
+  body.pt-timeline #print-timeline{display:block!important}
+  /* forcer l'impression des fonds et couleurs (sinon le navigateur les retire) */
+  #print-timeline,#print-timeline *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  #print-timeline .ptl-head h1{font-family:var(--display);font-weight:800;font-size:14pt;color:#0B2740;margin-bottom:1mm}
+  #print-timeline .ptl-head p{font-family:var(--mono);font-size:7pt;color:#444;margin-bottom:3mm;line-height:1.3}
+  #print-timeline .gantt-wrap{overflow:visible;border-radius:3mm}
+  #print-timeline .gantt{min-width:0;width:100%;padding:3.5mm 3mm 2mm}
+  #print-timeline .g-head,#print-timeline .g-days{font-size:5pt}
+  #print-timeline .g-days{padding-bottom:1.2mm;margin-bottom:1.6mm}
+  #print-timeline .g-group{font-size:6pt;margin:1.6mm 0 .8mm}
+  #print-timeline .g-row{height:3.6mm;margin-bottom:.7mm;break-inside:avoid}
+  #print-timeline .g-bar{height:2.8mm;font-size:5.5pt;border-radius:1.4mm;padding:0 1mm}
+  #print-timeline .g-bar.st-yes{outline:.55mm solid var(--vert);outline-offset:.25mm;box-shadow:none}
+  #print-timeline .g-out{font-size:5.5pt;padding-left:1mm}
+  #print-timeline .g-legend{margin-top:2.5mm;font-size:6.5pt;color:#333}
 }
 
 @media (max-width:560px){
@@ -216,6 +234,7 @@ footer b{color:#D7E4ED}
     <span class="grow"></span>
     <span class="savestate" id="savestate"></span>
     <button class="btn ghost" id="btn-reset">Tout réinitialiser</button>
+    <button class="btn ghost" id="btn-print-tl">Timeline A4 paysage</button>
     <button class="btn" id="btn-print">Générer le PDF A4</button>
   </div>
 </div>
@@ -349,6 +368,9 @@ footer b{color:#D7E4ED}
 
 <!-- ============ FEUILLE D'IMPRESSION (PDF A4) ============ -->
 <div id="print-sheet" aria-hidden="true"></div>
+
+<!-- ============ TIMELINE D'IMPRESSION (A4 PAYSAGE COULEUR) ============ -->
+<div id="print-timeline" aria-hidden="true"></div>
 
 <script>
 /* ================= DONNÉES (dates 2026 vérifiées) =================
@@ -641,6 +663,36 @@ document.getElementById('btn-print').addEventListener('click',()=>{
   window.print();   /* dans la boîte d’impression : destination « Enregistrer au format PDF » */
 });
 window.addEventListener('beforeprint',buildPrintSheet);
+
+/* ================= TIMELINE A4 PAYSAGE (couleur) ================= */
+/* Reprend le Gantt tel qu'affiché (avec vos votes) et l'imprime en couleur,
+   orienté paysage. Sur iPad : si l'aperçu reste en portrait, basculez
+   « Paysage » dans les options d'impression de Safari. */
+function buildPrintTimeline(){
+  const head=`<div class="ptl-head">
+    <h1>Été 2026 autour du Léman — la timeline</h1>
+    <p>Fenêtre 26 juin → 10 août 2026 · cerclé de vert = validé ✓ · hachuré = peut-être ? · estompé = refusé ✗ · imprimé le ${new Date().toLocaleDateString('fr-CH')}</p>
+  </div>`;
+  const gantt=`<div class="gantt-wrap"><div class="gantt">${document.getElementById('gantt').innerHTML}</div></div>`;
+  const legend=document.querySelector('.g-legend').outerHTML;
+  document.getElementById('print-timeline').innerHTML=head+gantt+legend;
+}
+function printTimeline(){
+  buildPrintTimeline();
+  const s=document.createElement('style');
+  s.id='ptl-page';
+  s.textContent='@page{size:A4 landscape;margin:8mm}';
+  document.head.appendChild(s);
+  document.body.classList.add('pt-timeline');
+  function cleanup(){
+    document.body.classList.remove('pt-timeline');
+    const e=document.getElementById('ptl-page');if(e)e.remove();
+    window.removeEventListener('afterprint',cleanup);
+  }
+  window.addEventListener('afterprint',cleanup);
+  window.print();
+}
+document.getElementById('btn-print-tl').addEventListener('click',printTimeline);
 
 /* ================= INIT ================= */
 renderAll();        // affichage immédiat
