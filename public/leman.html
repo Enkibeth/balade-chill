@@ -161,7 +161,7 @@ h2{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,36px);let
 footer{background:var(--nuit);color:#7E97AA;text-align:center;font-family:var(--mono);font-size:11px;padding:26px 20px;margin-top:30px}
 footer b{color:#D7E4ED}
 
-/* ---------- FEUILLE D'IMPRESSION ---------- */
+/* ---------- FEUILLE D'IMPRESSION (PDF liste A4 portrait) ---------- */
 #print-sheet{display:none}
 @media print{
   @page{size:A4;margin:11mm}
@@ -216,6 +216,7 @@ footer b{color:#D7E4ED}
     <span class="grow"></span>
     <span class="savestate" id="savestate"></span>
     <button class="btn ghost" id="btn-reset">Tout réinitialiser</button>
+    <button class="btn ghost" id="btn-print-tl">Timeline A4 paysage</button>
     <button class="btn" id="btn-print">Générer le PDF A4</button>
   </div>
 </div>
@@ -347,7 +348,7 @@ footer b{color:#D7E4ED}
 
 <footer>Synthèse visuelle du guide vérifié « Été 2026 autour du Léman » · <b>sources officielles uniquement</b> · dates corrigées juin 2026 · horaires à confirmer J-7 · vos votes sont sauvegardés automatiquement</footer>
 
-<!-- ============ FEUILLE D'IMPRESSION (PDF A4) ============ -->
+<!-- ============ FEUILLE D'IMPRESSION (PDF liste A4 portrait) ============ -->
 <div id="print-sheet" aria-hidden="true"></div>
 
 <script>
@@ -641,6 +642,94 @@ document.getElementById('btn-print').addEventListener('click',()=>{
   window.print();   /* dans la boîte d’impression : destination « Enregistrer au format PDF » */
 });
 window.addEventListener('beforeprint',buildPrintSheet);
+
+/* ================= TIMELINE A4 PAYSAGE (couleur) — fenêtre dédiée ================= */
+function printTimeline(){
+  buildGantt(); // s'assurer que les votes sont à jour dans le Gantt
+  const ganttHTML=document.getElementById('gantt').innerHTML;
+  const legendHTML=document.querySelector('.g-legend').outerHTML;
+  const scoreHTML=document.getElementById('score').innerHTML;
+  const today=new Date().toLocaleDateString('fr-CH');
+
+  const win=window.open('','_blank');
+  if(!win){alert('Autorisez les pop-ups pour cette page afin d\'imprimer la timeline.');return;}
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Léman été 2026 — Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Schibsted+Grotesk:wght@400;500;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:A4 landscape;margin:8mm}
+:root{
+  --nuit:#0B2740;--lac:#2E9BD6;--corail:#EE6C4D;--soleil:#F4C84B;
+  --encre:#10212F;--gris:#5B7184;--vert:#1E9E7E;--rouge:#C2391B;
+  --display:'Bricolage Grotesque',sans-serif;
+  --body:'Schibsted Grotesk',sans-serif;
+  --mono:'Spline Sans Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%}
+body{font-family:var(--body);background:#fff;color:var(--encre);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1{font-family:var(--display);font-weight:800;font-size:16pt;color:var(--nuit);margin-bottom:1mm}
+.sub{font-family:var(--mono);font-size:7pt;color:#444;margin-bottom:2mm;line-height:1.4}
+.score{font-family:var(--mono);font-size:7.5pt;display:flex;gap:4mm;flex-wrap:wrap;margin-bottom:3mm}
+.score .y{color:var(--vert)}.score .m{color:#8A6200}.score .n{color:var(--rouge)}.score .u{color:var(--gris)}
+.score b{font-weight:600}
+/* Gantt */
+.gantt-wrap{background:var(--nuit);border-radius:3mm;padding:3mm 0 2mm;overflow:hidden}
+.gantt{padding:0 3mm}
+.g-head{display:grid;grid-template-columns:repeat(46,1fr);font-family:var(--mono);font-size:6pt;color:#7E97AA;margin-bottom:1mm}
+.g-head .m{text-transform:uppercase;letter-spacing:.1em;color:#B9CCDB;padding-bottom:1mm}
+.g-days{display:grid;grid-template-columns:repeat(46,1fr);font-family:var(--mono);font-size:5.5pt;color:#5E7689;border-bottom:1px solid #1D3A55;padding-bottom:1mm;margin-bottom:1.5mm}
+.g-days div{text-align:center}
+.g-days div.we{color:var(--soleil)}
+.g-body{position:relative}
+.g-bg{position:absolute;inset:0;display:grid;grid-template-columns:repeat(46,1fr);pointer-events:none}
+.g-bg div.we{background:rgba(244,200,75,.07)}
+.g-bg div.big{background:rgba(244,200,75,.16)}
+.g-bg div.big-start{border-left:1px dashed rgba(244,200,75,.55)}
+.g-bg div.big-end{border-right:1px dashed rgba(244,200,75,.55)}
+.g-row{display:grid;grid-template-columns:repeat(46,1fr);height:4mm;align-items:center;position:relative;margin-bottom:.6mm}
+.g-bar{height:3.2mm;border-radius:1.6mm;display:flex;align-items:center;padding:0 1.2mm;font-size:5.5pt;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default;border:none;font-family:var(--body)}
+.g-bar.ge{background:var(--lac);color:#06283E}
+.g-bar.vd{background:var(--corail);color:#3A1207}
+.g-bar.fr{background:var(--soleil);color:#3A2B05}
+.g-bar.st-yes{outline:.5mm solid var(--vert);outline-offset:.2mm}
+.g-bar.st-no{opacity:.22;filter:grayscale(.7)}
+.g-bar.st-maybe{opacity:.8;background-image:repeating-linear-gradient(45deg,transparent 0 4px,rgba(255,255,255,.4) 4px 7px)}
+.g-out{font-size:5.5pt;font-weight:700;color:#D7E4ED;padding-left:1mm;white-space:nowrap;cursor:default;background:none;border:none;font-family:var(--body);text-align:left}
+.g-out.st-no{opacity:.3}
+.g-out.st-yes{color:#9FE8D2}
+.g-group{font-family:var(--mono);font-size:6.5pt;letter-spacing:.14em;text-transform:uppercase;color:#8FA9BC;margin:2mm 0 .8mm;position:relative;z-index:1}
+/* Légende */
+.g-legend{display:flex;flex-wrap:wrap;gap:3mm;margin-top:2.5mm;font-family:var(--mono);font-size:7pt;color:#555}
+.g-legend span{display:inline-flex;align-items:center;gap:1.5mm}
+.g-key{display:inline-block;width:5mm;height:2.5mm;border-radius:1.2mm;background:var(--lac)}
+.g-key.yes{outline:.5mm solid var(--vert);outline-offset:.2mm}
+.g-key.maybe{background-image:repeating-linear-gradient(45deg,transparent 0 4px,rgba(255,255,255,.5) 4px 7px)}
+.g-key.no{opacity:.25;filter:grayscale(.7)}
+</style>
+</head>
+<body>
+<h1>Été 2026 autour du Léman — Planning</h1>
+<p class="sub">Fenêtre 26 juin → 10 août 2026 · ✓ cerclé vert = validé · hachuré = peut-être · estompé = refusé · imprimé le ${today}</p>
+<div class="score">${scoreHTML}</div>
+<div class="gantt-wrap"><div class="gantt">${ganttHTML}</div></div>
+${legendHTML}
+</body>
+</html>`);
+
+  win.document.close();
+  /* Attendre le chargement des polices puis imprimer */
+  win.onload=()=>{win.focus();win.print();};
+  /* Fallback si onload ne se déclenche pas (navigateurs stricts) */
+  setTimeout(()=>{if(!win.closed){win.focus();win.print();}},1200);
+}
+document.getElementById('btn-print-tl').addEventListener('click',printTimeline);
 
 /* ================= INIT ================= */
 renderAll();        // affichage immédiat
