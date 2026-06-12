@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/generate', label: 'Générer' },
   { href: '/history', label: 'Historique' },
   { href: '/settings', label: 'Réglages' },
+  { href: '/autre', label: 'Léman' },
 ]
 
 export function Nav() {

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Été 2026 · Léman — Hugo &amp; Éloïse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Schibsted+Grotesk:wght@400;500;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --nuit:#0B2740;
+  --lac:#2E9BD6;
+  --corail:#EE6C4D;
+  --soleil:#F4C84B;
+  --brume:#EAF2F6;
+  --encre:#10212F;
+  --gris:#5B7184;
+  --vert:#1E9E7E;
+  --rouge:#C2391B;
+  --display:'Bricolage Grotesque',sans-serif;
+  --body:'Schibsted Grotesk',sans-serif;
+  --mono:'Spline Sans Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--brume);color:var(--encre);line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- HERO ---------- */
+.hero{background:var(--nuit);color:#EAF2F6;padding:48px 20px 0;overflow:hidden;position:relative}
+.hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:2}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--soleil)}
+.hero h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,9vw,92px);line-height:.98;margin:14px 0 10px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--lac)}
+.hero .sub{font-size:clamp(15px,2.2vw,19px);max-width:640px;color:#B9CCDB}
+.hero .window{font-family:var(--mono);font-size:13px;color:var(--soleil);margin-top:14px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:26px 0 0;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:7px;color:#D7E4ED}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dot.ge{background:var(--lac)} .dot.vd{background:var(--corail)} .dot.fr{background:var(--soleil)}
+.waves{display:block;width:100%;margin-top:30px}
+
+/* ---------- BARRE DE DÉCISION (sticky) ---------- */
+.deskbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1.5px solid #D5E2EB;box-shadow:0 2px 10px rgba(11,39,64,.06)}
+.deskbar-in{max-width:1100px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.score{font-family:var(--mono);font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
+.score b{font-weight:600}
+.score .y{color:var(--vert)} .score .m{color:#8A6200} .score .n{color:var(--rouge)} .score .u{color:var(--gris)}
+.deskbar .grow{flex:1}
+.btn{font-family:var(--mono);font-size:12.5px;font-weight:600;border:1.5px solid var(--nuit);border-radius:999px;padding:8px 16px;cursor:pointer;background:var(--nuit);color:#fff;transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
+.btn.ghost{background:#fff;color:var(--nuit)}
+.savestate{font-family:var(--mono);font-size:11px;color:var(--gris)}
+
+/* ---------- SECTIONS ---------- */
+section{max-width:1100px;margin:0 auto;padding:46px 20px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,36px);letter-spacing:-.01em;margin-bottom:6px}
+.lede{color:var(--gris);max-width:680px;margin-bottom:24px;font-size:15px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--corail);display:block;margin-bottom:8px}
+
+/* ---------- GANTT ---------- */
+.gantt-wrap{background:var(--nuit);border-radius:18px;padding:22px 0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gantt{min-width:1240px;padding:0 22px}
+.g-head{display:grid;grid-template-columns:repeat(46,1fr);font-family:var(--mono);font-size:10px;color:#7E97AA;margin-bottom:6px}
+.g-head .m{grid-row:1;text-transform:uppercase;letter-spacing:.14em;color:#B9CCDB;padding-bottom:4px}
+.g-days{display:grid;grid-template-columns:repeat(46,1fr);font-family:var(--mono);font-size:9px;color:#5E7689;border-bottom:1px solid #1D3A55;padding-bottom:5px;margin-bottom:10px}
+.g-days div{text-align:center}
+.g-days div.we{color:var(--soleil)}
+.g-body{position:relative}
+.g-bg{position:absolute;inset:0;display:grid;grid-template-columns:repeat(46,1fr);pointer-events:none}
+.g-bg div.we{background:rgba(244,200,75,.07)}
+.g-bg div.big{background:rgba(244,200,75,.16)}
+.g-bg div.big-start{border-left:1px dashed rgba(244,200,75,.55)}
+.g-bg div.big-end{border-right:1px dashed rgba(244,200,75,.55)}
+.g-row{display:grid;grid-template-columns:repeat(46,1fr);height:26px;align-items:center;position:relative;margin-bottom:4px}
+.g-bar{height:18px;border-radius:9px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0B2740;cursor:pointer;border:none;font-family:var(--body);transition:.15s}
+.g-bar:focus-visible{outline:3px solid #fff;outline-offset:1px}
+.g-bar.ge{background:var(--lac);color:#06283E}
+.g-bar.vd{background:var(--corail);color:#3A1207}
+.g-bar.fr{background:var(--soleil);color:#3A2B05}
+.g-bar.st-yes{box-shadow:0 0 0 2px #fff, 0 0 0 4.5px var(--vert)}
+.g-bar.st-no{opacity:.22;filter:grayscale(.7)}
+.g-bar.st-maybe{opacity:.8;background-image:repeating-linear-gradient(45deg,transparent 0 6px,rgba(255,255,255,.35) 6px 10px)}
+.g-out{font-size:11px;font-weight:700;color:#D7E4ED;padding-left:7px;white-space:nowrap;cursor:pointer;background:none;border:none;font-family:var(--body);text-align:left}
+.g-out:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.g-out.st-no{opacity:.3}
+.g-out.st-yes{color:#9FE8D2}
+.g-group{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8FA9BC;margin:14px 0 6px;position:relative;z-index:1}
+.g-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--gris)}
+.g-legend span{display:inline-flex;align-items:center;gap:6px}
+.g-key{display:inline-block;width:26px;height:12px;border-radius:6px;background:var(--lac)}
+.g-key.yes{box-shadow:0 0 0 1.5px #fff,0 0 0 3px var(--vert)}
+.g-key.maybe{background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(255,255,255,.5) 5px 8px)}
+.g-key.no{opacity:.25;filter:grayscale(.7)}
+.bigwe-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.bigwe{font-family:var(--mono);font-size:11px;background:#fff;border:1.5px solid var(--nuit);border-radius:999px;padding:5px 12px}
+.bigwe b{color:var(--corail)}
+
+/* ---------- FILTRES + CARTES ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px}
+.chip{font-family:var(--mono);font-size:12px;border:1.5px solid var(--nuit);background:#fff;color:var(--nuit);border-radius:999px;padding:7px 14px;cursor:pointer;transition:.15s}
+.chip:hover{transform:translateY(-1px)}
+.chip:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
+.chip.on{background:var(--nuit);color:#fff}
+.chip.on.c-ge{background:var(--lac);border-color:var(--lac);color:#06283E}
+.chip.on.c-vd{background:var(--corail);border-color:var(--corail);color:#fff}
+.chip.on.c-fr{background:var(--soleil);border-color:var(--soleil);color:#3A2B05}
+.chip.on.c-yes{background:var(--vert);border-color:var(--vert);color:#fff}
+.chip.on.c-maybe{background:var(--soleil);border-color:var(--soleil);color:#3A2B05}
+.chip.on.c-no{background:var(--rouge);border-color:var(--rouge);color:#fff}
+.count{font-family:var(--mono);font-size:12px;color:var(--gris);margin:6px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:#fff;border-radius:14px;padding:16px 16px 14px;border-top:5px solid var(--lac);box-shadow:0 1px 3px rgba(11,39,64,.08);display:flex;flex-direction:column;gap:8px;transition:.2s;scroll-margin-top:90px}
+.card.vd{border-top-color:var(--corail)} .card.fr{border-top-color:var(--soleil)}
+.card.st-yes{box-shadow:0 0 0 2px var(--vert),0 1px 3px rgba(11,39,64,.08)}
+.card.st-maybe{box-shadow:0 0 0 2px var(--soleil),0 1px 3px rgba(11,39,64,.08)}
+.card.st-no{opacity:.45;filter:grayscale(.5)}
+.card.flash{animation:flash 1.6s ease}
+@keyframes flash{0%{box-shadow:0 0 0 4px var(--lac)}100%{box-shadow:0 1px 3px rgba(11,39,64,.08)}}
+.card h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.2}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.04em;border-radius:6px;padding:3px 7px;background:var(--brume);color:#3D5468}
+.tag.free{background:#E2F5EE;color:var(--vert);font-weight:600}
+.tag.etu{background:#FFF2D6;color:#8A6200;font-weight:600}
+.tag.duo{background:#FDE8E2;color:#C2391B;font-weight:600}
+.tag.warn{background:#FDEFEF;color:#B33636;font-weight:600}
+.meta{font-family:var(--mono);font-size:12px;color:var(--gris);display:flex;flex-direction:column;gap:3px}
+.meta b{color:var(--encre);font-weight:600}
+.why{font-size:13.5px;color:#33485A;flex:1}
+.card .link{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--lac);text-decoration:none;border-bottom:1.5px solid currentColor;align-self:flex-start}
+.card .link:hover{color:var(--nuit)}
+.card .link:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
+.vote{display:flex;gap:6px;margin-top:4px}
+.vbtn{flex:1;font-family:var(--mono);font-size:12px;font-weight:600;border:1.5px solid #C9D8E2;background:#fff;color:var(--gris);border-radius:9px;padding:7px 4px;cursor:pointer;transition:.12s}
+.vbtn:hover{transform:translateY(-1px);border-color:var(--nuit);color:var(--nuit)}
+.vbtn:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
+.vbtn.on-yes{background:var(--vert);border-color:var(--vert);color:#fff}
+.vbtn.on-maybe{background:var(--soleil);border-color:var(--soleil);color:#3A2B05}
+.vbtn.on-no{background:var(--rouge);border-color:var(--rouge);color:#fff}
+.empty{display:none;text-align:center;color:var(--gris);padding:40px 0;font-family:var(--mono);font-size:13px}
+
+/* ---------- WEEK-ENDS PRÊTS ---------- */
+.wk{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.wk-card{background:var(--nuit);color:#EAF2F6;border-radius:16px;padding:20px}
+.wk-card .d{font-family:var(--mono);font-size:12px;color:var(--soleil);letter-spacing:.1em;text-transform:uppercase}
+.wk-card h3{font-family:var(--display);font-weight:800;font-size:21px;margin:8px 0 10px}
+.wk-card ul{list-style:none;display:flex;flex-direction:column;gap:7px;font-size:14px}
+.wk-card li::before{content:"~";color:var(--lac);font-family:var(--mono);margin-right:8px;font-weight:600}
+
+/* ---------- BONS PLANS / VIGILANCE ---------- */
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:#fff;border-radius:16px;padding:22px}
+.panel h3{font-family:var(--display);font-weight:800;font-size:19px;margin-bottom:12px}
+.panel ul{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.panel li b{font-weight:700}
+.price{font-family:var(--mono);font-size:12px;color:var(--vert);font-weight:600}
+.panel.warn{border:1.5px solid #F0C9C9}
+.panel.warn h3{color:#B33636}
+
+footer{background:var(--nuit);color:#7E97AA;text-align:center;font-family:var(--mono);font-size:11px;padding:26px 20px;margin-top:30px}
+footer b{color:#D7E4ED}
+
+/* ---------- FEUILLE D'IMPRESSION ---------- */
+#print-sheet{display:none}
+@media print{
+  @page{size:A4;margin:11mm}
+  body>*:not(#print-sheet){display:none!important}
+  body{background:#fff;color:#000}
+  #print-sheet{display:block;font-size:9pt;line-height:1.32}
+  #print-sheet h1{font-family:var(--display);font-size:17pt;font-weight:800;margin-bottom:1mm}
+  #print-sheet .psub{font-family:var(--mono);font-size:7.5pt;color:#444;margin-bottom:4mm}
+  #print-sheet h2{font-family:var(--display);font-size:11pt;margin:4mm 0 1.5mm;padding-bottom:.8mm;border-bottom:1.2pt solid #000;break-after:avoid}
+  #print-sheet h2 .pc{font-family:var(--mono);font-size:7.5pt;font-weight:400;color:#555}
+  .pcols{column-count:2;column-gap:7mm}
+  .pitem{break-inside:avoid;margin-bottom:2.2mm;padding-left:4.5mm;position:relative}
+  .pitem .pico{position:absolute;left:0;top:0;font-weight:700}
+  .pitem b{font-size:9.5pt}
+  .pitem .pd{font-family:var(--mono);font-size:7.8pt;font-weight:600}
+  .pitem .pm{font-size:8pt;color:#333}
+  .pitem .pu{font-family:var(--mono);font-size:7pt;color:#555}
+  .pno{font-size:8pt;color:#555}
+  #print-sheet .pfoot{margin-top:4mm;padding-top:1.5mm;border-top:.8pt solid #999;font-family:var(--mono);font-size:7pt;color:#555}
+}
+
+@media (max-width:560px){
+  .deskbar-in{padding:8px 14px}
+  .score{font-size:11.5px;gap:9px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Hugo &amp; Éloïse · saison lacustre</span>
+    <h1>Été 2026<br>autour du <em>Léman</em></h1>
+    <p class="sub">45 plans vérifiés et triés pour vous deux : lac, festivals, open air, sport, soirées et sorties à deux. Votez ✓ / ? / ✗ sur chaque plan, vos choix se retrouvent dans la timeline et sur le PDF A4 à imprimer.</p>
+    <p class="window">FENÊTRE — 26 JUIN → 10 AOÛT 2026</p>
+    <div class="legend">
+      <span><i class="dot ge"></i>Genève &amp; rive gauche</span>
+      <span><i class="dot vd"></i>Lausanne · Nyon · Vaud</span>
+      <span><i class="dot fr"></i>Évian · Thonon · France</span>
+    </div>
+  </div>
+  <svg class="waves" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C180,80 360,0 540,30 C720,60 900,10 1080,35 C1260,60 1380,30 1440,45 L1440,90 L0,90 Z" fill="#1A4568" opacity=".6"/>
+    <path d="M0,60 C200,30 420,85 640,55 C860,25 1080,75 1300,50 C1380,42 1420,50 1440,55 L1440,90 L0,90 Z" fill="#EAF2F6"/>
+  </svg>
+</header>
+
+<!-- ============ BARRE DE DÉCISION ============ -->
+<div class="deskbar">
+  <div class="deskbar-in">
+    <div class="score" id="score" aria-live="polite"></div>
+    <span class="grow"></span>
+    <span class="savestate" id="savestate"></span>
+    <button class="btn ghost" id="btn-reset">Tout réinitialiser</button>
+    <button class="btn" id="btn-print">Générer le PDF A4</button>
+  </div>
+</div>
+
+<!-- ============ PLANNING ============ -->
+<section id="planning">
+  <span class="kicker">Le planning du lac</span>
+  <h2>Qui joue quand</h2>
+  <p class="lede">Chaque barre couvre les dates réelles de l’événement dans votre fenêtre (dates 2026 vérifiées). Vos votes colorent les barres : cerclé de vert = validé, hachuré = peut-être, estompé = refusé. Cliquez sur une barre pour aller à sa fiche. Faites défiler horizontalement.</p>
+  <div class="gantt-wrap"><div class="gantt" id="gantt"></div></div>
+  <div class="g-legend">
+    <span><i class="g-key yes"></i>validé ✓</span>
+    <span><i class="g-key maybe"></i>peut-être ?</span>
+    <span><i class="g-key no"></i>refusé ✗</span>
+    <span><i class="g-key"></i>pas encore voté</span>
+  </div>
+  <div class="bigwe-tags">
+    <span class="bigwe"><b>WE 1</b> · 26–28 juin — lancement transfrontalier</span>
+    <span class="bigwe"><b>WE 2</b> · 9–12 juil — festival + Evian Championship</span>
+    <span class="bigwe"><b>WE 3</b> · 21–26 juil — semaine Paléo</span>
+    <span class="bigwe"><b>WE 4</b> · 7–10 août — le week-end couple ultime</span>
+  </div>
+</section>
+
+<!-- ============ CARTES ============ -->
+<section id="catalogue">
+  <span class="kicker">Le catalogue complet</span>
+  <h2>Tous les plans, filtrables et votables</h2>
+  <p class="lede">Filtrez par rive, type, budget ou par votre vote. Chaque fiche a son lien officiel ↗. Le cœur signale les meilleures sorties à deux, l’étoile les vrais bons plans étudiants, le ⚠ les pages à re-vérifier une semaine avant.</p>
+
+  <div class="filters" id="f-region" role="group" aria-label="Filtrer par région">
+    <button class="chip on" data-v="all">Toutes les rives</button>
+    <button class="chip c-ge" data-v="ge">Genève</button>
+    <button class="chip c-vd" data-v="vd">Lausanne · Nyon</button>
+    <button class="chip c-fr" data-v="fr">Évian · Thonon</button>
+  </div>
+  <div class="filters" id="f-type" role="group" aria-label="Filtrer par type">
+    <button class="chip on" data-v="all">Tout</button>
+    <button class="chip" data-v="fest">Festivals &amp; musique</button>
+    <button class="chip" data-v="lac">Lac &amp; sport</button>
+    <button class="chip" data-v="cine">Ciné &amp; culture</button>
+    <button class="chip" data-v="soir">Soirées &amp; danse</button>
+  </div>
+  <div class="filters" id="f-status" role="group" aria-label="Filtrer par vote">
+    <button class="chip on" data-v="all">Tous les votes</button>
+    <button class="chip c-yes" data-v="yes">✓ Validés</button>
+    <button class="chip c-maybe" data-v="maybe">? Peut-être</button>
+    <button class="chip c-no" data-v="no">✗ Refusés</button>
+    <button class="chip" data-v="none">À décider</button>
+  </div>
+  <div class="filters" id="f-extra" role="group" aria-label="Autres filtres">
+    <button class="chip" data-v="free">Gratuit</button>
+    <button class="chip" data-v="etu">★ Bon plan étudiant</button>
+    <button class="chip" data-v="duo">❤ Idées duo</button>
+  </div>
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty">Aucun plan ne correspond à ces filtres — élargissez d’un cran.</p>
+</section>
+
+<!-- ============ WEEK-ENDS PRÊTS ============ -->
+<section id="weekends">
+  <span class="kicker">Zéro logistique</span>
+  <h2>Trois week-ends prêts à l’emploi</h2>
+  <div class="wk">
+    <div class="wk-card">
+      <p class="d">26 – 28 juin</p>
+      <h3>Lancement cross-border</h3>
+      <ul>
+        <li>Léman Bouquet Festival</li>
+        <li>Lausanne Pride</li>
+        <li>Lausanne sur Mer (ouverture)</li>
+        <li>Fête du Nautisme à Évian</li>
+      </ul>
+    </div>
+    <div class="wk-card">
+      <p class="d">9 – 12 juillet</p>
+      <h3>Festival &amp; greens</h3>
+      <ul>
+        <li>Plein-les-Watts (préloc étudiant CHF 20)</li>
+        <li>Amundi Evian Championship</li>
+        <li>CinéTransat (ouverture le 9)</li>
+        <li>Montreux Jazz off, gratuit</li>
+      </ul>
+    </div>
+    <div class="wk-card">
+      <p class="d">6 – 9 août</p>
+      <h3>Le week-end duo ultime</h3>
+      <ul>
+        <li>Jeudis Electro à Ripaille (jeudi 6)</li>
+        <li>Jazz sur la Plage à Hermance (7–8)</li>
+        <li>ON THE WATER Geneva (samedi 8)</li>
+        <li>Triathlon de Nyon en spectateurs</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BONS PLANS / VIGILANCE ============ -->
+<section id="budget">
+  <span class="kicker">Budget</span>
+  <h2>Bons plans étudiants &amp; vigilance</h2>
+  <div class="split">
+    <div class="panel">
+      <h3>★ Là où vos cartes étudiantes paient</h3>
+      <ul>
+        <li><b>Plein-les-Watts</b> — CHF 26/jour étudiant, <span class="price">CHF 20 en préloc jusqu’au 30 juin</span></li>
+        <li><b>Paléo</b> — abonnements réduits officiels <span class="price">CHF 74 et 94</span> · 1500 billets last-minute chaque matin sur paleo.ch</li>
+        <li><b>Allianz Cinéma</b> — <span class="price">CHF 12</span> au lieu de 16</li>
+        <li><b>Jeudis Electro Ripaille</b> — <span class="price">25 €</span> étudiant au lieu de 30 € (40 € sur place)</li>
+        <li><b>Rencontres Musicales d’Évian</b> — tarif réduit <span class="price">&lt; 25 ans</span></li>
+        <li><b>Voilier à Thonon</b> — <span class="price">19 € tarif étudiant</span> au lieu de 29 €</li>
+        <li><b>mudac / expo Takahata</b> — <span class="price">gratuit &lt; 26 ans</span> (à confirmer pour 2026)</li>
+      </ul>
+    </div>
+    <div class="panel warn">
+      <h3>⚠ À re-vérifier avant de bloquer</h3>
+      <ul>
+        <li><b>Lake Parade</b> — édition 2026 NON confirmée ; une version allégée mi-juillet est à l’étude. Surveiller lakeparade.ch.</li>
+        <li><b>Pully Live Festival</b> — aucune édition 2026 annoncée : écarté de la sélection.</li>
+        <li><b>La Canopée</b> &amp; <b>buvettes</b> — saison 2026 confirmée (29 mai–16 août) mais programmes hebdo à contrôler la semaine même.</li>
+        <li><b>Voilier de Thonon, Pré Curieux, Barque La Savoie, base nautique d’Évian</b> — millésime/tarifs 2026 à confirmer auprès des offices de tourisme.</li>
+        <li><b>Météo</b> — ON THE WATER reporté au 15 août si mauvais temps ; CinéTransat décide le jour même à 19h30.</li>
+        <li><b>NC</b> = prix non communiqué clairement sur la page officielle consultée.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>Synthèse visuelle du guide vérifié « Été 2026 autour du Léman » · <b>sources officielles uniquement</b> · dates corrigées juin 2026 · horaires à confirmer J-7 · vos votes sont sauvegardés automatiquement</footer>
+
+<!-- ============ FEUILLE D'IMPRESSION (PDF A4) ============ -->
+<div id="print-sheet" aria-hidden="true"></div>
+
+<script>
+/* ================= DONNÉES (dates 2026 vérifiées) =================
+   r: ge|vd|fr · t: fest|lac|cine|soir · g:[début,fin] index 0 = 26 juin, 45 = 10 août
+   free/etu/duo/warn : booléens · u : URL officielle · gn : libellé court timeline */
+const ACT = [
+/* ---- GENÈVE ---- */
+{id:'bouquet',r:'ge',t:'fest',n:'Léman Bouquet Festival',d:'26–28 juin',h:'ven dès 16h · sam journée cyclo-musicale · dim 11h/15h/19h',p:'Pass cyclo-musical 20 € (navette Genève incl.)',w:'Très bon « date weekend » transfrontalier : vélo + concerts + Léman.',u:'https://lemanfestival.org/',g:[0,2],gn:'Léman Bouquet',duo:1},
+{id:'ella',r:'ge',t:'fest',n:'Scène Ella Fitzgerald · Musiques en été',d:'Jusqu’au 21 août',h:'plusieurs soirs, 21h–22h',p:'Gratuit',w:'Du concert gratuit en plein air, sans prise de tête.',u:'https://www.geneve.ch/faire-geneve/faire-geneve-saisons/ete-geneve',g:[0,45],gn:'Ella Fitzgerald',free:1},
+{id:'stgermain',r:'ge',t:'fest',n:'Concerts d’été à St-Germain',d:'5 juil – 31 août',h:'programme variable',p:'Gratuit',w:'Option classique en centre-ville, locale et simple.',u:'https://www.geneve.ch/faire-geneve/faire-geneve-saisons/ete-geneve',g:[9,45],gn:'St-Germain',free:1},
+{id:'aubes',r:'ge',t:'fest',n:'Les Aubes musicales (Bains des Pâquis)',d:'13 juil – 16 août',h:'tous les jours à 6h00',p:'Gratuit',w:'Lever du soleil + concert + petit-déj aux Pâquis : très fort en duo. 20e édition, 35 concerts.',u:'https://lesaubes.ch/',g:[17,45],gn:'Aubes musicales',free:1,duo:1},
+{id:'allianz',r:'ge',t:'cine',n:'Allianz Cinéma (Port-Noir)',d:'29 juin – 24 août',h:'à la tombée de la nuit · terrasses dès 18h',p:'CHF 16 · étudiant 12',w:'Date classique mais très efficace au bord de l’eau.',u:'https://geneve.allianzcinema.ch/fr',g:[3,45],gn:'Allianz Cinéma',etu:1,duo:1},
+{id:'cinetransat',r:'ge',t:'cine',n:'CinéTransat (Perle du Lac)',d:'9 juil – 16 août',h:'jeu–dim à la tombée de la nuit · buvette dès 19h',p:'Gratuit · transat 5 CHF',w:'Culte, chill, pique-nique, VO sous-titrée : zéro pression.',u:'https://www.cinetransat.ch/',g:[13,45],gn:'CinéTransat',free:1,duo:1},
+{id:'plw',r:'ge',t:'fest',n:'Plein-les-Watts Festival (Lancy)',d:'9–11 juil',h:'portes 18h, fin ~minuit',p:'CHF 35/j · étu 26 · préloc étu 20 (jusqu’au 30 juin)',w:'Le vrai bon plan festival étudiant — Burning Spear, Danakil, KT Gorique.',u:'https://pleinleswatts.ch/',g:[13,15],gn:'Plein-les-Watts',etu:1},
+{id:'otw',r:'ge',t:'soir',n:'ON THE WATER Geneva',d:'8 août (report 15/8 si pluie)',h:'13h–20h',p:'Gratuit',w:'DJ sets électro sur scène flottante, public en paddle/pédalo : le concept le plus original de la sélection. Votre plan signature.',u:'https://on-the-water.ch/',g:[43,43],gn:'ON THE WATER',free:1,duo:1},
+{id:'hermance',r:'ge',t:'fest',n:'Jazz sur la Plage (Hermance)',d:'7–8 août',h:'ven soir · sam après-midi et soir',p:'Prix libre',w:'Jazz, lac, village, baignade pendant les concerts : très bonne soirée à deux.',u:'https://www.jazzsurlaplage.ch/',g:[42,43],gn:'Jazz s/ la Plage',free:1,duo:1},
+{id:'gplage',r:'ge',t:'lac',n:'Genève-Plage',d:'Toute la saison',h:'voir site',p:'Tarifs 2026 à confirmer',w:'Pur bon plan baignade / toboggan / plongeoirs / sieste.',u:'https://www.geneve-plage.ch/',warn:1},
+{id:'paquis',r:'ge',t:'lac',n:'Bains des Pâquis',d:'Tout l’été',h:'horaires étendus l’été · buvette',p:'Entrée modique · sauna NC',w:'Toujours une bonne idée : nage, petit-déj, coucher de soleil.',u:'https://www.bains-des-paquis.ch/',duo:1},
+{id:'canopee',r:'ge',t:'soir',n:'La Canopée (Quai Gustave-Ador)',d:'29 mai – 16 août',h:'cours sport quotidiens · soirées salsa/tango',p:'Gratuit (majorité)',w:'Sport + danse + vue lac : très aligné avec vos goûts.',u:'https://www.geneve.ch/faire-geneve/faire-geneve-saisons/ete-geneve',g:[0,45],gn:'La Canopée',free:1,warn:1},
+{id:'buvettes',r:'ge',t:'soir',n:'Buvettes d’été (Chaloupe, Cormoran, Barje, Trempette…)',d:'Mai – septembre',h:'soirées danse tango/swing/salsa selon programme',p:'Gratuit ou prix libre · conso',w:'Soirées dansantes régulières confirmées à la Chaloupe à vapeur ; programmes hebdo à vérifier.',u:'https://www.geneve.ch/faire-geneve/faire-geneve-saisons/ete-geneve',free:1,warn:1,duo:1},
+{id:'orangerie',r:'ge',t:'cine',n:'Théâtre de l’Orangerie (parc La Grange)',d:'Dès le 17 juin',h:'programme variable',p:'Tarifs variables',w:'Plus « culture d’été » que clubbing, mais cadre superbe.',u:'https://theatreorangerie.ch/',duo:1},
+/* ---- VAUD ---- */
+{id:'pride',r:'vd',t:'soir',n:'Lausanne Pride',d:'26–27 juin',h:'village ven 17h–00h · sam 16h–00h · marche sam 14h',p:'Village gratuit',w:'Gros week-end festif et vivant — premier retour à Lausanne depuis 20 ans.',u:'https://www.lausannepride.ch/',g:[0,1],gn:'Lausanne Pride',free:1},
+{id:'wakeup',r:'vd',t:'lac',n:'Wake Up and Run Lausanne',d:'26 juin',h:'RDV 5h, départ 5h30, Montbenon · 5 km',p:'CHF 15–38 (t-shirt + petit-déj)',w:'Format décalé et sportif pour ouvrir l’été.',u:'https://www.wake-up-and-run.ch/',g:[0,0],gn:'Wake Up & Run'},
+{id:'lavaux',r:'vd',t:'fest',n:'Lavaux Classic (Cully · Vevey)',d:'19–28 juin (26–28 dans la fenêtre)',h:'selon concerts',p:'Tarifs variables',w:'Un cran plus chic, très beau cadre dans les vignes. El Bacha, Goerner, Avdeeva.',u:'https://www.lavauxclassic.ch/',g:[0,2],gn:'Lavaux Classic',duo:1},
+{id:'cite',r:'vd',t:'fest',n:'Festival de la Cité (Lausanne)',d:'30 juin – 5 juil',h:'150 projets sur 23 sites · afters Tridel jusqu’à 5h dès le 3/7',p:'Gratuit',w:'Un des meilleurs festivals gratuits de Suisse — musique, danse, électro.',u:'https://festivalcite.ch/',g:[4,9],gn:'Festival de la Cité',free:1,duo:1},
+{id:'lsm1',r:'vd',t:'lac',n:'Lausanne sur Mer · sessions juin-juillet',d:'27–28 juin · 1–5 juil · 8–12 juil',h:'mer–dim 14h30–20h',p:'~90 % gratuit · eau CHF 5–10',w:'Le meilleur combo lac + initiations (paddle, wakeboard, mermaiding, danse, yoga).',u:'https://lausanne-sur-mer.ch/',g:[1,16],gn:'Lausanne sur Mer 1',free:1},
+{id:'lsm2',r:'vd',t:'lac',n:'Lausanne sur Mer · session août',d:'5–9 août (puis 12–16)',h:'mer–dim 14h30–20h',p:'Terre gratuite · eau CHF 5–10',w:'Excellent créneau début août : lac actif et pas cher.',u:'https://lausanne-sur-mer.ch/',g:[40,44],gn:'Lausanne s/ Mer 2',free:1,etu:1},
+{id:'garden',r:'vd',t:'fest',n:'Garden-Parties de Lausanne',d:'10 juil – 8 août',h:'ven 17h–00h · sam 15h–00h · 5 parcs',p:'Gratuit',w:'Musique, danse, théâtre, ciné open air dans les parcs.',u:'https://gardenpartieslausanne.ch/',g:[14,43],gn:'Garden-Parties',free:1},
+{id:'locarno',r:'vd',t:'cine',n:'Open Air Locarno · Plateforme 10',d:'12–18 juil',h:'films 22h · bar dès 18h',p:'Gratuit, inscription recommandée',w:'Films du Locarno Film Festival projetés sur la façade du musée. Très bonne soirée ciné + verre.',u:'https://plateforme10.ch/',g:[16,22],gn:'Open Air Locarno',free:1,duo:1},
+{id:'mudac',r:'vd',t:'cine',n:'Expo Isao Takahata au mudac',d:'Dates 2026 à confirmer',h:'10h–18h · jeu jusqu’à 20h',p:'Gratuit < 26 ans (à confirmer)',w:'Si la gratuité < 26 ans tient, franchement très rentable pour vous deux.',u:'https://plateforme10.ch/mudac',etu:1,duo:1,warn:1},
+{id:'paleo',r:'vd',t:'fest',n:'Paléo Festival Nyon',d:'21–26 juil',h:'portes 15h30',p:'Abos réduits CHF 74/94 · 1500 billets last-minute/jour',w:'Katy Perry, Gorillaz, The Cure, Lorde, Orelsan. Le plus gros shoot festival de votre période.',u:'https://www.paleo.ch/',g:[25,30],gn:'Paléo',etu:1},
+{id:'rivejazzy',r:'vd',t:'fest',n:'Rive Jazzy (Nyon)',d:'2 juil – 9 août',h:'jeu–dim en soirée · 6 scènes du Quartier de Rive',p:'Gratuit',w:'Jazz, swing, blues au bord du lac : soirée cool sans logistique.',u:'https://www.rivejazzy.ch/',g:[6,44],gn:'Rive Jazzy',free:1,duo:1},
+{id:'tdff',r:'vd',t:'lac',n:'Tour de France Femmes — Grand Départ',d:'1er août Lausanne–Lausanne · 2 août arrivée Genève',h:'journées de course',p:'Gratuit au bord de la route',w:'Grand Départ suisse le jour de la Fête nationale : double ambiance lacustre.',u:'https://www.letourfemmes.fr/',g:[36,37],gn:'TDF Femmes',free:1},
+{id:'trinyon',r:'vd',t:'lac',n:'Triathlon de Nyon · FISU',d:'7–9 août',h:'départs ~8h–10h30 · championnat universitaire 8–9',p:'Spectateur gratuit',w:'Week-end sportif, lacustre et universitaire — top en spectateurs, voire en dossard.',u:'https://www.trinyon.ch/',g:[42,44],gn:'Triathlon Nyon',free:1},
+{id:'montreux',r:'vd',t:'fest',n:'Montreux Jazz Festival (60e)',d:'3–18 juil',h:'quais + Lake House en continu · clubs le soir',p:'~90 % des activités gratuites · payant dès CHF 49',w:'~140 concerts et 320 DJ sets gratuits, silent discos, pool parties. À 20 min de Lausanne en train.',u:'https://www.montreuxjazzfestival.com/',g:[7,22],gn:'Montreux Jazz',free:1,duo:1},
+{id:'estivale',r:'vd',t:'fest',n:'Estivale Open Air (Estavayer-le-Lac)',d:'29 juil – 1er août',h:'ouverture 16h–17h',p:'Dès CHF 67/jour',w:'Gims, Bob Sinclar, Tayc, Amel Bent. Sur le lac de Neuchâtel (~1h), mais très orienté danse.',u:'https://estivale.ch/',g:[33,36],gn:'Estivale'},
+{id:'uci',r:'vd',t:'lac',n:'UCI Trials World Cup / Youth Games',d:'24–26 juil',h:'lieu lémanique exact à confirmer',p:'NC',w:'Sport urbain spectaculaire, facile à caser dans une journée lac.',u:'https://www.uci.org/',g:[28,30],gn:'UCI Trials',warn:1},
+/* ---- FRANCE ---- */
+{id:'nautisme',r:'fr',t:'lac',n:'Fête du Nautisme · 60 ans du Centre nautique d’Évian',d:'27–28 juin',h:'animations nautiques (à confirmer)',p:'Gratuit (probable)',w:'Très bon plan d’ouverture pour tester l’ambiance lac côté français.',u:'https://www.evian-tourisme.com/',g:[1,2],gn:'Fête du Nautisme',free:1,warn:1},
+{id:'rme',r:'fr',t:'fest',n:'Rencontres Musicales d’Évian',d:'24 juin – 5 juil',h:'La Grange au Lac · selon concerts',p:'16–105 € · réduit < 25 ans',w:'Direction Renaud Capuçon ; Yo-Yo Ma, Yuja Wang. Une soirée musicale forte et haut de gamme.',u:'https://www.evian-tourisme.com/',g:[0,9],gn:'Rencontres Évian',etu:1,duo:1},
+{id:'evianchamp',r:'fr',t:'lac',n:'Amundi Evian Championship (golf)',d:'9–12 juil',h:'journées de tournoi',p:'25–65 € · gratuit < 18 ans',w:'Seul Majeur féminin d’Europe continentale, cadre superbe au-dessus du lac.',u:'https://amundi.evianchampionship.com/',g:[13,16],gn:'Evian Championship'},
+{id:'feu14',r:'fr',t:'soir',n:'Feu d’artifice du 14 juillet à Évian',d:'14 juil',h:'~22h30, bord du lac',p:'Gratuit',w:'Simple, efficace, très bon format soirée d’été.',u:'https://www.ville-evian.fr/',g:[18,18],gn:'14 juillet',free:1,duo:1},
+{id:'scenes',r:'fr',t:'fest',n:'Scènes Estivales d’Évian',d:'Vendredis, 24 juil – 21 août',h:'concerts plein air en soirée',p:'Gratuit',w:'Concert sans gros ticket d’entrée, côté français.',u:'https://www.ville-evian.fr/',g:[28,45],gn:'Scènes Estivales',free:1,warn:1},
+{id:'je1',r:'fr',t:'soir',n:'Jeudis Electro · Champeillant (Féternes)',d:'Jeudi 23 juil',h:'19h–03h',p:'ENTRÉE LIBRE',w:'Vraie soirée électro gratuite côté Chablais — rapport qualité/prix imbattable.',u:'https://lesjeudiselectro.com/',g:[27,27],gn:'J. Electro Féternes',free:1},
+{id:'je2',r:'fr',t:'soir',n:'Jeudis Electro · Piscine de Thonon',d:'Jeudi 30 juil',h:'19h–03h',p:'18 €',w:'Électro au bord des bassins : format original entre les deux autres dates.',u:'https://lesjeudiselectro.com/',g:[34,34],gn:'J. Electro Thonon'},
+{id:'je3',r:'fr',t:'soir',n:'Jeudis Electro · Château de Ripaille',d:'Jeudi 6 août',h:'19h30–04h00 · 2 dancefloors (house + hardfloor)',p:'30 € · étudiant 25 € · sur place 40 €',w:'Une des meilleures soirées « jeunes / danse » côté français — prenez en préloc.',u:'https://lesjeudiselectro.com/',g:[41,41],gn:'J. Electro Ripaille',etu:1},
+{id:'voilier',r:'fr',t:'lac',n:'Balade en voilier à Thonon',d:'Jeu & sam, 9 juil – 29 août',h:'13h30 ou 15h30 (millésime à reconfirmer)',p:'29 € · étudiant 19 €',w:'Très bon rapport plaisir/prix pour vous deux.',u:'https://www.thononlesbains.com/',g:[13,45],gn:'Voilier Thonon',etu:1,duo:1,warn:1},
+{id:'basenautique',r:'fr',t:'lac',n:'Base nautique d’Évian (paddle · kayak · pédalo)',d:'Saison estivale',h:'location à la journée',p:'Tarifs 2026 à confirmer',w:'Parfait pour une après-midi nautique improvisée.',u:'https://www.ville-evian.fr/',warn:1},
+{id:'precurieux',r:'fr',t:'cine',n:'Jardins de l’Eau du Pré Curieux',d:'13 juil – 25 août (probable)',h:'traversée en bateau · départs matin/après-midi',p:'Prix avec traversée à confirmer',w:'Sortie calme et belle, très bien en couple.',u:'https://www.evian-tourisme.com/',g:[17,45],gn:'Pré Curieux',duo:1,warn:1},
+{id:'savoie',r:'fr',t:'lac',n:'Barque La Savoie',d:'Agenda 2026 en ligne',h:'sorties en barque historique',p:'~18 €',w:'Léman « old-school » : très bonne idée romantique.',u:'https://www.evian-tourisme.com/',duo:1,warn:1},
+{id:'ripaille',r:'fr',t:'cine',n:'Château de Ripaille (visite)',d:'Toute la saison',h:'visite château + domaine',p:'Tarifs à confirmer',w:'Patrimoine + domaine + balade au bord du lac — combinable avec la soirée du 6 août.',u:'https://www.ripaille.fr/',warn:1},
+{id:'rives',r:'fr',t:'cine',n:'Visite guidée du hameau de Rives (Thonon)',d:'26 juil',h:'10h–12h',p:'Gratuit, sur inscription',w:'Petite sortie si vous êtes déjà sur Thonon ce week-end-là.',u:'https://www.thononlesbains.com/',g:[30,30],gn:'Hameau de Rives',free:1},
+{id:'rafting',r:'fr',t:'lac',n:'Rafting découverte sur la Dranse',d:'Mardis, 7 juil – 25 août',h:'10h45–12h45',p:'Tarif à confirmer',w:'Un vrai shot sportif hors simple baignade.',u:'https://www.thononlesbains.com/',g:[11,45],gn:'Rafting Dranse',warn:1}
+];
+
+/* ================= STATUTS (✓ / ? / ✗) ================= */
+/* Persistance via localStorage : les votes restent enregistrés sur cet
+   appareil/navigateur (iPad, ordinateur…) entre les sessions. */
+const STORE_KEY='leman-2026-votes';
+let statuses={};            // id -> 'yes'|'maybe'|'no'
+let storageOK=true;
+
+function loadStatuses(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(raw){statuses=JSON.parse(raw)||{};}
+  }catch(e){
+    /* localStorage indisponible (navigation privée stricte, etc.) */
+    storageOK=false;
+  }
+  setSaveState(storageOK?'Votes sauvegardés sur cet appareil':'Sauvegarde indisponible — votes valables pour cette session');
+  renderAll();
+}
+let saveTimer=null;
+function saveStatuses(){
+  if(!storageOK)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{
+      localStorage.setItem(STORE_KEY,JSON.stringify(statuses));
+      setSaveState('Votes sauvegardés ✓');
+    }catch(e){setSaveState('Échec de sauvegarde — réessayez');}
+  },400);
+}
+function setSaveState(t){document.getElementById('savestate').textContent=t;}
+
+function setStatus(id,v){
+  if(statuses[id]===v){delete statuses[id];}   // re-clic = annuler le vote
+  else{statuses[id]=v;}
+  saveStatuses();
+  renderAll();
+}
+
+/* ================= GANTT ================= */
+const REGCLS={ge:'ge',vd:'vd',fr:'fr'};
+const GROUPS=[['Genève','ge'],['Lausanne · Nyon','vd'],['Évian · Thonon','fr']];
+const SAT=[1,8,15,22,29,36,43], SUN=[2,9,16,23,30,37,44];
+const BIG=[[0,2],[13,16],[25,30],[42,45]];
+const DAYNUM=i=>{ if(i<=4)return 26+i; if(i<=35)return i-4; return i-35; };
+
+function buildGantt(){
+  const g=document.getElementById('gantt');
+  let h='<div class="g-head">';
+  h+='<div class="m" style="grid-column:1/6">Juin</div>';
+  h+='<div class="m" style="grid-column:6/37">Juillet</div>';
+  h+='<div class="m" style="grid-column:37/47">Août</div></div>';
+  h+='<div class="g-days">';
+  for(let i=0;i<46;i++){
+    const we=SAT.includes(i)||SUN.includes(i);
+    h+=`<div class="${we?'we':''}">${DAYNUM(i)}</div>`;
+  }
+  h+='</div><div class="g-body"><div class="g-bg">';
+  for(let i=0;i<46;i++){
+    const big=BIG.some(([a,b])=>i>=a&&i<=b);
+    const bs=BIG.some(([a])=>i===a), be=BIG.some(([,b])=>i===b);
+    const we=SAT.includes(i)||SUN.includes(i);
+    h+=`<div class="${big?'big':(we?'we':'')}${bs?' big-start':''}${be?' big-end':''}"></div>`;
+  }
+  h+='</div>';
+  for(const [label,reg] of GROUPS){
+    h+=`<div class="g-group">${label}</div>`;
+    for(const a of ACT){
+      if(a.r!==reg||!a.g)continue;
+      const [s,e]=a.g, span=e-s+1;
+      const st=statuses[a.id]?` st-${statuses[a.id]}`:'';
+      const name=a.gn||a.n;
+      h+='<div class="g-row">';
+      if(span>=6){
+        h+=`<button class="g-bar ${REGCLS[reg]}${st}" style="grid-column:${s+1}/${e+2}" title="${a.n} — voir la fiche" data-go="${a.id}">${name}</button>`;
+      }else if(e>=36){
+        h+=`<button class="g-out${st}" style="grid-column:1/${s+1};text-align:right;padding-right:7px;padding-left:0" data-go="${a.id}">${name}</button>`;
+        h+=`<button class="g-bar ${REGCLS[reg]}${st}" style="grid-column:${s+1}/${e+2}" title="${a.n} — voir la fiche" data-go="${a.id}"></button>`;
+      }else{
+        h+=`<button class="g-bar ${REGCLS[reg]}${st}" style="grid-column:${s+1}/${e+2}" title="${a.n} — voir la fiche" data-go="${a.id}"></button>`;
+        h+=`<button class="g-out${st}" style="grid-column:${e+2}/47" data-go="${a.id}">${name}</button>`;
+      }
+      h+='</div>';
+    }
+  }
+  h+='</div>';
+  g.innerHTML=h;
+}
+document.getElementById('gantt').addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');if(!b)return;
+  const card=document.getElementById('card-'+b.dataset.go);
+  if(card){
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');
+  }
+});
+
+/* ================= CARTES + FILTRES ================= */
+const REGNAME={ge:'Genève',vd:'Lausanne · Nyon',fr:'Évian · Thonon'};
+const TYPENAME={fest:'Festivals & musique',lac:'Lac & sport',cine:'Ciné & culture',soir:'Soirées & danse'};
+let fRegion='all',fType='all',fStatus='all',fExtra=new Set();
+
+function renderCards(){
+  const grid=document.getElementById('grid');
+  let html='',n=0;
+  for(const a of ACT){
+    const st=statuses[a.id]||null;
+    if(fRegion!=='all'&&a.r!==fRegion)continue;
+    if(fType!=='all'&&a.t!==fType)continue;
+    if(fStatus!=='all'){
+      if(fStatus==='none'&&st)continue;
+      if(fStatus!=='none'&&st!==fStatus)continue;
+    }
+    if(fExtra.has('free')&&!a.free)continue;
+    if(fExtra.has('etu')&&!a.etu)continue;
+    if(fExtra.has('duo')&&!a.duo)continue;
+    n++;
+    html+=`<article class="card ${a.r}${st?' st-'+st:''}" id="card-${a.id}">
+      <h3>${a.n}</h3>
+      <div class="tags">
+        <span class="tag">${REGNAME[a.r]}</span>
+        <span class="tag">${TYPENAME[a.t]}</span>
+        ${a.free?'<span class="tag free">Gratuit</span>':''}
+        ${a.etu?'<span class="tag etu">★ étudiant</span>':''}
+        ${a.duo?'<span class="tag duo">❤ duo</span>':''}
+        ${a.warn?'<span class="tag warn">⚠ à re-vérifier</span>':''}
+      </div>
+      <div class="meta">
+        <span><b>${a.d}</b></span>
+        <span>${a.h}</span>
+        <span>${a.p}</span>
+      </div>
+      <p class="why">${a.w}</p>
+      <a class="link" href="${a.u}" target="_blank" rel="noopener noreferrer">Site officiel ↗</a>
+      <div class="vote" role="group" aria-label="Votre décision pour ${a.n}">
+        <button class="vbtn${st==='yes'?' on-yes':''}" data-id="${a.id}" data-v="yes" aria-pressed="${st==='yes'}">✓ On y va</button>
+        <button class="vbtn${st==='maybe'?' on-maybe':''}" data-id="${a.id}" data-v="maybe" aria-pressed="${st==='maybe'}">? Peut-être</button>
+        <button class="vbtn${st==='no'?' on-no':''}" data-id="${a.id}" data-v="no" aria-pressed="${st==='no'}">✗ Non</button>
+      </div>
+    </article>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('count').textContent=`${n} plan${n>1?'s':''} affiché${n>1?'s':''} sur ${ACT.length}`;
+  document.getElementById('empty').style.display=n?'none':'block';
+}
+document.getElementById('grid').addEventListener('click',e=>{
+  const b=e.target.closest('.vbtn');if(!b)return;
+  setStatus(b.dataset.id,b.dataset.v);
+});
+
+function renderScore(){
+  let y=0,m=0,no=0;
+  for(const a of ACT){
+    const s=statuses[a.id];
+    if(s==='yes')y++;else if(s==='maybe')m++;else if(s==='no')no++;
+  }
+  const u=ACT.length-y-m-no;
+  document.getElementById('score').innerHTML=
+    `<span class="y"><b>${y}</b> validé${y>1?'s':''} ✓</span>`+
+    `<span class="m"><b>${m}</b> peut-être ?</span>`+
+    `<span class="n"><b>${no}</b> refusé${no>1?'s':''} ✗</span>`+
+    `<span class="u"><b>${u}</b> à décider</span>`;
+}
+
+function renderAll(){renderScore();renderCards();buildGantt();}
+
+function bindGroup(id,setter){
+  const box=document.getElementById(id);
+  box.addEventListener('click',e=>{
+    const b=e.target.closest('.chip');if(!b)return;
+    box.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    b.classList.add('on');
+    setter(b.dataset.v);renderCards();
+  });
+}
+bindGroup('f-region',v=>fRegion=v);
+bindGroup('f-type',v=>fType=v);
+bindGroup('f-status',v=>fStatus=v);
+document.getElementById('f-extra').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const v=b.dataset.v;
+  if(fExtra.has(v)){fExtra.delete(v);b.classList.remove('on');}
+  else{fExtra.add(v);b.classList.add('on');}
+  renderCards();
+});
+
+/* ================= RÉINITIALISER ================= */
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  if(!confirm('Effacer tous vos votes ✓ / ? / ✗ ?'))return;
+  statuses={};saveStatuses();renderAll();
+});
+
+/* ================= PDF A4 (impression) ================= */
+const ICON={yes:'✓',maybe:'?',no:'✗'};
+function domain(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
+function sortByDate(list){
+  return [...list].sort((a,b)=>{
+    const sa=a.g?a.g[0]:99, sb=b.g?b.g[0]:99;
+    return sa-sb || a.n.localeCompare(b.n,'fr');
+  });
+}
+function pItem(a,withIcon){
+  const st=statuses[a.id];
+  return `<div class="pitem">
+    ${withIcon?`<span class="pico">${st?ICON[st]:'·'}</span>`:'<span class="pico">·</span>'}
+    <b>${a.n}</b> — <span class="pd">${a.d}</span><br>
+    <span class="pm">${a.h} · ${a.p}${a.warn?' · ⚠ à re-vérifier J-7':''}</span><br>
+    <span class="pu">${domain(a.u)}</span>
+  </div>`;
+}
+function buildPrintSheet(){
+  const yes=sortByDate(ACT.filter(a=>statuses[a.id]==='yes'));
+  const maybe=sortByDate(ACT.filter(a=>statuses[a.id]==='maybe'));
+  const undec=sortByDate(ACT.filter(a=>!statuses[a.id]));
+  const no=sortByDate(ACT.filter(a=>statuses[a.id]==='no'));
+  let h=`<h1>Été 2026 autour du Léman — Hugo &amp; Éloïse</h1>
+  <p class="psub">Fenêtre 26 juin → 10 août 2026 · ✓ validé · ? peut-être · ✗ refusé · imprimé le ${new Date().toLocaleDateString('fr-CH')}</p>`;
+  if(yes.length){
+    h+=`<h2>✓ Validés <span class="pc">(${yes.length})</span></h2><div class="pcols">${yes.map(a=>pItem(a,true)).join('')}</div>`;
+  }
+  if(maybe.length){
+    h+=`<h2>? Peut-être <span class="pc">(${maybe.length})</span></h2><div class="pcols">${maybe.map(a=>pItem(a,true)).join('')}</div>`;
+  }
+  if(undec.length){
+    h+=`<h2>À décider <span class="pc">(${undec.length})</span></h2><div class="pcols">${undec.map(a=>pItem(a,false)).join('')}</div>`;
+  }
+  if(no.length){
+    h+=`<h2>✗ Écartés <span class="pc">(${no.length})</span></h2><p class="pno">${no.map(a=>a.n).join(' · ')}</p>`;
+  }
+  h+=`<p class="pfoot">Sources officielles uniquement · dates 2026 vérifiées (Aubes 13/7–16/8 · CinéTransat 9/7–16/8 · Hermance 7–8/8 · Jeudis Electro 23/7, 30/7, 6/8) · Lake Parade 2026 non confirmée · horaires à confirmer J-7 sur les sites officiels.</p>`;
+  document.getElementById('print-sheet').innerHTML=h;
+}
+document.getElementById('btn-print').addEventListener('click',()=>{
+  buildPrintSheet();
+  window.print();   /* dans la boîte d’impression : destination « Enregistrer au format PDF » */
+});
+window.addEventListener('beforeprint',buildPrintSheet);
+
+/* ================= INIT ================= */
+renderAll();        // affichage immédiat
+loadStatuses();     // puis chargement des votes sauvegardés
+</script>
+</body>
+</html>
