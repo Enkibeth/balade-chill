@@ -1341,29 +1341,33 @@ function init3D(THREE, OrbitControls){
   applyFilter();
 
   /* ============================================================
-     CENTRAGE — garantie absolue ("impossible de la centrer" réglé).
-     On translate tout le groupe pour que le centre réel du pays
-     tombe pile sur l'origine de la scène (0,0,0). La cible de
-     l'orbite reste donc TOUJOURS (0,0,0) : la Chine est au centre
-     exact, qu'on tourne, zoome ou redimensionne la fenêtre.
+     CENTRAGE & CADRAGE — calcul DÉTERMINISTE.
+     On ne dépend plus de Box3 (qui renvoyait une boîte vide pour
+     l'ExtrudeGeometry → distance ≈ 0 → carte géante hors-champ).
+     La projection centre déjà le pays sur (0,0) ; son centre réel
+     en coords-monde est donc (0, TOPZ/2, 0). La cible d'orbite y
+     est verrouillée et la distance se déduit de l'envergure connue
+     de la projection → la Chine est toujours centrée et entière.
      ============================================================ */
-  world.updateMatrixWorld(true);
-  { const lb=new THREE.Box3().setFromObject(land); const lc=lb.getCenter(new THREE.Vector3());
-    world.position.sub(lc); world.updateMatrixWorld(true); }
-
-  const ORIGIN=new THREE.Vector3(0,0,0);
-  let HOME={pos:new THREE.Vector3(0,180,150), target:ORIGIN.clone()};
-  function landRadius(){ const b=new THREE.Box3().setFromObject(land); const s=b.getSize(new THREE.Vector3());
-    return Math.hypot(s.x,s.z)/2; }                       // flat span — the height is negligible
+  const CENTER=new THREE.Vector3(0, TOPZ/2, 0);
+  let HOME={pos:new THREE.Vector3(0,200,150), target:CENTER.clone()};
+  function frameRadius(){
+    const spanX=(PROJ.maxLng-PROJ.minLng)*PROJ.kx*PROJ.S;   // largeur E-O en unités monde
+    const spanZ=(PROJ.maxLat-PROJ.minLat)*PROJ.S;           // hauteur N-S en unités monde
+    return Math.hypot(spanX,spanZ)/2;                       // ~86 — jamais nul
+  }
   function computeHome(margin){
-    const r=landRadius()*(margin||1.16);
+    const r=frameRadius()*(margin||1.16);
     const vFov=camera.fov*Math.PI/180;
-    const hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect);
-    const dist=r/Math.sin(Math.min(vFov,hFov)/2);          // fit the tighter screen axis
-    const elev=1.0, azim=-0.12;                            // ~57° bird's-eye, barely angled
-    const pos=new THREE.Vector3(dist*Math.cos(elev)*Math.sin(azim), dist*Math.sin(elev), dist*Math.cos(elev)*Math.cos(azim));
-    controls.minDistance=dist*0.4; controls.maxDistance=dist*2;
-    return {pos,target:ORIGIN.clone()};
+    const hFov=2*Math.atan(Math.tan(vFov/2)*Math.max(0.2,camera.aspect));
+    const dist=r/Math.sin(Math.max(0.25,Math.min(vFov,hFov))/2);
+    const elev=1.0, azim=-0.12;                             // ~57° vue d'oiseau, à peine inclinée
+    const pos=new THREE.Vector3(
+      CENTER.x + dist*Math.cos(elev)*Math.sin(azim),
+      CENTER.y + dist*Math.sin(elev),
+      CENTER.z + dist*Math.cos(elev)*Math.cos(azim));
+    controls.minDistance=dist*0.4; controls.maxDistance=dist*2.2;
+    return {pos,target:CENTER.clone()};
   }
   function applyHome(){ camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); }
   let flyId=0;
