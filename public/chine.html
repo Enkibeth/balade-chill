@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Noto+Serif+SC:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Mapbox GL JS (zoom + géolocalisation). Repli automatique sur la carte SVG si indisponible (ex. réseau bloqué). -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
+<meta name="mapbox-token" content="pk.eyJ1IjoiZW5raTkyOTM5NCIsImEiOiJjbXFjam9tMzEwb283MnJxemNmNzVjMXk3In0.9wmNJGDIC9nQbPC3ssa8Kg">
 <script type="importmap">
 {
   "imports": {
@@ -209,6 +213,28 @@ img{display:block}
 .pv-more{width:100%;border:1px solid rgba(244,206,106,.42);background:rgba(244,206,106,.12);color:var(--gold);
   border-radius:10px;padding:9px;cursor:pointer;font-size:12.5px;font-weight:600;transition:background .18s,transform .18s}
 .pv-more:hover{background:rgba(244,206,106,.22);transform:translateY(-1px)}
+
+/* ---- Mapbox : marqueurs HTML, fiche et contrôles ---- */
+.mb-mk{cursor:pointer;width:0;height:0;position:relative}
+.mb-dot{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:var(--mc);
+  border:2px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.3),0 2px 7px rgba(0,0,0,.45);transition:transform .16s var(--spring)}
+.mb-mk:hover .mb-dot,.mb-mk.in .mb-dot{transform:scale(1.18)}
+.mb-badge{position:absolute;left:5px;top:-13px;min-width:16px;height:16px;padding:0 3px;border-radius:99px;
+  background:var(--gold);color:#1a1206;font:700 9.5px Outfit,sans-serif;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(0,0,0,.45);box-shadow:0 2px 5px rgba(0,0,0,.4)}
+.mb-name{position:absolute;left:50%;transform:translateX(-50%);top:-31px;white-space:nowrap;
+  font:600 11px Outfit,sans-serif;color:var(--paper);text-shadow:0 1px 3px var(--ink),0 0 5px var(--ink);
+  opacity:0;transition:opacity .2s;pointer-events:none}
+.mb-mk:hover .mb-name,.mb-mk.in .mb-name{opacity:1}
+.mb-mk.off{display:none}
+.mb-pop .mapboxgl-popup-content{padding:0;border-radius:15px;overflow:hidden;background:var(--glass-card);
+  border:1px solid var(--line);border-top:2px solid var(--pc,var(--gold));box-shadow:0 26px 64px -26px rgba(0,0,0,.6)}
+.mb-pop .mapboxgl-popup-close-button{width:27px;height:27px;font-size:16px;color:#fff;background:rgba(0,0,0,.5);
+  border-radius:50%;top:7px;right:7px;line-height:1}
+.mb-pop .mapboxgl-popup-close-button:hover{background:rgba(255,90,77,.7)}
+.mb-pop .mapboxgl-popup-tip{border-top-color:var(--glass-card);border-bottom-color:var(--glass-card)}
+.mb-pop .pv-photo{height:122px;background:var(--ink2)}
+.mb-pop .pv-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .stage-glow{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(76% 70% at 50% 46%, transparent 60%, rgba(7,5,10,.55))}
 
@@ -1434,14 +1460,120 @@ function buildMap2D(){
   rebuildRoute(); applyFilter();
   mapView={ applyFilter, rebuildRoute,
     focus(id){ showPreview(id); },
-    refresh(){ /* responsive : rien à recalculer, les marqueurs sont dans le SVG */ } };
+    refresh(){ /* responsive : rien à recalculer, les marqueurs sont dans le SVG */ },
+    setTheme(){ /* la carte SVG suit déjà les variables CSS */ } };
 }
 
+/* =====================================================================
+   CARTE MAPBOX — zoom + géolocalisation (utile sur place en Chine).
+   Mêmes marqueurs, mêmes fiches (photo + jours selon l'itinéraire).
+   La basemap suit le thème (preset jour/nuit du style Standard).
+   ===================================================================== */
+function initMapbox(token){
+  const stage=document.getElementById('stage'), host=document.getElementById('map2d');
+  mapboxgl.accessToken=token;
+  const isLight=()=>document.documentElement.getAttribute('data-theme')==='light';
+  const map=new mapboxgl.Map({
+    container:host, style:'mapbox://styles/mapbox/standard',
+    center:[110,33], zoom:3.1, attributionControl:true, cooperativeGestures:true });
+
+  map.addControl(new mapboxgl.NavigationControl({visualizePitch:true}),'top-right');
+  map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions:{enableHighAccuracy:true}, trackUserLocation:true, showUserHeading:true }),'top-right');
+  map.addControl(new mapboxgl.ScaleControl({maxWidth:90,unit:'metric'}),'bottom-left');
+
+  const applyPreset=()=>{ try{ map.setConfigProperty('basemap','lightPreset',isLight()?'day':'night'); }catch(e){} };
+
+  // marqueurs HTML
+  const marks={};
+  DEST.forEach(d=>{ const col=CATS[d.cat].color;
+    const el=document.createElement('div'); el.className='mb-mk'; el.style.setProperty('--mc',col);
+    el.innerHTML=`<span class="mb-dot"></span><span class="mb-badge" hidden></span><span class="mb-name">${d.name}</span>`;
+    el.addEventListener('click',e=>{ e.stopPropagation(); showPreview(d.id); });
+    new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([d.lng,d.lat]).addTo(map);
+    marks[d.id]={el, dot:el.querySelector('.mb-dot'), badge:el.querySelector('.mb-badge')};
+  });
+
+  function daysOf(id){ const s=state.plan.find(s=>s.id===id); return s?s.days:0; }
+  function applyFilter(){ DEST.forEach(d=>{ marks[d.id].el.classList.toggle('off',!state.filters[d.cat]); }); }
+  function rebuildRoute(){
+    DEST.forEach(d=>{ const m=marks[d.id], on=inPlan(d.id);
+      m.el.classList.toggle('in',on);
+      if(on){ m.badge.hidden=false; m.badge.textContent=daysOf(d.id); } else m.badge.hidden=true; });
+    const plan=state.plan.filter(s=>BY_ID[s.id]);
+    const data={type:'Feature',geometry:{type:'LineString',coordinates:plan.map(s=>{ const d=BY_ID[s.id]; return [d.lng,d.lat]; })}};
+    const src=map.getSource('cn-route'); if(src) src.setData(data);
+  }
+
+  let curPopup=null;
+  function previewNode(id){ const d=BY_ID[id], days=daysOf(id), inP=inPlan(id), col=CATS[d.cat].color;
+    const n=document.createElement('div'); n.className='pv'; n.style.setProperty('--pc',col);
+    n.innerHTML=`
+      <div class="pv-photo"><img src="${photoURL(id,360,210)}" alt="${d.name}" loading="lazy" onerror="${imgFB(id,360,210)}"></div>
+      <div class="pv-body">
+        <span class="pv-cat" style="background:${col}">${CATS[d.cat].icon} ${CATS[d.cat].label.split(' ')[0]}</span>
+        <h4>${d.name} <span class="cn">${d.cn}</span></h4>
+        ${d.region?`<p class="pv-region">${d.region}</p>`:''}
+        <p class="pv-days">${ inP ? `📅 <b>${days} jour${days>1?'s':''}</b> prévus · ${currentRouteName()}` : `Pas dans l’itinéraire actuel` }</p>
+        <button class="pv-more" type="button">Voir le détail →</button>
+      </div>`;
+    n.querySelector('.pv-more').onclick=()=>{ if(curPopup) curPopup.remove(); openDest(id); };
+    return n;
+  }
+  function showPreview(id){ const d=BY_ID[id]; if(!d) return;
+    if(curPopup) curPopup.remove();
+    curPopup=new mapboxgl.Popup({offset:16,closeButton:true,maxWidth:'248px',className:'mb-pop'})
+      .setLngLat([d.lng,d.lat]).setDOMContent(previewNode(id)).addTo(map);
+    map.flyTo({center:[d.lng,d.lat], zoom:Math.max(map.getZoom(),5.4), duration:750});
+  }
+
+  map.on('load',()=>{
+    applyPreset();
+    map.addSource('cn-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
+    map.addLayer({id:'cn-route-glow',type:'line',source:'cn-route',
+      layout:{'line-cap':'round','line-join':'round'},
+      paint:{'line-color':'#F4CE6A','line-width':7,'line-opacity':.22,'line-blur':4}});
+    map.addLayer({id:'cn-route-line',type:'line',source:'cn-route',
+      layout:{'line-cap':'round','line-join':'round'},
+      paint:{'line-color':'#F4CE6A','line-width':2.4,'line-opacity':.9}});
+    rebuildRoute(); applyFilter();
+    const b=new mapboxgl.LngLatBounds(); DEST.forEach(d=>b.extend([d.lng,d.lat]));
+    map.fitBounds(b,{padding:{top:70,bottom:70,left:50,right:50},duration:0,maxZoom:6});
+    const loader=document.getElementById('loader');
+    if(loader){ loader.classList.add('hide'); setTimeout(()=>{loader.style.display='none';},700); }
+  });
+
+  new ResizeObserver(()=>map.resize()).observe(stage);
+
+  mapView={ applyFilter, rebuildRoute,
+    focus(id){ showPreview(id); },
+    refresh(){ map.resize(); },
+    setTheme(){ applyPreset(); } };
+  return map;
+}
+
+function hideLoader(){ const l=document.getElementById('loader');
+  if(l){ l.classList.add('hide'); setTimeout(()=>{ l.style.display='none'; },700); } }
+
 async function bootMap(){
-  const loader=document.getElementById('loader');
-  try{ buildMap2D(); }
-  catch(err){ console.error('[Chine] carte 2D indisponible', err); }
-  if(loader){ loader.classList.add('hide'); setTimeout(()=>{ loader.style.display='none'; },700); }
+  const token=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
+  if(token && window.mapboxgl){
+    try{
+      const map=initMapbox(token);
+      let loaded=false; map.on('load',()=>{ loaded=true; });
+      // Repli SVG si le style Mapbox ne charge pas (token invalide, réseau bloqué en Chine…)
+      setTimeout(()=>{ if(loaded || (map.isStyleLoaded&&map.isStyleLoaded())) return;
+        console.warn('[Chine] Mapbox non chargé → repli carte SVG');
+        try{ map.remove(); }catch(e){}
+        const host=document.getElementById('map2d'); if(host) host.innerHTML='';
+        try{ buildMap2D(); }catch(e){ console.error(e); }
+        hideLoader();
+      }, 7000);
+      return;
+    }catch(err){ console.error('[Chine] Mapbox indisponible, repli SVG', err); }
+  }
+  try{ buildMap2D(); }catch(err){ console.error('[Chine] carte 2D indisponible', err); }
+  hideLoader();
 }
 
 /* =================== GALERIE + ANIMATIONS =================== */
@@ -1485,6 +1617,7 @@ function setupTheme(){
     root.setAttribute('data-theme',next);
     try{ localStorage.setItem('cn-theme',next); }catch(e){}
     sync();
+    if(mapView && mapView.setTheme) mapView.setTheme(next);
   });
 }
 /* Subtle magnetic pull on the primary controls — a high-touch detail. */
