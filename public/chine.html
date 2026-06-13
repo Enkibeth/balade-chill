@@ -93,7 +93,7 @@ img{display:block}
 
 /* ---------- HERO + STAGE ---------- */
 .stage-wrap{position:relative;max-width:var(--maxw);margin:0 auto;padding:26px 20px 0}
-.hero{position:relative;z-index:2;text-align:center;padding:34px 10px 16px;pointer-events:none}
+.hero{position:relative;z-index:2;text-align:center;padding:22px 10px 12px;pointer-events:none}
 .hero .eyebrow{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;
   color:var(--gold);opacity:0;animation:rise .9s var(--ease-out) .05s forwards}
 .hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(42px,8.4vw,94px);line-height:.96;letter-spacing:-.018em;
@@ -108,7 +108,7 @@ img{display:block}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 @keyframes shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 
-.stage{position:relative;height:min(74vh,740px);min-height:460px;margin-top:14px;border-radius:var(--r-lg);overflow:hidden;
+.stage{position:relative;height:min(66vh,600px);min-height:420px;margin-top:10px;border-radius:var(--r-lg);overflow:hidden;
   border:1px solid var(--line);background:
    radial-gradient(120% 90% at 50% -4%, rgba(46,26,34,.62), transparent 56%),
    radial-gradient(100% 120% at 82% 104%, rgba(224,64,46,.12), transparent 60%),
@@ -405,6 +405,31 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
 @media (prefers-reduced-motion:reduce){.dr-photo img{animation:none}}
 @keyframes slowzoom{from{transform:scale(1)}to{transform:scale(1.14)}}
 .dr-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#16111f,transparent 62%)}
+
+/* ---------- RESSOURCES & ASTUCES ---------- */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:26px}
+.rescard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:4px;
+  transition:transform .35s var(--ease-out),border-color .35s,box-shadow .35s}
+.rescard:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:var(--line-soft)}
+.rescard .rc-head{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.rescard .rc-ic{font-size:22px;line-height:1}
+.rescard h3{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.1}
+.rescard .rc-zh{font-family:var(--cn);font-size:12px;color:var(--gold);opacity:.85;margin-left:auto}
+.rescard .rc-intro{font-size:13px;color:var(--mute);line-height:1.55;margin-bottom:8px}
+.rlist{list-style:none;display:flex;flex-direction:column}
+.rlist li{padding:11px 0;border-bottom:1px dashed rgba(255,255,255,.07)}
+.rlist li:last-child{border-bottom:0;padding-bottom:0}
+.rlist .rt{font-weight:600;font-size:13.5px;color:#fff;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rlist .when{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:#0b0910;background:var(--gold);border-radius:999px;padding:2px 8px;font-weight:700;white-space:nowrap}
+.rlist .when.urgent{background:var(--red);color:#fff}
+.rlist .when.soft{background:rgba(244,206,106,.16);color:var(--gold)}
+.rlist .rd{font-size:12.5px;color:var(--paper-dim);line-height:1.5;margin-top:3px}
+.rlist .rd b{color:#fff;font-weight:600}
+.rlink{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:var(--mono);font-size:11.5px;font-weight:600;
+  color:var(--jade);border:1px solid rgba(79,208,180,.32);background:rgba(79,208,180,.08);border-radius:999px;padding:5px 11px;
+  transition:transform .18s var(--spring),background .15s,border-color .15s;word-break:break-all}
+.rlink:hover{transform:translateY(-1px);background:rgba(79,208,180,.18);border-color:rgba(79,208,180,.5)}
+.rlink::after{content:"↗";font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
@@ -484,11 +509,11 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
   <div class="agree">
     <h4>✓ Ce sur quoi les deux sont d'accord</h4>
     <ul>
-      <li>Un <b>visa L</b> est indispensable (séjour &gt; 30 jours)</li>
       <li>La <b>Golden Week (1–7 oct)</b> est la contrainte n°1</li>
+      <li>La règle des <b>30 jours/entrée</b> structure tout (voir la stratégie visa)</li>
       <li>Réserver tout le <b>nominatif</b> dès l'ouverture des ventes</li>
-      <li><b>Départ de Shanghai</b> en fin de boucle</li>
-      <li><b>Dali, Yangshuo, Hangzhou</b> = les respirations lentes du couple</li>
+      <li><b>Fin urbaine et lente</b> dans le Jiangnan (Hangzhou, Shanghai)</li>
+      <li><b>Guilin/Yangshuo, Hangzhou</b> = les respirations lentes du couple</li>
       <li>Octobre = l'un des <b>meilleurs mois</b> pour ce parcours</li>
     </ul>
   </div>
@@ -540,14 +565,14 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
     </div>
 
     <div class="pcard flag">
-      <h3><span class="ic">🛂</span> Visa</h3>
-      <div class="sub">Indispensable · séjour &gt; 30 jours sur le continent</div>
+      <h3><span class="ic">🛂</span> Visa — la stratégie qui change tout</h3>
+      <div class="sub">Sans visa L, c'est possible · règle des 30 j/entrée</div>
       <ul>
-        <li>L'exemption de visa française <b>ne suffit pas</b> au-delà de 30 jours/entrée (valable jusqu'au 31/12/2026).</li>
-        <li>Il faut un <b>visa L touristique</b> (ou une sortie/réentrée intermédiaire).</li>
-        <li>≈ <b>111 € TTC</b>, délai standard ~6 jours ouvrés ; formulaire COVA en ligne au préalable.</li>
-        <li>À déposer dans les <b>3 mois</b> avant le départ.</li>
-        <li>Plus d'exigence COVID de routine à ce jour — <b>à reconfirmer J-30</b>.</li>
+        <li>Exemption de visa pour passeports <b>français</b> en Chine continentale jusqu'au <b>31/12/2026</b> : <b>30 jours max par entrée</b>, entrées multiples autorisées.</li>
+        <li>L'astuce : passer la <b>Golden Week à Hong Kong (90 j sans visa) puis Macao (90 j)</b>, qui ont une entrée distincte, puis entrer sur le continent pour un séjour continu <b>&lt; 30 jours</b> → <b>aucun visa L requis</b>.</li>
+        <li>Les 30 jours se comptent <b>dès le lendemain de l'entrée</b> sur le continent.</li>
+        <li>Si vous restez <b>&gt; 30 j d'affilée</b> sur le continent : visa L (≈ <b>111 € TTC</b>, ~6 j ouvrés, formulaire COVA en ligne, dépôt dans les 3 mois).</li>
+        <li>Détails officiels &amp; vérifications dans <b>Ressources &amp; astuces</b> ci-dessous — <b>à reconfirmer J-30</b>.</li>
       </ul>
     </div>
 
@@ -641,9 +666,17 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
   </div>
 </section>
 
+<!-- ============ RESSOURCES & ASTUCES A→Z ============ -->
+<section class="block" id="ressources">
+  <span class="kicker">Tout, de A à Z · liens officiels cliquables</span>
+  <h2 class="big">Réserver, payer, s'organiser<span class="zh cn">实用锦囊</span></h2>
+  <p class="lede">Comment faire les réservations, comment payer, quelles applis installer, quels billets partent en quelques minutes — chaque conseil renvoie à la <b>source officielle</b>. Tarifs &amp; horaires 2026 à reconfirmer avant de payer.</p>
+  <div class="res-grid" id="res-grid"></div>
+</section>
+
 <footer>
   <span class="seal cn">愿你们旅途愉快</span><br>
-  Carnet de voyage interactif · fusion de deux recherches approfondies (Claude &amp; GPT) · <b>tarifs &amp; horaires 2026 à reconfirmer J-7</b><br>
+  Carnet de voyage interactif · deux stratégies comparées &amp; recherche approfondie sourcée · <b>tarifs &amp; horaires 2026 à reconfirmer J-7</b><br>
   Vos votes et votre itinéraire sont sauvegardés sur cet appareil · « Partager » crée un lien à envoyer à l'autre.
 </footer>
 
@@ -683,6 +716,19 @@ const DEST = [
     couple:['The Peak au coucher du soleil puis Symphony of Lights sur le port'],
     food:['Dim sum à volonté — l’une des capitales gastronomiques d’Asie'],
     note:'Symphony of Lights brièvement suspendue fin 2025 puis reprise — à reconfirmer.' },
+
+  { id:'macao', name:'Macao', cn:'澳门', region:'Sud', lng:113.54, lat:22.19,
+    cat:'culture', duo:true, days:3, prio:'recommande', niveau:'Faible', transport:'Bus HZMB depuis Hong Kong ~40 min (~7 €/pers) · ou ferry TurboJET',
+    tag:'Le métissage luso-chinois : ruelles pavées, pâtisseries et shows à grand spectacle.',
+    sites:[
+      {n:'Ruines de Saint-Paul & Senado Square', d:'½ j · cœur historique (UNESCO)', p:'libre'},
+      {n:'« House of Dancing Water »', d:'soirée · ~85 min', p:'dès ~398 MOP', c:'réserver à l’avance, week-ends serrés'},
+      {n:'Taipa & Coloane', d:'½ j flâneries', c:'egg tarts Lord Stow’s à Coloane'},
+      {n:'Cotai — skyline & casinos', d:'soirée'},
+    ],
+    couple:['Pastéis de nata chauds à Coloane puis spectacle nautique le soir'],
+    food:['Egg tarts portugais, cuisine macanaise (minchi, porc bafassá)'],
+    note:'Régime d’entrée distinct du continent : 90 jours sans visa pour les passeports UE — idéal pour absorber la Golden Week hors Chine continentale.' },
 
   { id:'beijing', name:'Beijing', cn:'北京', region:'Nord', lng:116.41, lat:39.90,
     cat:'histoire', duo:false, days:4, prio:'immanquable', niveau:'Modéré (muraille)', transport:'Vol — point d’arrivée possible (approche Classique) · TGV depuis Pingyao ~4 h',
@@ -892,6 +938,17 @@ const DEST = [
     couple:['Nuit au sommet pour le lever de soleil sur la mer de nuages'],
     food:['Cuisine de l’Anhui, pousses de bambou'],
     note:'Variante : remplace le duo Suzhou + Hangzhou en fin de boucle (densifie la fin).' },
+
+  { id:'hongcun', name:'Villages Hongcun · Xidi', cn:'宏村·西递', region:'Anhui', lng:117.98, lat:29.91,
+    cat:'culture', duo:true, days:1, prio:'recommande', niveau:'Faible', transport:'Navette depuis Huangshan ~1 h — souvent couplé à la montagne',
+    tag:'Villages Hui classés UNESCO : pignons blancs et toits gris reflétés dans l’eau.',
+    sites:[
+      {n:'Village de Hongcun', d:'7 h 30–17 h 30', p:'~104 ¥', c:'magique tôt le matin / en soirée'},
+      {n:'Village de Xidi', d:'7 h 30–18 h', p:'~104 ¥'},
+    ],
+    couple:['Nuit dans une maison d’hôte du village pour les reflets au lever du jour'],
+    food:['Cuisine de l’Anhui : poisson mandarin, pousses de bambou'],
+    note:'Intérêt maximal hors des créneaux de bus de groupe ; dormir sur place change tout.' },
 ];
 
 const BY_ID = Object.fromEntries(DEST.map(d=>[d.id,d]));
@@ -899,7 +956,8 @@ const st = (id,days)=>({id,days}); // raccourci
 
 /* ---- Photos d'illustration (Flickr CC via loremflickr, repli picsum) ---- */
 const IMG = {
-  hongkong:'hongkong,skyline,harbour', beijing:'beijing,forbidden,city', xian:'xian,terracotta,army',
+  hongkong:'hongkong,skyline,harbour', macao:'macau,ruins,saint,paul', beijing:'beijing,forbidden,city', xian:'xian,terracotta,army',
+  hongcun:'hongcun,village,anhui',
   huashan:'huashan,mountain,china', chengdu:'chengdu,panda', leshan:'leshan,giant,buddha',
   guilin:'guilin,li,river,karst', longji:'longji,rice,terraces', zhangjiajie:'zhangjiajie,mountains',
   dali:'dali,erhai,yunnan', lijiang:'lijiang,old,town', tigerleaping:'tiger,leaping,gorge',
@@ -916,9 +974,9 @@ const ROUTES = [
   { id:'sud', name:'Approche Sud', zh:'南线', color:'#4FD0B4', src:'Recherche Claude',
     blurb:'Anti-Golden Week : on commence par Hong Kong et le Sud, on fuit la foule dans les grands espaces, et on garde les sites stars du Nord pour après le 20 octobre.',
     stops:[st('hongkong',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',4),st('dali',3),st('lijiang',3),st('tigerleaping',2),st('shangrila',2),st('xian',3),st('pingyao',2),st('beijing',4),st('shanghai',3),st('suzhou',1),st('hangzhou',1)] },
-  { id:'classique', name:'Approche Classique', zh:'经典', color:'#F4CE6A', src:'Recherche GPT',
-    blurb:'La colonne vertébrale historique : Pékin d’abord, puis Xi’an, Chengdu, Guilin et la branche Yunnan, avant un final urbain et lent à Shanghai et Hangzhou. On accepte deux ou trois grands sites tôt le matin, on compense par des séjours lents.',
-    stops:[st('beijing',6),st('xian',4),st('chengdu',6),st('guilin',5),st('dali',5),st('lijiang',4),st('shanghai',6),st('hangzhou',2)] },
+  { id:'classique', name:'Recherche approfondie', zh:'深度研究', color:'#F4CE6A', src:'Sans visa L · HK + Macao',
+    blurb:'La stratégie la plus intelligente, sans visa L : on absorbe la Golden Week à Hong Kong puis Macao (territoires à entrée distincte du continent), puis on entre sur le continent après le pic — Guangxi karstique, Xi’an, Pékin, Huangshan + villages Hui, et un final lent dans le Jiangnan (Hangzhou, Suzhou, Shanghai).',
+    stops:[st('hongkong',5),st('macao',3),st('guilin',4),st('longji',2),st('xian',4),st('beijing',5),st('huangshan',3),st('hongcun',1),st('hangzhou',3),st('suzhou',2),st('shanghai',5)] },
   { id:'leger', name:'Version allégée', zh:'轻松', color:'#F2884E', src:'dérivé · approche Sud',
     blurb:'On retire Shangri-La (altitude/froid) pour respirer et étaler un peu plus les belles étapes.',
     stops:[st('hongkong',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',4),st('dali',4),st('lijiang',3),st('tigerleaping',2),st('xian',3),st('pingyao',2),st('beijing',4),st('shanghai',3),st('suzhou',1),st('hangzhou',2)] },
@@ -1134,13 +1192,13 @@ function renderApproaches(){
       <h3>${B.name} <span class="cn" style="font-size:.7em;color:var(--gold)">${B.zh}</span></h3>
       <p class="phil">${B.blurb}</p>
       <dl>
-        <div class="row"><dt>Arrivée</dt><dd>Pékin</dd></div>
-        <div class="row"><dt>Golden Week</dt><dd>On <b>fonce tôt le matin</b> sur les grands sites, séjours lents en compensation</dd></div>
-        <div class="row"><dt>Signature</dt><dd>Palais d’Été · Huashan · Leshan · Longji · Zhujiajiao</dd></div>
+        <div class="row"><dt>Arrivée</dt><dd>Hong Kong, puis Macao</dd></div>
+        <div class="row"><dt>Golden Week</dt><dd>On l’<b>absorbe à Hong Kong & Macao</b> (entrée distincte du continent) — <b>pas de visa L</b> nécessaire</dd></div>
+        <div class="row"><dt>Signature</dt><dd>Macao · Longji · Pékin impérial · Huangshan · villages Hongcun · Jiangnan</dd></div>
         <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:#CDBFAE">${list(B)}</dd></div>
-        <div class="row"><dt>Format</dt><dd>${B.stops.length} étapes · ${days(B)} j (cadre 42 j à l’origine)</dd></div>
+        <div class="row"><dt>Format</dt><dd>${B.stops.length} étapes · ${days(B)} j (≈ 37 nuits + marge)</dd></div>
       </dl>
-      <button class="load" data-r="${B.id}">Charger l’approche Classique →</button>
+      <button class="load" data-r="${B.id}">Charger ce parcours →</button>
     </div>`;
   box.querySelectorAll('.load').forEach(b=>b.addEventListener('click',()=>loadRoute(ROUTES.find(r=>r.id===b.dataset.r))));
 }
@@ -1221,22 +1279,14 @@ function init3D(THREE, OrbitControls){
   const TOPZ=6;
   const shapes=CHINA_GEO.map(poly=>{ const sh=new THREE.Shape();
     poly.forEach(([lng,lat],i)=>{ const x=PROJ.x(lng),y=PROJ.y(lat); i?sh.lineTo(x,y):sh.moveTo(x,y); }); return sh; });
-  const geo=new THREE.ExtrudeGeometry(shapes,{depth:TOPZ,bevelEnabled:true,bevelThickness:.5,bevelSize:.5,bevelSegments:2});
-  // Brighter, warmer land so the WHOLE country reads — not just the glowing pins.
-  const landMat=new THREE.MeshStandardMaterial({color:0x224a55,metalness:.2,roughness:.62,emissive:0x123038,emissiveIntensity:.7,flatShading:false});
-  const sideMat=new THREE.MeshStandardMaterial({color:0x123038,metalness:.35,roughness:.85,emissive:0x0a1c22,emissiveIntensity:.4});
-  const land=new THREE.Mesh(geo,[landMat,sideMat]); land.castShadow=false; world.add(land);
+  const geo=new THREE.ExtrudeGeometry(shapes,{depth:TOPZ,bevelEnabled:true,bevelThickness:.6,bevelSize:.6,bevelSegments:2});
+  // Bright, warm land so the WHOLE country reads at a glance — not just the pins.
+  const landMat=new THREE.MeshStandardMaterial({color:0x2f6576,metalness:.18,roughness:.58,emissive:0x1b4856,emissiveIntensity:.95});
+  const sideMat=new THREE.MeshStandardMaterial({color:0x1c4250,metalness:.3,roughness:.8,emissive:0x123038,emissiveIntensity:.6});
+  const land=new THREE.Mesh(geo,[landMat,sideMat]); world.add(land);
   // crisp gold coastline
   CHINA_GEO.forEach(poly=>{ const pts=poly.map(([lng,lat])=>new THREE.Vector3(PROJ.x(lng),PROJ.y(lat),TOPZ+0.06));
-    world.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xF7DD93,transparent:true,opacity:.7}))); });
-
-  // subtle reflective sea plane beneath the country
-  (function(){ const box=new THREE.Box3().setFromObject(land); const cx=(box.min.x+box.max.x)/2, cy=(box.min.y+box.max.y)/2;
-    const r=Math.max(box.max.x-box.min.x,box.max.y-box.min.y)*1.6;
-    const sea=new THREE.Mesh(new THREE.CircleGeometry(r,64),
-      new THREE.MeshBasicMaterial({color:0x0a1620,transparent:true,opacity:.5}));
-    sea.position.set(cx,cy,-1.5); world.add(sea);
-  })();
+    world.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xF7DD93,transparent:true,opacity:.8}))); });
 
   // ----- starfield -----
   const sp=[]; for(let i=0;i<520;i++) sp.push((Math.random()-.5)*1100,(Math.random()-.15)*500,(Math.random()-.5)*1100);
@@ -1291,31 +1341,29 @@ function init3D(THREE, OrbitControls){
   applyFilter();
 
   /* ============================================================
-     FIT-TO-BOUNDS — the core fix for "impossible de la centrer".
-     We measure the real bounds of the country in WORLD space,
-     point the orbit target at its true centre, and place the
-     camera at a distance that frames the whole shape with margin,
-     accounting for both the vertical AND horizontal field of view.
+     CENTRAGE — garantie absolue ("impossible de la centrer" réglé).
+     On translate tout le groupe pour que le centre réel du pays
+     tombe pile sur l'origine de la scène (0,0,0). La cible de
+     l'orbite reste donc TOUJOURS (0,0,0) : la Chine est au centre
+     exact, qu'on tourne, zoome ou redimensionne la fenêtre.
      ============================================================ */
-  let HOME={pos:new THREE.Vector3(0,150,165), target:new THREE.Vector3(0,0,0)};
+  world.updateMatrixWorld(true);
+  { const lb=new THREE.Box3().setFromObject(land); const lc=lb.getCenter(new THREE.Vector3());
+    world.position.sub(lc); world.updateMatrixWorld(true); }
+
+  const ORIGIN=new THREE.Vector3(0,0,0);
+  let HOME={pos:new THREE.Vector3(0,180,150), target:ORIGIN.clone()};
+  function landRadius(){ const b=new THREE.Box3().setFromObject(land); const s=b.getSize(new THREE.Vector3());
+    return Math.hypot(s.x,s.z)/2; }                       // flat span — the height is negligible
   function computeHome(margin){
-    world.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(land);     // country only — ignore tall route arcs
-    const center=box.getCenter(new THREE.Vector3());
-    const sphere=box.getBoundingSphere(new THREE.Sphere());
-    const r=sphere.radius*(margin||1.18);
+    const r=landRadius()*(margin||1.16);
     const vFov=camera.fov*Math.PI/180;
     const hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect);
-    const dist=r/Math.sin(Math.min(vFov,hFov)/2);        // fit the tighter axis
-    // a gently tilted bird's-eye angle (elevation ~ 48°)
-    const elev=0.84, azim=-0.18;
-    const pos=new THREE.Vector3(
-      center.x + dist*Math.cos(elev)*Math.sin(azim),
-      center.y + dist*Math.sin(elev),
-      center.z + dist*Math.cos(elev)*Math.cos(azim)
-    );
-    controls.minDistance=dist*0.45; controls.maxDistance=dist*1.9;
-    return {pos,target:center.clone()};
+    const dist=r/Math.sin(Math.min(vFov,hFov)/2);          // fit the tighter screen axis
+    const elev=1.0, azim=-0.12;                            // ~57° bird's-eye, barely angled
+    const pos=new THREE.Vector3(dist*Math.cos(elev)*Math.sin(azim), dist*Math.sin(elev), dist*Math.cos(elev)*Math.cos(azim));
+    controls.minDistance=dist*0.4; controls.maxDistance=dist*2;
+    return {pos,target:ORIGIN.clone()};
   }
   function applyHome(){ camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); }
   let flyId=0;
@@ -1327,8 +1375,7 @@ function init3D(THREE, OrbitControls){
       camera.position.lerpVectors(p0,pos,e); controls.target.lerpVectors(t0,target,e); controls.update();
       if(k<1) flyId=requestAnimationFrame(step); else controls.autoRotate=wasRot&&!REDUCED; })();
   }
-  function recenter(){ HOME=computeHome(); btnRot.classList.toggle('active',controls.autoRotate);
-    flyTo(HOME.pos,HOME.target,850); }
+  function recenter(){ HOME=computeHome(); flyTo(HOME.pos,HOME.target,800); }
 
   const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let down=null, hoverId=null;
   function ndc(e){ const r=canvas.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; }
@@ -1343,22 +1390,20 @@ function init3D(THREE, OrbitControls){
   btnRot.addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; btnRot.classList.toggle('active',controls.autoRotate); });
   document.getElementById('btn-resetview').addEventListener('click',recenter);
 
-  function resize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false);
-    camera.aspect=w/h; camera.updateProjectionMatrix();
-    const home=computeHome(); HOME=home;                 // keep framing correct on every resize
-    // only snap the camera home automatically before the user has interacted
-    if(!userMoved) applyHome();
-  }
   let userMoved=false; controls.addEventListener('start',()=>{ userMoved=true; });
+  function resize(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+    HOME=computeHome();                                    // keep framing correct on every resize
+    if(!userMoved) applyHome();                            // snap home until the user grabs the map
+  }
   resize(); new ResizeObserver(resize).observe(stage);
 
-  // intro: frame the country, then a graceful dolly-in
-  HOME=computeHome(); applyHome();
+  // intro: start pulled back, then a graceful dolly-in to the framed country
+  HOME=computeHome();
   (function intro(){
-    const start=computeHome(2.1);                         // begin pulled back...
-    camera.position.copy(start.pos); controls.target.copy(start.target); controls.update();
-    const end=computeHome(1.18); HOME=end;
-    flyTo(end.pos,end.target,1400);
+    if(REDUCED){ applyHome(); return; }
+    const start=computeHome(2.0); camera.position.copy(start.pos); controls.target.copy(start.target); controls.update();
+    const end=computeHome(); HOME=end; flyTo(end.pos,end.target,1300);
   })();
 
   let running=true; document.addEventListener('visibilitychange',()=>{ running=!document.hidden; if(running) loop(); });
@@ -1422,7 +1467,7 @@ function buildGallery(){
   track.querySelectorAll('.gcard').forEach(g=>g.addEventListener('click',()=>openDest(g.dataset.id)));
 }
 function setupReveal(){
-  const sels=['.gallery-head','.kicker','h2.big','.lede','.cal','.compare .capproach','.agree','.itin-stats','.props .prop','.cards2 .pcard'];
+  const sels=['.gallery-head','.kicker','h2.big','.lede','.cal','.compare .capproach','.agree','.itin-stats','.props .prop','.cards2 .pcard','.res-grid .rescard'];
   const els=[]; sels.forEach(s=>document.querySelectorAll(s).forEach(e=>{ if(!e.classList.contains('reveal')){ e.classList.add('reveal'); els.push(e);} }));
   if(REDUCED || !('IntersectionObserver' in window)){ els.forEach(e=>e.classList.add('in')); return; }
   const io=new IntersectionObserver(ent=>ent.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} }),{threshold:.12,rootMargin:'0px 0px -7% 0px'});
@@ -1449,6 +1494,71 @@ function setupMagnetic(){
   });
 }
 
+/* =================== RESSOURCES & ASTUCES (liens officiels) =================== */
+const RESOURCES=[
+  { ic:'🛂', title:'Formalités & entrée', zh:'签证', intro:'La règle des 30 jours par entrée pilote toute la stratégie : Golden Week à Hong Kong/Macao, continent ensuite.', items:[
+    { t:'Exemption de visa — passeports français', when:'à lire', tone:'soft', d:'Continent : <b>30 j max/entrée</b>, entrées multiples, valable jusqu’au 31/12/2026.', href:'https://fr.china-embassy.gov.cn/fra/zgzfg/zgsg/lsb/202511/t20251113_11752805.htm' },
+    { t:'Hong Kong — 90 jours sans visa', d:'Entrée <b>distincte</b> du continent : idéal pour absorber le pic.', href:'https://www.immd.gov.hk/eng/services/visas/visit-transit/visit-visa-entry-permit.html' },
+    { t:'Macao — 90 jours (UE / Schengen)', d:'Également distinct du continent.', href:'https://www.gov.mo/en/services/ps-1474/ps-1474b/' },
+    { t:'Jours fériés 2026 — Golden Week', when:'1–7 oct', tone:'urgent', d:'Le calendrier officiel qui sature trains, hôtels et grands sites.', href:'https://english.beijing.gov.cn/workinginbeijing/laborrights/publicholidays/' },
+  ]},
+  { ic:'💳', title:'Payer en Chine', zh:'支付', intro:'Tout se paie au téléphone. À configurer et tester AVANT le départ.', items:[
+    { t:'Alipay — lier une carte Visa/Mastercard', when:'avant départ', tone:'soft', d:'Marche pour les étrangers ; mini-programmes « Tour Pass » et trajets. La solution n°1 au quotidien.', href:'https://www.alipay.com/' },
+    { t:'WeChat Pay — carte étrangère acceptée', d:'Le second réflexe ; utile aussi pour réserver via les comptes officiels des lieux.', href:'https://www.wechat.com/' },
+    { t:'Train 12306 — carte internationale', d:'Paiement par carte internationale ou UnionPay directement sur le site officiel.', href:'https://www.12306.cn/en/' },
+    { t:'Un peu de cash (¥) en secours', d:'Pour les petits stands et zones rurales (Longji, villages).' },
+  ]},
+  { ic:'📱', title:'Applis indispensables', zh:'应用', intro:'À installer (et un VPN à configurer) avant d’arriver — certains services se téléchargent mal sur place.', items:[
+    { t:'Trip.com — hôtels, trains, billets', when:'EN/FR', tone:'soft', d:'Réservations en anglais, billets de train et d’attractions, e-tickets.', href:'https://www.trip.com/' },
+    { t:'Amap (高德) ou Apple Plans', d:'Cartes, métro et itinéraires fiables (Google Maps inutilisable sur place).' },
+    { t:'DiDi — VTC', d:'L’équivalent d’Uber, intégré aussi dans Alipay.' },
+    { t:'Pleco + un VPN', d:'Dictionnaire/traduction hors-ligne ; <b>installer le VPN avant le départ</b>.' },
+  ]},
+  { ic:'🚄', title:'Transports & liaisons', zh:'交通', intro:'Anticiper les grands tronçons de week-end et de vacances.', items:[
+    { t:'Compte 12306 — à créer', when:'maintenant', tone:'urgent', d:'Vérifier le passeport, tester le paiement. Ventes <b>5 h–1 h</b>, billets ~15 j avant.', href:'https://www.12306.cn/en/' },
+    { t:'Bus HZMB — Hong Kong ↔ Macao', d:'~40 min, ~7 €/pers, service continu — la liaison la plus simple.', href:'https://i.hzmbus.com/' },
+    { t:'Ferry TurboJET — Hong Kong ↔ Macao', d:'Plus romantique que le bus si la météo suit.', href:'https://www2.turbojet.com.hk/travel-with-us-sea-ferry/' },
+    { t:'Peak Tram + Sky Terrace (HK)', d:'Magique à l’heure bleue ; billet combiné en ligne.', href:'https://www.thepeak.com.hk/en/ticket-and-booking/purchase-ticket/peak-tram-sky-pass' },
+    { t:'Star Ferry (HK)', d:'La traversée du port pour quelques HK$.', href:'https://www.starferry.com.hk/en/service' },
+  ]},
+  { ic:'🎫', title:'Billets à prendre tôt', zh:'门票', intro:'Quotas durs et fenêtres de vente courtes : à réserver dès les dates figées.', items:[
+    { t:'Cité interdite (Palace Museum)', when:'J-7 · 20 h', tone:'urgent', d:'Vente 7 j avant à 20 h, plafond <b>40 000/j</b>, passeport, pas de billet jour J.', href:'https://bookingticket.dpm.org.cn' },
+    { t:'Armée de terre cuite (Xi’an)', when:'dès dates figées', tone:'soft', d:'Réservation nominative obligatoire, créneau horaire, passeport original.', href:'https://www.bmy.com.cn/jingtai/bmyweb/ticketing.html' },
+    { t:'Grande Muraille — Mutianyu', when:'J-7 à J-14', tone:'soft', d:'Le meilleur compromis beauté/logistique depuis Pékin.', href:'https://en.mutianyugreatwall.com/reservation-center/tickets' },
+    { t:'Huangshan (Montagnes Jaunes)', when:'dès dates figées', tone:'soft', d:'Réservation en ligne désormais imposée ; surveiller la météo juste avant.', href:'https://www.huangshan.gov.cn/English/Huangshanscenicplaces/TravelGuide/8374483.html' },
+    { t:'Croisière sur la rivière Li', when:'2–4 sem avant', tone:'soft', d:'Produit iconique, capacité finie ; 3★/4★/4,5★ selon le bateau.', href:'https://en.liriver.com.cn/' },
+  ]},
+  { ic:'🎭', title:'Spectacles & expériences', zh:'演出', intro:'Les beaux sièges et les soirées se sécurisent 1 à 3 semaines avant.', items:[
+    { t:'« Impression West Lake » (Hangzhou)', when:'1–3 sem', tone:'soft', d:'Le show romantique du Jiangnan, signé Zhang Yimou ; météo-dépendant.', href:'https://www.gotohangzhou.com/impression-west-lake.aspx' },
+    { t:'« House of Dancing Water » (Macao)', when:'1–3 sem', tone:'soft', d:'Grand spectacle nautique ; week-ends serrés.', href:'https://www.cityofdreamsmacau.com/en/house-of-dancing-water' },
+    { t:'ERA — Spirit of Shanghai', d:'Le meilleur show acrobatique indoor, parfait pour une soirée pluvieuse.', href:'https://www.shcircusworld.com/era-tickets.html' },
+    { t:'Jardin de l’Humble Administrateur (Suzhou)', d:'Sublime tôt le matin, pénible à 11 h ; passeport sur certaines plateformes.', href:'https://english.suzhou.gov.cn/szsenglish/sjwhyclm/201611/0e774293426145f6b4b00d3a5717c6df.shtml' },
+    { t:'Top of Shanghai (observatoire)', d:'Final urbain ; si le ciel est laiteux, préférez une soirée sur le Bund.', href:'https://en.shanghaitower.com/shagnhai.html' },
+  ]},
+  { ic:'🧭', title:'Bonnes pratiques', zh:'贴士', intro:'Les réflexes de terrain qui changent un voyage de couple.', items:[
+    { t:'Passeport = billet d’entrée', d:'L’avoir toujours sur soi : il sert de ticket nominatif sur la plupart des grands sites.' },
+    { t:'Viser le 1er créneau', d:'Armée de terre cuite, pandas, jardins de Suzhou : arriver à l’ouverture change tout.' },
+    { t:'Éviter Pékin/Xi’an le 1–7 oct', d:'Placer ces étapes <b>après</b> le pic ; absorber la semaine à Hong Kong/Macao.' },
+    { t:'S’habiller en couches + doudoune légère', d:'Forts écarts jour/nuit : Huangshan en altitude, Pékin fin octobre.' },
+    { t:'Réserver les tables via le compte WeChat du lieu', d:'Ou via l’hôtel — plus fiable que les plateformes pour les adresses prisées.' },
+  ]},
+];
+function resLinkLabel(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return 'Ouvrir'; } }
+function renderResources(){
+  const box=document.getElementById('res-grid'); if(!box) return;
+  box.innerHTML=RESOURCES.map(c=>`
+    <div class="rescard">
+      <div class="rc-head"><span class="rc-ic">${c.ic}</span><h3>${c.title}</h3><span class="rc-zh cn">${c.zh}</span></div>
+      ${c.intro?`<p class="rc-intro">${c.intro}</p>`:''}
+      <ul class="rlist">${c.items.map(it=>`
+        <li>
+          <div class="rt">${it.t}${it.when?`<span class="when ${it.tone||'soft'}">${it.when}</span>`:''}</div>
+          ${it.d?`<div class="rd">${it.d}</div>`:''}
+          ${it.href?`<a class="rlink" href="${it.href}" target="_blank" rel="noopener noreferrer">${resLinkLabel(it.href)}</a>`:''}
+        </li>`).join('')}</ul>
+    </div>`).join('');
+}
+
 /* =================== INIT =================== */
 loadState();
 buildFilters();
@@ -1457,6 +1567,7 @@ renderApproaches();
 renderCalendar();
 renderEditor();
 renderProps();
+renderResources();
 setupReveal();
 setupHeroParallax();
 setupTopbar();
