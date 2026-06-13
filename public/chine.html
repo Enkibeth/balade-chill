@@ -122,10 +122,51 @@ img{display:block}
 .stage::before,.stage::after{content:"";position:absolute;width:26px;height:26px;z-index:6;pointer-events:none;opacity:.5}
 .stage::before{top:14px;left:14px;border-top:1.5px solid var(--gold);border-left:1.5px solid var(--gold);border-radius:5px 0 0 0}
 .stage::after{bottom:14px;right:14px;border-bottom:1.5px solid var(--gold);border-right:1.5px solid var(--gold);border-radius:0 0 5px 0}
-#scene{position:absolute;inset:0;display:block;touch-action:none;cursor:grab}
-#scene:active{cursor:grabbing}
+.map2d{position:absolute;inset:0}
+.cn-map{width:100%;height:100%;display:block}
+.cn-map .grid line{stroke:rgba(244,206,106,.06);stroke-width:.5}
+.cn-map .route{fill:none;stroke:#F4CE6A;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
+  opacity:.9;stroke-dasharray:5 6;animation:cnflow 1.5s linear infinite}
+@keyframes cnflow{to{stroke-dashoffset:-11}}
+.cn-map .mk{cursor:pointer}
+.cn-map .mk-halo{fill:var(--mc);opacity:.26;transition:opacity .2s}
+.cn-map .mk-dot{fill:var(--mc);stroke:#fff;stroke-width:1;transition:stroke-width .18s}
+.cn-map .mk:hover .mk-halo,.cn-map .mk.sel .mk-halo{opacity:.55}
+.cn-map .mk:hover .mk-dot,.cn-map .mk.sel .mk-dot{stroke-width:1.5}
+.cn-map .mk-name{font:600 8.5px Outfit,sans-serif;text-anchor:middle;fill:#F4ECE0;
+  paint-order:stroke;stroke:#0b0910;stroke-width:2.4px;stroke-linejoin:round;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.cn-map .mk:hover .mk-name,.cn-map .mk.in .mk-name,.cn-map .mk.sel .mk-name{opacity:1}
+.cn-map .mk.off{display:none}
+.cn-map .mk-badge{display:none}
+.cn-map .mk.in .mk-badge{display:block}
+.cn-map .mk-badge circle{fill:#F4CE6A;stroke:#0b0910;stroke-width:.6}
+.cn-map .mk-bt{font:700 4.4px Outfit,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#1a1206}
+@media (prefers-reduced-motion:reduce){.cn-map .route{animation:none}}
+
+.map-preview{position:absolute;z-index:30;width:236px;background:rgba(14,11,20,.97);
+  border:1px solid var(--line-soft);border-top:2px solid var(--pc,var(--gold));border-radius:15px;overflow:hidden;
+  box-shadow:0 26px 64px -26px rgba(0,0,0,.88);backdrop-filter:blur(8px);animation:pvin .22s var(--spring)}
+@keyframes pvin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.map-preview[hidden]{display:none}
+.pv-photo{height:122px;background:#0b0910}
+.pv-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.pv-x{position:absolute;top:8px;right:8px;width:27px;height:27px;border-radius:50%;border:none;
+  background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:12px;line-height:1;display:grid;place-items:center}
+.pv-x:hover{background:rgba(255,90,77,.7)}
+.pv-body{padding:11px 14px 14px}
+.pv-cat{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:#1a1206;padding:3px 9px;border-radius:999px;margin-bottom:8px}
+.pv-body h4{font-size:15.5px;margin:0 0 3px}
+.pv-body h4 .cn{font-family:var(--cn);font-size:12px;color:var(--mute);margin-left:4px}
+.pv-region{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--mute);margin:0 0 9px}
+.pv-days{font-size:12.5px;color:#F4ECE0;margin:0 0 12px;line-height:1.4}
+.pv-days b{color:var(--gold)}
+.pv-more{width:100%;border:1px solid rgba(244,206,106,.42);background:rgba(244,206,106,.12);color:var(--gold);
+  border-radius:10px;padding:9px;cursor:pointer;font-size:12.5px;font-weight:600;transition:background .18s,transform .18s}
+.pv-more:hover{background:rgba(244,206,106,.22);transform:translateY(-1px)}
 .stage-glow{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(72% 64% at 50% 46%, transparent 58%, rgba(7,5,10,.6))}
+  background:radial-gradient(76% 70% at 50% 46%, transparent 60%, rgba(7,5,10,.55))}
 
 .ov{position:absolute;z-index:5}
 .ov.tl{top:16px;left:16px;max-width:62%}
@@ -459,18 +500,15 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
   <div class="hero">
     <span class="eyebrow">Notre carnet de voyage interactif</span>
     <h1><span class="zh cn">中国之旅</span>La Chine, à deux</h1>
-    <p class="sub"><b>38 jours</b>, du 28 septembre au 4 novembre 2026. Deux recherches approfondies fusionnées en une carte vivante : tourne le globe, ouvre chaque étape, vote ❤, compare <b>deux approches</b> et <b>module l'itinéraire</b> ensemble.</p>
+    <p class="sub"><b>38 jours</b>, du 28 septembre au 4 novembre 2026. Deux recherches approfondies fusionnées en une carte vivante : explore la carte, clique chaque étape pour sa photo et ses jours, vote ❤, compare <b>deux approches</b> et <b>module l'itinéraire</b> ensemble.</p>
   </div>
 
   <div class="stage" id="stage">
-    <canvas id="scene"></canvas>
+    <div class="map2d" id="map2d"></div>
     <div class="stage-glow"></div>
     <div class="ov tl"><div class="filters" id="filters"></div></div>
-    <div class="ov tr">
-      <button class="icon-btn active" id="btn-rotate" title="Rotation automatique">↻</button>
-      <button class="icon-btn" id="btn-resetview" title="Recentrer la carte">⊙</button>
-    </div>
-    <div class="stage-hint" id="stage-hint">Glisse pour tourner · molette pour zoomer · clique un point pour l'ouvrir</div>
+    <div class="map-preview" id="preview" hidden></div>
+    <div class="stage-hint" id="stage-hint">Clique un point pour voir la photo et les jours prévus</div>
     <div class="loader" id="loader"><div class="lantern"></div><p>关 · préparation de la carte…</p></div>
   </div>
 </div>
@@ -1226,248 +1264,132 @@ document.getElementById('btn-share').addEventListener('click',async()=>{
 });
 
 /* =====================================================================
-   CARTE 3D + repli 2D
+   CARTE 2D — image vectorielle de la Chine + marqueurs + fiche au clic
+   Fini le globe 3D (cadrage instable). On dessine le pays en SVG depuis
+   CHINA_GEO, on pose un marqueur par étape À L'INTÉRIEUR du SVG (donc
+   parfaitement aligné, sans calcul de letterbox), et un clic ouvre une
+   fiche : photo + nombre de jours prévus selon l'itinéraire choisi.
    ===================================================================== */
 let mapView=null;
 const REDUCED = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const SVGNS='http://www.w3.org/2000/svg';
 
-const PROJ = (()=>{
+const MAP = (()=>{
   let minLng=1e9,maxLng=-1e9,minLat=1e9,maxLat=-1e9;
   for(const poly of CHINA_GEO) for(const [x,y] of poly){ if(x<minLng)minLng=x; if(x>maxLng)maxLng=x; if(y<minLat)minLat=y; if(y>maxLat)maxLat=y; }
   if(!isFinite(minLng)){ minLng=73.5;maxLng=135.1;minLat=18;maxLat=53.6; }
-  const cLng=(minLng+maxLng)/2, cLat=(minLat+maxLat)/2, kx=Math.cos(cLat*Math.PI/180);
-  const S=140/Math.max((maxLng-minLng)*kx,(maxLat-minLat));
-  return { cLng,cLat,kx,S,minLng,maxLng,minLat,maxLat, x:lng=>(lng-cLng)*kx*S, y:lat=>(lat-cLat)*S };
+  const kx=Math.cos(((minLat+maxLat)/2)*Math.PI/180), SC=12, PAD=26;
+  const W=(maxLng-minLng)*kx*SC, H=(maxLat-minLat)*SC;
+  const px=lng=>PAD+(lng-minLng)*kx*SC, py=lat=>PAD+(maxLat-lat)*SC;
+  return { minLng,maxLng,minLat,maxLat,kx,SC,PAD,W,H,px,py, vbW:W+PAD*2, vbH:H+PAD*2 };
 })();
+
+function currentRouteName(){
+  for(const r of ROUTES){ if(r.stops.length===state.plan.length && r.stops.every((s,i)=>state.plan[i]&&state.plan[i].id===s.id)) return r.name; }
+  return 'votre itinéraire';
+}
+
+function buildMap2D(){
+  const stage=document.getElementById('stage');
+  const host=document.getElementById('map2d');
+  const preview=document.getElementById('preview');
+
+  const dPath=CHINA_GEO.map(poly=>'M'+poly.map(([lng,lat])=>`${MAP.px(lng).toFixed(1)} ${MAP.py(lat).toFixed(1)}`).join('L')+'Z').join(' ');
+  let grid='';
+  for(let L=Math.ceil(MAP.minLng/10)*10; L<MAP.maxLng; L+=10){ const X=MAP.px(L).toFixed(1); grid+=`<line x1="${X}" y1="0" x2="${X}" y2="${MAP.vbH}"/>`; }
+  for(let L=Math.ceil(MAP.minLat/10)*10; L<MAP.maxLat; L+=10){ const Y=MAP.py(L).toFixed(1); grid+=`<line x1="0" y1="${Y}" x2="${MAP.vbW}" y2="${Y}"/>`; }
+  const marks=DEST.map(d=>{ const col=CATS[d.cat].color;
+    return `<g class="mk" data-id="${d.id}" transform="translate(${MAP.px(d.lng).toFixed(1)},${MAP.py(d.lat).toFixed(1)})" style="--mc:${col}">
+      <circle class="mk-halo" r="7"/>
+      <circle class="mk-dot" r="3.4"/>
+      <g class="mk-badge" transform="translate(4.8,-4.8)"><circle r="3.1"/><text class="mk-bt" y="0.2">0</text></g>
+      <text class="mk-name" y="-7.5">${d.name}</text>
+    </g>`; }).join('');
+
+  const svg=document.createElementNS(SVGNS,'svg');
+  svg.setAttribute('viewBox',`0 0 ${MAP.vbW.toFixed(1)} ${MAP.vbH.toFixed(1)}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.classList.add('cn-map');
+  svg.innerHTML=`
+    <defs>
+      <linearGradient id="cn-land" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2f6576"/><stop offset="1" stop-color="#153741"/>
+      </linearGradient>
+      <radialGradient id="cn-sea" cx="50%" cy="36%" r="85%">
+        <stop offset="0" stop-color="#101a2b"/><stop offset="1" stop-color="#08060e"/>
+      </radialGradient>
+      <filter id="cn-coast" x="-15%" y="-15%" width="130%" height="130%">
+        <feDropShadow dx="0" dy="0" stdDeviation="2.2" flood-color="#F7DD93" flood-opacity=".55"/>
+      </filter>
+    </defs>
+    <rect x="0" y="0" width="${MAP.vbW.toFixed(1)}" height="${MAP.vbH.toFixed(1)}" fill="url(#cn-sea)"/>
+    <g class="grid">${grid}</g>
+    <path class="land" d="${dPath}" fill="url(#cn-land)" stroke="#F7DD93" stroke-width="1.1" stroke-linejoin="round" filter="url(#cn-coast)"/>
+    <path class="route" d=""/>
+    <g class="mks">${marks}</g>`;
+  host.innerHTML=''; host.appendChild(svg);
+  const routeEl=svg.querySelector('.route');
+  const mkEls={}; svg.querySelectorAll('.mk').forEach(g=>{ mkEls[g.dataset.id]=g; });
+
+  function daysOf(id){ const s=state.plan.find(s=>s.id===id); return s?s.days:0; }
+
+  function rebuildRoute(){
+    const plan=state.plan.filter(s=>BY_ID[s.id]);
+    routeEl.setAttribute('d', plan.length>1 ? 'M'+plan.map(s=>{ const d=BY_ID[s.id]; return `${MAP.px(d.lng).toFixed(1)} ${MAP.py(d.lat).toFixed(1)}`; }).join('L') : '');
+    DEST.forEach(d=>{ const g=mkEls[d.id], on=inPlan(d.id);
+      g.classList.toggle('in',on);
+      if(on) g.querySelector('.mk-bt').textContent=daysOf(d.id);
+    });
+  }
+  function applyFilter(){ DEST.forEach(d=>{ mkEls[d.id].classList.toggle('off',!state.filters[d.cat]); }); }
+
+  function svgToStage(x,y){ const m=svg.getScreenCTM(); const p=svg.createSVGPoint(); p.x=x; p.y=y;
+    const s=p.matrixTransform(m), r=stage.getBoundingClientRect(); return { x:s.x-r.left, y:s.y-r.top, w:r.width, h:r.height }; }
+
+  let selId=null;
+  function closePreview(){ preview.hidden=true; if(selId&&mkEls[selId]) mkEls[selId].classList.remove('sel'); selId=null; }
+
+  function showPreview(id){ const d=BY_ID[id]; if(!d) return;
+    if(selId&&mkEls[selId]) mkEls[selId].classList.remove('sel');
+    selId=id; mkEls[id].classList.add('sel');
+    const days=daysOf(id), inP=inPlan(id), col=CATS[d.cat].color;
+    preview.style.setProperty('--pc',col);
+    preview.innerHTML=`
+      <button class="pv-x" type="button" aria-label="Fermer">✕</button>
+      <div class="pv-photo"><img src="${photoURL(id,360,210)}" alt="${d.name}" loading="lazy" onerror="${imgFB(id,360,210)}"></div>
+      <div class="pv-body">
+        <span class="pv-cat" style="background:${col}">${CATS[d.cat].icon} ${CATS[d.cat].label.split(' ')[0]}</span>
+        <h4>${d.name} <span class="cn">${d.cn}</span></h4>
+        ${d.region?`<p class="pv-region">${d.region}</p>`:''}
+        <p class="pv-days">${ inP ? `📅 <b>${days} jour${days>1?'s':''}</b> prévus · ${currentRouteName()}` : `Pas dans l’itinéraire actuel` }</p>
+        <button class="pv-more" type="button">Voir le détail →</button>
+      </div>`;
+    preview.hidden=false;
+    const c=svgToStage(MAP.px(d.lng),MAP.py(d.lat));
+    const pw=preview.offsetWidth, ph=preview.offsetHeight;
+    let left=Math.max(10,Math.min(c.w-pw-10, c.x-pw/2));
+    let top=c.y-ph-16; if(top<8) top=Math.min(c.h-ph-8, c.y+18);
+    preview.style.left=left+'px'; preview.style.top=top+'px';
+    preview.querySelector('.pv-x').onclick=()=>closePreview();
+    preview.querySelector('.pv-more').onclick=()=>{ closePreview(); openDest(id); };
+  }
+
+  svg.querySelectorAll('.mk').forEach(g=>g.addEventListener('click',e=>{ e.stopPropagation(); showPreview(g.dataset.id); }));
+  stage.addEventListener('click',e=>{ if(!e.target.closest('.mk') && !e.target.closest('.map-preview')) closePreview(); });
+  addEventListener('resize',closePreview);
+  const hint=document.getElementById('stage-hint'); if(hint){ svg.addEventListener('click',()=>{ hint.style.opacity='0'; },{once:true}); }
+
+  rebuildRoute(); applyFilter();
+  mapView={ applyFilter, rebuildRoute,
+    focus(id){ showPreview(id); },
+    refresh(){ /* responsive : rien à recalculer, les marqueurs sont dans le SVG */ } };
+}
 
 async function bootMap(){
   const loader=document.getElementById('loader');
-  try{
-    const THREE = await import('three');
-    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
-    init3D(THREE, OrbitControls);
-  }catch(err){
-    console.warn('[Chine] WebGL/Three indisponible, repli 2D', err);
-    try{ init2D(); }catch(e){ console.error(e); }
-  }
-  loader.classList.add('hide'); setTimeout(()=>loader.style.display='none',700);
-}
-
-function init3D(THREE, OrbitControls){
-  const canvas=document.getElementById('scene'), stage=document.getElementById('stage');
-  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  const scene=new THREE.Scene();
-  const camera=new THREE.PerspectiveCamera(42,1,.5,4000);
-
-  const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true; controls.dampingFactor=.07;
-  controls.maxPolarAngle=1.47; controls.minPolarAngle=.18;
-  controls.autoRotate=!REDUCED; controls.autoRotateSpeed=.22; controls.enablePan=false;
-  controls.rotateSpeed=.85; controls.zoomSpeed=.8;
-
-  // ----- lights -----
-  scene.add(new THREE.AmbientLight(0x9aa6c8,1.05));
-  const key=new THREE.DirectionalLight(0xffeacb,1.35); key.position.set(70,140,50); scene.add(key);
-  const fill=new THREE.DirectionalLight(0x5a78ff,.55); fill.position.set(-90,50,-70); scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xff8a6a,.4); rim.position.set(20,30,-120); scene.add(rim);
-
-  // The world group is rotated flat; the map is built in projected coords
-  // (centred on the bounding-box centre), so its geometric centre is ~origin.
-  const world=new THREE.Group(); world.rotation.x=-Math.PI/2; scene.add(world);
-  const TOPZ=6;
-  const shapes=CHINA_GEO.map(poly=>{ const sh=new THREE.Shape();
-    poly.forEach(([lng,lat],i)=>{ const x=PROJ.x(lng),y=PROJ.y(lat); i?sh.lineTo(x,y):sh.moveTo(x,y); }); return sh; });
-  const geo=new THREE.ExtrudeGeometry(shapes,{depth:TOPZ,bevelEnabled:true,bevelThickness:.6,bevelSize:.6,bevelSegments:2});
-  // Bright, warm land so the WHOLE country reads at a glance — not just the pins.
-  const landMat=new THREE.MeshStandardMaterial({color:0x2f6576,metalness:.18,roughness:.58,emissive:0x1b4856,emissiveIntensity:.95});
-  const sideMat=new THREE.MeshStandardMaterial({color:0x1c4250,metalness:.3,roughness:.8,emissive:0x123038,emissiveIntensity:.6});
-  const land=new THREE.Mesh(geo,[landMat,sideMat]); world.add(land);
-  // crisp gold coastline
-  CHINA_GEO.forEach(poly=>{ const pts=poly.map(([lng,lat])=>new THREE.Vector3(PROJ.x(lng),PROJ.y(lat),TOPZ+0.06));
-    world.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xF7DD93,transparent:true,opacity:.8}))); });
-
-  // ----- starfield -----
-  const sp=[]; for(let i=0;i<520;i++) sp.push((Math.random()-.5)*1100,(Math.random()-.15)*500,(Math.random()-.5)*1100);
-  const starGeo=new THREE.BufferGeometry(); starGeo.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
-  const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xfff2d8,size:1.2,transparent:true,opacity:.55})); scene.add(stars);
-
-  function haloTex(color){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
-    const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,color); g.addColorStop(.25,color); g.addColorStop(1,'rgba(0,0,0,0)');
-    x.fillStyle=g; x.fillRect(0,0,128,128); return new THREE.CanvasTexture(c); }
-  const haloCache={}; const halo=col=>haloCache[col]||(haloCache[col]=haloTex(col));
-  function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-  function labelSprite(name,cn){ const c=document.createElement('canvas'), ctx=c.getContext('2d');
-    ctx.font='600 34px Outfit, sans-serif'; const w=Math.max(ctx.measureText(name).width, 60)+46; c.width=w; c.height=94;
-    const x=c.getContext('2d'); x.fillStyle='rgba(11,9,16,.82)'; rr(x,2,2,w-4,90,20); x.fill();
-    x.strokeStyle='rgba(247,221,147,.55)'; x.lineWidth=2; rr(x,2,2,w-4,90,20); x.stroke();
-    x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#F4ECE0'; x.font='600 34px Outfit, sans-serif'; x.fillText(name,w/2,37);
-    x.fillStyle='#9C8F81'; x.font='500 22px "Noto Serif SC", serif'; x.fillText(cn,w/2,70);
-    const t=new THREE.CanvasTexture(c); t.anisotropy=4;
-    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,depthWrite:false}));
-    s.scale.set(w/94*7.2,7.2,1); s.renderOrder=10; return s; }
-
-  const pinGroup=new THREE.Group(); world.add(pinGroup);
-  const hitMeshes=[], pins={};
-  DEST.forEach(d=>{ const x=PROJ.x(d.lng), y=PROJ.y(d.lat), col=CATS[d.cat].color, stemH=11;
-    const g=new THREE.Group(); g.position.set(x,y,0);
-    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,stemH,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5}));
-    stem.position.set(0,0,TOPZ+stemH/2); stem.rotation.x=Math.PI/2; g.add(stem);
-    const ring=new THREE.Mesh(new THREE.RingGeometry(.6,1.1,24),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.55,side:THREE.DoubleSide}));
-    ring.position.set(0,0,TOPZ+0.12); g.add(ring);
-    const sph=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,20),new THREE.MeshBasicMaterial({color:col})); sph.position.set(0,0,TOPZ+stemH); g.add(sph);
-    const hs=new THREE.Sprite(new THREE.SpriteMaterial({map:halo(col),color:col,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false}));
-    hs.scale.set(7,7,1); hs.position.copy(sph.position); g.add(hs);
-    const lab=labelSprite(d.name,d.cn); lab.position.set(0,0,TOPZ+stemH+5.6); g.add(lab);
-    const hit=new THREE.Mesh(new THREE.SphereGeometry(4.5,8,8),new THREE.MeshBasicMaterial({visible:false})); hit.position.copy(sph.position); hit.userData.id=d.id; g.add(hit); hitMeshes.push(hit);
-    pinGroup.add(g); pins[d.id]={g,sph,ring,halo:hs,lab,base:new THREE.Vector3(x,y,TOPZ),cat:d.cat};
-  });
-
-  const routeGroup=new THREE.Group(); world.add(routeGroup); let comets=[];
-  function rebuildRoute(){ while(routeGroup.children.length) routeGroup.remove(routeGroup.children[0]); comets=[];
-    const plan=state.plan.filter(s=>pins[s.id]);
-    for(let i=1;i<plan.length;i++){ const a=pins[plan[i-1].id].base, b=pins[plan[i].id].base, dist=a.distanceTo(b);
-      const mid=a.clone().add(b).multiplyScalar(.5); mid.z+=Math.min(dist*.38,46)+6;
-      const curve=new THREE.QuadraticBezierCurve3(a.clone(),mid,b.clone());
-      routeGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve,44,.34,8,false),new THREE.MeshBasicMaterial({color:0xF4CE6A,transparent:true,opacity:.58})));
-      const cm=new THREE.Sprite(new THREE.SpriteMaterial({map:halo('#FFE9B0'),color:0xFFF0C8,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false})); cm.scale.set(4.5,4.5,1);
-      routeGroup.add(cm); comets.push({cm,curve,off:i*0.18}); }
-  }
-  rebuildRoute();
-  function applyFilter(){ DEST.forEach(d=>{ pins[d.id].g.visible=state.filters[d.cat]; }); refreshLabels(); }
-  function refreshLabels(hoverId){ DEST.forEach(d=>{ const p=pins[d.id];
-    p.lab.visible=(inPlan(d.id)||d.id===openId||d.id===hoverId)&&p.g.visible; p.sph.scale.setScalar(d.id===openId?1.5:1); }); }
-  applyFilter();
-
-  /* ============================================================
-     CENTRAGE & CADRAGE — on vise LE CONTENU, pas le pays.
-     Autre angle d'attaque : auparavant on centrait sur le centre
-     géométrique de la Chine — mais celui-ci tombe dans le désert
-     vide de l'ouest (Xinjiang ~73°E), si bien que toutes les étapes
-     (toutes à l'est/sud) se tassaient dans un coin de l'écran.
-     Désormais la cible d'orbite ET la distance sont calées sur la
-     boîte englobante des ÉTAPES réelles. Le barycentre des villes
-     est donc toujours au milieu du cadre, peu importe l'orientation.
-     ============================================================ */
-  const CONTENT=(()=>{
-    let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
-    for(const d of DEST){ const x=PROJ.x(d.lng), y=PROJ.y(d.lat);
-      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
-    if(!isFinite(minX)){ minX=maxX=minY=maxY=0; }
-    return { cx:(minX+maxX)/2, cy:(minY+maxY)/2, spanX:maxX-minX, spanY:maxY-minY };
-  })();
-  // local (x,y) → monde (x, TOPZ/2, -y) après la rotation x=-90° du groupe.
-  const CENTER=new THREE.Vector3(CONTENT.cx, TOPZ/2, -CONTENT.cy);
-  let HOME={pos:new THREE.Vector3(0,200,150), target:CENTER.clone()};
-  function frameRadius(){
-    return Math.hypot(CONTENT.spanX,CONTENT.spanY)/2;        // demi-diagonale des étapes
-  }
-  function computeHome(margin){
-    const r=frameRadius()*(margin||1.5);
-    const vFov=camera.fov*Math.PI/180;
-    const hFov=2*Math.atan(Math.tan(vFov/2)*Math.max(0.2,camera.aspect));
-    const dist=r/Math.sin(Math.max(0.25,Math.min(vFov,hFov))/2);
-    const elev=1.0, azim=-0.12;                             // ~57° vue d'oiseau, à peine inclinée
-    const pos=new THREE.Vector3(
-      CENTER.x + dist*Math.cos(elev)*Math.sin(azim),
-      CENTER.y + dist*Math.sin(elev),
-      CENTER.z + dist*Math.cos(elev)*Math.cos(azim));
-    controls.minDistance=dist*0.4; controls.maxDistance=dist*2.2;
-    return {pos,target:CENTER.clone()};
-  }
-  function applyHome(){ camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); }
-  let flyId=0;
-  function flyTo(pos,target,ms){
-    cancelAnimationFrame(flyId);
-    const p0=camera.position.clone(), t0=controls.target.clone(), t1=performance.now(), dur=ms||900;
-    const wasRot=controls.autoRotate; controls.autoRotate=false;
-    (function step(){ const k=Math.min(1,(performance.now()-t1)/dur), e=1-Math.pow(1-k,3);
-      camera.position.lerpVectors(p0,pos,e); controls.target.lerpVectors(t0,target,e); controls.update();
-      if(k<1) flyId=requestAnimationFrame(step); else controls.autoRotate=wasRot&&!REDUCED; })();
-  }
-  function recenter(){ HOME=computeHome(); flyTo(HOME.pos,HOME.target,800); }
-
-  const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let down=null, hoverId=null;
-  function ndc(e){ const r=canvas.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; }
-  function pick(){ world.updateMatrixWorld(); ray.setFromCamera(mouse,camera); const h=ray.intersectObjects(hitMeshes,false); return h.length?h[0].object.userData.id:null; }
-  canvas.addEventListener('pointerdown',e=>{ down={x:e.clientX,y:e.clientY,t:Date.now()}; });
-  canvas.addEventListener('pointerup',e=>{ if(!down)return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y), dt=Date.now()-down.t; down=null;
-    if(moved<7&&dt<420){ ndc(e); const id=pick(); if(id) openDest(id); } });
-  canvas.addEventListener('pointermove',e=>{ ndc(e); const id=pick(); if(id!==hoverId){ hoverId=id; canvas.style.cursor=id?'pointer':'grab'; refreshLabels(id); } });
-  const hint=document.getElementById('stage-hint'); canvas.addEventListener('pointerdown',()=>{ if(hint) hint.style.opacity='0'; },{once:true});
-
-  const btnRot=document.getElementById('btn-rotate'); btnRot.classList.toggle('active',controls.autoRotate);
-  btnRot.addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; btnRot.classList.toggle('active',controls.autoRotate); });
-  document.getElementById('btn-resetview').addEventListener('click',recenter);
-
-  let userMoved=false; controls.addEventListener('start',()=>{ userMoved=true; });
-  function resize(){ const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false);
-    camera.aspect=w/h; camera.updateProjectionMatrix();
-    HOME=computeHome();                                    // keep framing correct on every resize
-    if(!userMoved) applyHome();                            // snap home until the user grabs the map
-  }
-  resize(); new ResizeObserver(resize).observe(stage);
-
-  // intro: start pulled back, then a graceful dolly-in to the framed country
-  HOME=computeHome();
-  (function intro(){
-    if(REDUCED){ applyHome(); return; }
-    const start=computeHome(2.0); camera.position.copy(start.pos); controls.target.copy(start.target); controls.update();
-    const end=computeHome(); HOME=end; flyTo(end.pos,end.target,1300);
-  })();
-
-  let running=true; document.addEventListener('visibilitychange',()=>{ running=!document.hidden; if(running) loop(); });
-  const clock=new THREE.Clock();
-  function loop(){ if(!running) return; requestAnimationFrame(loop); const t=clock.getElapsedTime(); controls.update();
-    stars.rotation.y=t*0.006;
-    DEST.forEach((d,i)=>{ const p=pins[d.id]; if(!p.g.visible) return; const pulse=1+(REDUCED?0:Math.sin(t*2.2+i)*0.16); p.halo.scale.setScalar(7*pulse*(d.id===openId?1.4:1));
-      if(p.ring) p.ring.rotation.z=t*0.5+i; });
-    if(!REDUCED) comets.forEach(c=>c.cm.position.copy(c.curve.getPointAt((t*0.16+c.off)%1)));
-    renderer.render(scene,camera); }
-  loop();
-
-  mapView={
-    focus(id){ const p=pins[id]; if(!p) return; controls.autoRotate=false; btnRot.classList.remove('active'); refreshLabels();
-      const target=p.base.clone().applyMatrix4(world.matrixWorld);
-      // glide the camera in toward the selected pin while keeping the whole map readable
-      const dir=camera.position.clone().sub(controls.target).normalize();
-      const pos=target.clone().add(dir.multiplyScalar(Math.max(controls.minDistance*1.5,HOME.pos.distanceTo(HOME.target)*0.62)));
-      flyTo(pos,target,800); },
-    recenter,
-    rebuildRoute(){ rebuildRoute(); refreshLabels(); },
-    applyFilter(){ applyFilter(); },
-    refresh(){ refreshLabels(); },
-  };
-}
-
-function init2D(){
-  const canvas=document.getElementById('scene'), stage=document.getElementById('stage'), ctx=canvas.getContext('2d');
-  let W,H,sc,ox,oy; document.getElementById('stage-hint').textContent='Carte 2D (mode léger) · clique un point pour l’ouvrir';
-  // Cadrer sur les ÉTAPES, pas sur le pays entier (sinon les villes de l'est se tassent dans un coin).
-  const C2D=(()=>{ let a=1e9,b=-1e9,c=1e9,d=-1e9;
-    for(const x of DEST){ if(x.lng<a)a=x.lng; if(x.lng>b)b=x.lng; if(x.lat<c)c=x.lat; if(x.lat>d)d=x.lat; }
-    if(!isFinite(a)){ a=PROJ.minLng;b=PROJ.maxLng;c=PROJ.minLat;d=PROJ.maxLat; }
-    return { cLng:(a+b)/2, cLat:(c+d)/2, spanLng:Math.max(b-a,1), spanLat:Math.max(d-c,1) }; })();
-  const sx=lng=>ox+(lng-C2D.cLng)*PROJ.kx*sc, sy=lat=>oy-(lat-C2D.cLat)*sc;
-  function fit(){ const r=stage.getBoundingClientRect(); W=canvas.width=r.width*devicePixelRatio; H=canvas.height=r.height*devicePixelRatio;
-    canvas.style.width=r.width+'px'; canvas.style.height=r.height+'px';
-    sc=Math.min(W/(C2D.spanLng*PROJ.kx*1.4),H/(C2D.spanLat*1.4)); ox=W/2; oy=H/2; draw(); }
-  function draw(){ ctx.clearRect(0,0,W,H); ctx.beginPath();
-    CHINA_GEO.forEach(poly=>{ poly.forEach(([lng,lat],i)=>{ const X=sx(lng),Y=sy(lat); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.closePath(); });
-    ctx.fillStyle='rgba(22,50,61,.55)'; ctx.fill(); ctx.strokeStyle='rgba(244,206,106,.55)'; ctx.lineWidth=1.4*devicePixelRatio; ctx.stroke();
-    const plan=state.plan.filter(s=>BY_ID[s.id]); ctx.strokeStyle='rgba(244,206,106,.85)'; ctx.lineWidth=2*devicePixelRatio; ctx.beginPath();
-    plan.forEach((s,i)=>{ const d=BY_ID[s.id],X=sx(d.lng),Y=sy(d.lat); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
-    DEST.forEach(d=>{ if(!state.filters[d.cat])return; const X=sx(d.lng),Y=sy(d.lat);
-      ctx.beginPath(); ctx.arc(X,Y,(d.id===openId?7:5)*devicePixelRatio,0,7); ctx.fillStyle=CATS[d.cat].color; ctx.fill();
-      ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1.5*devicePixelRatio; ctx.stroke();
-      if(inPlan(d.id)||d.id===openId){ ctx.fillStyle='#F3E9DD'; ctx.font=`${12*devicePixelRatio}px Outfit, sans-serif`; ctx.textAlign='center'; ctx.fillText(d.name,X,Y-10*devicePixelRatio); } });
-  }
-  canvas.addEventListener('click',e=>{ const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*devicePixelRatio,my=(e.clientY-r.top)*devicePixelRatio;
-    let best=null,bd=1e9; DEST.forEach(d=>{ if(!state.filters[d.cat])return; const dd=Math.hypot(mx-sx(d.lng),my-sy(d.lat)); if(dd<bd){bd=dd;best=d.id;} });
-    if(best&&bd<22*devicePixelRatio) openDest(best); });
-  fit(); new ResizeObserver(fit).observe(stage);
-  mapView={ focus(){draw();}, rebuildRoute(){draw();}, applyFilter(){draw();}, refresh(){draw();} };
+  try{ buildMap2D(); }
+  catch(err){ console.error('[Chine] carte 2D indisponible', err); }
+  if(loader){ loader.classList.add('hide'); setTimeout(()=>{ loader.style.display='none'; },700); }
 }
 
 /* =================== GALERIE + ANIMATIONS =================== */
