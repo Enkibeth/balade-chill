@@ -1557,18 +1557,25 @@ function hideLoader(){ const l=document.getElementById('loader');
 
 async function bootMap(){
   const token=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
-  if(token && window.mapboxgl){
+  const webgl = window.mapboxgl && (typeof mapboxgl.supported!=='function' || mapboxgl.supported());
+  if(token && webgl){
     try{
       const map=initMapbox(token);
-      let loaded=false; map.on('load',()=>{ loaded=true; });
-      // Repli SVG si le style Mapbox ne charge pas (token invalide, réseau bloqué en Chine…)
-      setTimeout(()=>{ if(loaded || (map.isStyleLoaded&&map.isStyleLoaded())) return;
-        console.warn('[Chine] Mapbox non chargé → repli carte SVG');
+      let settled=false;
+      // Bascule sur la carte SVG hors-ligne (token invalide, WebGL ou réseau bloqué en Chine…)
+      const fallback=(why)=>{ if(settled) return; settled=true;
+        console.warn('[Chine] repli carte SVG :', why);
         try{ map.remove(); }catch(e){}
         const host=document.getElementById('map2d'); if(host) host.innerHTML='';
         try{ buildMap2D(); }catch(e){ console.error(e); }
         hideLoader();
-      }, 7000);
+      };
+      map.on('load',()=>{ settled=true; });
+      // Repli IMMÉDIAT sur une vraie erreur d'authentification / de style (pas sur une simple tuile manquante)
+      map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; const s=(e&&e.error&&e.error.status)||0;
+        if(s===401||s===403||/access token|unauthorized|forbidden|not authorized|failed to load.*style|style is not done/i.test(m)) fallback('erreur Mapbox ('+(s||'?')+') '+m); });
+      // Filet de sécurité : connexion lente (le style 3D « Standard » peut être long en mobile/cellulaire)
+      setTimeout(()=>{ if(map.isStyleLoaded&&map.isStyleLoaded()){ settled=true; return; } fallback('délai de chargement dépassé (14 s)'); }, 14000);
       return;
     }catch(err){ console.error('[Chine] Mapbox indisponible, repli SVG', err); }
   }
