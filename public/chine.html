@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>中国 · Chine 2026 — Notre carnet de voyage</title>
+<meta name="theme-color" content="#0c0a10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Noto+Serif+SC:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+:root{
+  /* — surfaces — */
+  --ink:#0b0910; --ink2:#120e18; --ink3:#171120; --lacquer:#1b0f16;
+  --card:linear-gradient(180deg,#17121f,#100b16);
+  --card-hi:linear-gradient(180deg,#1d1626,#130d19);
+  /* — accents — */
+  --red:#FF5A4D; --red-deep:#E0402E; --gold:#F4CE6A; --gold-soft:#F7DD93; --gold-deep:#E9B949;
+  --jade:#4FD0B4; --violet:#B98BE6; --coral:#F2884E; --green:#5BD27A; --rose:#EE6E93;
+  /* — text — */
+  --paper:#F4ECE0; --paper-dim:#D8CBBA; --mute:#9C8F81; --faint:#6E6458;
+  --line:rgba(244,206,106,.14); --line-soft:rgba(255,255,255,.07);
+  /* — type — */
+  --serif:'Fraunces',Georgia,serif; --cn:'Noto Serif SC',serif;
+  --body:'Outfit',system-ui,sans-serif; --mono:'Spline Sans Mono',ui-monospace,monospace;
+  --display:var(--serif);
+  /* — motion — */
+  --ease:cubic-bezier(.22,.61,.36,1); --ease-out:cubic-bezier(.16,1,.3,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  /* — geometry — */
+  --r-sm:12px; --r:16px; --r-lg:22px; --maxw:1200px;
+  --shadow:0 30px 70px -38px rgba(0,0,0,.85); --shadow-lift:0 40px 90px -42px rgba(0,0,0,.9);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);line-height:1.6;
+  font-weight:380;letter-spacing:.005em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+a{color:inherit;text-decoration:none}
+img{display:block}
+::selection{background:rgba(244,206,106,.28);color:#fff}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-thumb{background:rgba(244,206,106,.18);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(244,206,106,.34);background-clip:padding-box}
+.cn{font-family:var(--cn);font-weight:700}
+
+/* ---------- BACKDROP ---------- */
+.bg-deco{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(1200px 760px at 82% -12%, rgba(224,64,46,.22), transparent 58%),
+  radial-gradient(980px 720px at 8% 4%, rgba(79,208,180,.13), transparent 60%),
+  radial-gradient(1300px 980px at 50% 120%, rgba(233,185,73,.11), transparent 62%),
+  linear-gradient(180deg,#0b0910,#0b0910 38%,#0f0a14)}
+.bg-grain{position:fixed;inset:0;z-index:-1;opacity:.42;pointer-events:none;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E")}
+/* drifting aurora veil */
+.bg-veil{position:fixed;inset:-20%;z-index:-1;pointer-events:none;opacity:.5;
+  background:radial-gradient(40% 40% at 30% 30%, rgba(185,139,230,.10), transparent 70%),
+             radial-gradient(45% 45% at 75% 60%, rgba(79,208,180,.08), transparent 70%);
+  animation:veil 26s ease-in-out infinite alternate;will-change:transform}
+@keyframes veil{from{transform:translate3d(-2%,-1%,0) rotate(0deg)}to{transform:translate3d(3%,2%,0) rotate(4deg)}}
+
+/* ---------- TOPBAR ---------- */
+.topbar{position:sticky;top:0;z-index:60;backdrop-filter:blur(16px) saturate(1.3);
+  background:linear-gradient(180deg,rgba(11,9,16,.9),rgba(11,9,16,.5));
+  border-bottom:1px solid var(--line);transition:box-shadow .4s var(--ease),background .4s}
+.topbar.scrolled{box-shadow:0 10px 40px -22px rgba(0,0,0,.8);background:linear-gradient(180deg,rgba(11,9,16,.96),rgba(11,9,16,.78))}
+.topbar-in{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px 20px}
+.brand{display:flex;align-items:baseline;gap:11px;font-family:var(--serif);font-weight:600}
+.brand .seal{font-family:var(--cn);font-size:22px;color:var(--red);text-shadow:0 0 22px rgba(255,90,77,.55);transition:transform .5s var(--spring)}
+.brand:hover .seal{transform:rotate(-8deg) scale(1.08)}
+.brand .t{font-size:16px;letter-spacing:.01em}
+.brand .yr{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.14em}
+.tb-spacer{flex:1}
+.tb-dates{font-family:var(--mono);font-size:11.5px;color:var(--mute);text-align:right;line-height:1.4}
+.tb-dates b{color:var(--paper);font-weight:600}
+.tb-back,.tb-btn{font-family:var(--mono);font-size:11.5px;border-radius:999px;padding:7px 13px;white-space:nowrap;
+  transition:transform .2s var(--spring),color .2s,background .2s,border-color .2s}
+.tb-back{color:var(--mute);border:1px solid var(--line)}
+.tb-back:hover{color:var(--paper);border-color:rgba(244,206,106,.4);transform:translateY(-1px)}
+.tb-btn{font-weight:600;cursor:pointer;border:1px solid rgba(244,206,106,.34);
+  background:linear-gradient(180deg,rgba(244,206,106,.16),rgba(244,206,106,.05));color:var(--gold)}
+.tb-btn:hover{background:rgba(244,206,106,.24);transform:translateY(-1px);box-shadow:0 8px 24px -10px rgba(244,206,106,.5)}
+.tb-btn:active{transform:translateY(0) scale(.97)}
+@media(max-width:720px){.tb-dates{display:none}}
+
+/* ---------- HERO + STAGE ---------- */
+.stage-wrap{position:relative;max-width:var(--maxw);margin:0 auto;padding:26px 20px 0}
+.hero{position:relative;z-index:2;text-align:center;padding:34px 10px 16px;pointer-events:none}
+.hero .eyebrow{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--gold);opacity:0;animation:rise .9s var(--ease-out) .05s forwards}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(42px,8.4vw,94px);line-height:.96;letter-spacing:-.018em;
+  margin:10px 0 6px;background:linear-gradient(108deg,#fff,#F7DD93 42%,#FF7A5A 72%,#fff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:220% 100%;animation:rise .95s var(--ease-out) .12s forwards,shine 9s ease-in-out 1.2s infinite;opacity:0}
+.hero h1 .zh{display:block;font-family:var(--cn);font-weight:700;font-size:.36em;letter-spacing:.62em;
+  color:var(--red);-webkit-text-fill-color:var(--red);margin-bottom:6px;opacity:.92;text-indent:.62em}
+.hero .sub{color:var(--mute);max-width:680px;margin:14px auto 0;font-size:clamp(15px,1.7vw,17px);line-height:1.62;
+  opacity:0;animation:rise .9s var(--ease-out) .24s forwards}
+.hero .sub b{color:var(--paper);font-weight:600}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+.stage{position:relative;height:min(74vh,740px);min-height:460px;margin-top:14px;border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line);background:
+   radial-gradient(120% 90% at 50% -4%, rgba(46,26,34,.62), transparent 56%),
+   radial-gradient(100% 120% at 82% 104%, rgba(224,64,46,.12), transparent 60%),
+   radial-gradient(80% 90% at 16% 96%, rgba(79,208,180,.08), transparent 60%),
+   #09060c;
+  box-shadow:var(--shadow), inset 0 0 140px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
+  opacity:0;transform:translateY(30px) scale(.985);
+  animation:stageIn 1.1s var(--ease-out) .3s forwards}
+@keyframes stageIn{to{opacity:1;transform:none}}
+/* hairline corner ticks for a crafted frame */
+.stage::before,.stage::after{content:"";position:absolute;width:26px;height:26px;z-index:6;pointer-events:none;opacity:.5}
+.stage::before{top:14px;left:14px;border-top:1.5px solid var(--gold);border-left:1.5px solid var(--gold);border-radius:5px 0 0 0}
+.stage::after{bottom:14px;right:14px;border-bottom:1.5px solid var(--gold);border-right:1.5px solid var(--gold);border-radius:0 0 5px 0}
+#scene{position:absolute;inset:0;display:block;touch-action:none;cursor:grab}
+#scene:active{cursor:grabbing}
+.stage-glow{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(72% 64% at 50% 46%, transparent 58%, rgba(7,5,10,.6))}
+
+.ov{position:absolute;z-index:5}
+.ov.tl{top:16px;left:16px;max-width:62%}
+.ov.tr{top:16px;right:16px;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+.filters{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:var(--mono);font-size:11px;font-weight:500;cursor:pointer;user-select:none;
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid var(--line);background:rgba(13,10,18,.62);backdrop-filter:blur(8px);
+  color:var(--paper-dim);border-radius:999px;padding:7px 12px;
+  transition:transform .2s var(--spring),color .18s,background .18s,opacity .25s,filter .25s,border-color .18s}
+.chip:hover{transform:translateY(-2px);color:#fff;border-color:rgba(244,206,106,.4)}
+.chip:active{transform:translateY(0) scale(.96)}
+.chip .dotc{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 8px currentColor}
+.chip.off{opacity:.36;filter:grayscale(.7)}
+.icon-btn{width:40px;height:40px;display:grid;place-items:center;cursor:pointer;font-size:17px;
+  border:1px solid var(--line);background:rgba(13,10,18,.62);backdrop-filter:blur(8px);
+  color:var(--paper);border-radius:13px;transition:transform .2s var(--spring),border-color .18s,background .18s,color .18s}
+.icon-btn:hover{border-color:rgba(244,206,106,.5);transform:translateY(-2px)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.active{background:rgba(244,206,106,.2);border-color:rgba(244,206,106,.55);color:var(--gold);box-shadow:0 0 18px -4px rgba(244,206,106,.6)}
+.stage-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--mute);
+  background:rgba(9,6,12,.55);border:1px solid var(--line);border-radius:999px;padding:6px 13px;
+  backdrop-filter:blur(8px);pointer-events:none;transition:opacity .6s;text-align:center}
+
+.loader{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:#09060c;transition:opacity .7s var(--ease)}
+.loader.hide{opacity:0;pointer-events:none}
+.lantern{width:48px;height:64px;position:relative;animation:sway 2.6s ease-in-out infinite}
+.lantern::before{content:"";position:absolute;inset:8px 4px;border-radius:50% / 42%;
+  background:radial-gradient(circle at 50% 34%,#ffc27a,#FF5A4D 58%,#bf2c20);box-shadow:0 0 50px rgba(255,90,77,.65)}
+.lantern::after{content:"";position:absolute;left:50%;bottom:-7px;width:2px;height:13px;background:var(--gold);transform:translateX(-50%)}
+@keyframes sway{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+.loader p{position:absolute;bottom:28%;font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.24em}
+
+/* ---------- DRAWER ---------- */
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(448px,100%);z-index:80;
+  background:linear-gradient(180deg,#16111f,#0d0913);border-left:1px solid var(--line);
+  box-shadow:-40px 0 100px -34px rgba(0,0,0,.85);transform:translateX(103%);
+  transition:transform .5s var(--ease-out);display:flex;flex-direction:column;overscroll-behavior:contain}
+.drawer.open{transform:translateX(0)}
+.dr-head{position:relative;padding:24px 24px 18px;border-bottom:1px solid var(--line);flex:none;overflow:hidden}
+.dr-head .glow{position:absolute;inset:0;opacity:.55;pointer-events:none}
+.dr-close{position:absolute;top:15px;right:15px;width:34px;height:34px;border-radius:11px;cursor:pointer;
+  border:1px solid var(--line);background:rgba(0,0,0,.32);color:var(--paper);font-size:16px;z-index:3;
+  transition:transform .2s var(--spring),border-color .18s,background .18s}
+.dr-close:hover{border-color:var(--red);transform:rotate(90deg);background:rgba(255,90,77,.12)}
+.dr-cat{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;position:relative}
+.dr-head h2{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.04;letter-spacing:-.01em;margin:7px 0 2px;position:relative}
+.dr-head .zh{font-family:var(--cn);font-size:16px;color:var(--mute);position:relative}
+.dr-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;position:relative}
+.pill{font-family:var(--mono);font-size:10.5px;border-radius:999px;padding:4px 10px;border:1px solid var(--line);color:var(--paper);background:rgba(255,255,255,.04)}
+.pill.prio-immanquable{border-color:rgba(244,206,106,.5);color:var(--gold);background:rgba(244,206,106,.1)}
+.pill.prio-recommande{border-color:rgba(79,208,180,.4);color:var(--jade)}
+.pill.prio-interessant{color:var(--mute)}
+.pill.duo{border-color:rgba(238,110,147,.45);color:var(--rose)}
+.dr-body{padding:20px 24px 32px;overflow-y:auto;flex:1}
+.dr-tag{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--paper);opacity:.95;margin-bottom:10px;line-height:1.4}
+.dr-when{font-family:var(--mono);font-size:12px;color:var(--gold)}
+.dr-sec{margin-top:20px}
+.dr-sec h4{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  margin-bottom:10px;display:flex;align-items:center;gap:9px}
+.dr-sec h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.site{padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.07)}
+.site:last-child{border-bottom:0}
+.site .sn{font-weight:600;font-size:14.5px;color:#fff}
+.site .si{font-family:var(--mono);font-size:11px;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
+.site .si .p{color:var(--gold)}
+.site .si .c{color:var(--coral)}
+.bul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.bul li{font-size:13.5px;color:var(--paper-dim);padding-left:18px;position:relative}
+.bul li::before{content:"›";position:absolute;left:0;color:var(--jade);font-weight:700}
+.note{font-size:12.5px;color:var(--paper-dim);background:rgba(255,90,77,.07);border:1px solid rgba(255,90,77,.18);
+  border-radius:12px;padding:10px 12px;margin-top:8px}
+.note b{color:var(--red)}
+.dr-actions{flex:none;padding:15px 24px;border-top:1px solid var(--line);background:rgba(0,0,0,.28);display:flex;flex-direction:column;gap:11px}
+.vote{display:flex;gap:8px}
+.vbtn{flex:1;font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--mute);border-radius:11px;padding:10px 4px;
+  transition:transform .18s var(--spring),color .15s,background .15s,border-color .15s}
+.vbtn:hover{transform:translateY(-2px);color:var(--paper);border-color:var(--line-soft)}
+.vbtn:active{transform:scale(.95)}
+.vbtn.on-yes{background:var(--green);border-color:var(--green);color:#04210f;box-shadow:0 8px 22px -10px rgba(91,210,122,.7)}
+.vbtn.on-maybe{background:var(--gold);border-color:var(--gold);color:#2a2103;box-shadow:0 8px 22px -10px rgba(244,206,106,.7)}
+.vbtn.on-no{background:var(--red-deep);border-color:var(--red-deep);color:#fff;box-shadow:0 8px 22px -10px rgba(224,64,46,.7)}
+.add-btn{font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer;border-radius:13px;padding:12px;
+  border:1px solid rgba(244,206,106,.4);background:linear-gradient(180deg,rgba(244,206,106,.2),rgba(244,206,106,.06));color:var(--gold);
+  transition:transform .2s var(--spring),background .18s,border-color .18s}
+.add-btn:hover{background:rgba(244,206,106,.28);transform:translateY(-2px)}
+.add-btn:active{transform:translateY(0) scale(.98)}
+.add-btn.in-plan{border-color:rgba(91,210,122,.4);color:var(--green);background:rgba(91,210,122,.08)}
+.scrim{position:fixed;inset:0;background:rgba(5,4,8,.6);backdrop-filter:blur(3px);z-index:70;opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+.scrim.open{opacity:1;pointer-events:auto}
+
+/* ---------- SECTIONS ---------- */
+section.block{max-width:var(--maxw);margin:0 auto;padding:72px 20px 8px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--red);display:inline-flex;align-items:center;gap:9px;margin-bottom:12px}
+.kicker::before{content:"";width:26px;height:1px;background:var(--red);opacity:.6}
+h2.big{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.6vw,44px);line-height:1.04;letter-spacing:-.015em;margin-bottom:12px}
+h2.big .zh{font-family:var(--cn);font-size:.5em;color:var(--gold);margin-left:12px;opacity:.85}
+.lede{color:var(--mute);max-width:780px;font-size:clamp(14.5px,1.7vw,16px);line-height:1.65;margin-bottom:6px}
+.lede b{color:var(--paper-dim);font-weight:600}
+
+/* ---------- CALENDAR ---------- */
+.cal{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 20px;overflow-x:auto}
+.cal-grid{min-width:860px;display:grid;grid-template-columns:repeat(38,1fr);gap:3px}
+.cal-d{position:relative;height:36px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:8.5px;color:var(--mute);transition:.2s}
+.cal-d:hover{background:rgba(255,255,255,.06)}
+.cal-d .dn{font-size:10px;color:var(--paper);font-weight:500;line-height:1}
+.cal-d .mo{font-size:7px;opacity:.7}
+.cal-d.gw{background:repeating-linear-gradient(45deg,rgba(255,90,77,.16) 0 7px,rgba(255,90,77,.04) 7px 14px);border-color:rgba(255,90,77,.36)}
+.cal-d.we{box-shadow:inset 0 -3px 0 rgba(244,206,106,.32)}
+.cal-stops{min-width:860px;display:grid;grid-template-columns:repeat(38,1fr);gap:3px;margin-top:9px}
+.cal-stop{height:32px;border-radius:8px;display:flex;align-items:center;padding:0 9px;font-size:11px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:#0b0910;border:none;
+  transition:transform .2s var(--spring),filter .2s,box-shadow .2s}
+.cal-stop:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 10px 24px -12px rgba(0,0,0,.7)}
+.cal-stop.depart{background:repeating-linear-gradient(45deg,#3a3340 0 6px,#2a2530 6px 12px)!important;color:var(--paper)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--mute)}
+.cal-legend span{display:inline-flex;align-items:center;gap:7px}
+.gw-key{width:18px;height:11px;border-radius:3px;background:repeating-linear-gradient(45deg,rgba(255,90,77,.5) 0 5px,rgba(255,90,77,.12) 5px 10px);border:1px solid rgba(255,90,77,.4)}
+
+/* ---------- DEUX APPROCHES ---------- */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+.capproach{position:relative;background:var(--card-hi);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;
+  display:flex;flex-direction:column;gap:13px;overflow:hidden;transition:transform .35s var(--ease-out),border-color .35s,box-shadow .35s}
+.capproach:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift)}
+.capproach::before{content:"";position:absolute;inset:0 0 auto 0;height:4px}
+.capproach.a::before{background:linear-gradient(90deg,var(--jade),transparent)}
+.capproach.a:hover{border-color:rgba(79,208,180,.4)}
+.capproach.b::before{background:linear-gradient(90deg,var(--gold),transparent)}
+.capproach.b:hover{border-color:rgba(244,206,106,.4)}
+.capproach .src{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+.capproach.a .src{color:var(--jade)} .capproach.b .src{color:var(--gold)}
+.capproach h3{font-family:var(--serif);font-weight:600;font-size:24px;line-height:1.08}
+.capproach .phil{font-size:14px;color:var(--paper-dim);line-height:1.55}
+.capproach dl{display:flex;flex-direction:column;gap:9px;margin-top:2px}
+.capproach .row{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13px;align-items:baseline}
+.capproach .row dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.capproach .row dd{color:#EFE5D8}
+.capproach .load{margin-top:auto;font-family:var(--mono);font-weight:600;font-size:12.5px;cursor:pointer;align-self:flex-start;
+  border-radius:999px;padding:10px 17px;transition:transform .2s var(--spring),background .18s}
+.capproach.a .load{border:1px solid rgba(79,208,180,.5);color:var(--jade);background:rgba(79,208,180,.1)}
+.capproach.a .load:hover{background:rgba(79,208,180,.22);transform:translateX(3px)}
+.capproach.b .load{border:1px solid rgba(244,206,106,.5);color:var(--gold);background:rgba(244,206,106,.1)}
+.capproach.b .load:hover{background:rgba(244,206,106,.22);transform:translateX(3px)}
+.agree{margin-top:18px;background:rgba(79,208,180,.06);border:1px solid rgba(79,208,180,.2);border-radius:var(--r);padding:18px 20px}
+.agree h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--jade);margin-bottom:10px}
+.agree ul{list-style:none;display:flex;flex-wrap:wrap;gap:9px 24px}
+.agree li{font-size:13px;color:var(--paper-dim);position:relative;padding-left:20px}
+.agree li::before{content:"✓";position:absolute;left:0;color:var(--jade)}
+@media(max-width:760px){.compare{grid-template-columns:1fr}}
+
+/* ---------- ITINERARY ---------- */
+.itin{margin-top:26px;display:grid;gap:16px}
+.itin-stats{display:flex;flex-wrap:wrap;gap:11px}
+.stat{font-family:var(--mono);background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;min-width:124px;
+  transition:transform .3s var(--ease-out),border-color .3s}
+.stat:hover{transform:translateY(-2px);border-color:rgba(244,206,106,.3)}
+.stat .v{font-size:23px;font-weight:600;color:var(--paper);font-family:var(--serif)}
+.stat .v.warn{color:var(--red)}
+.stat .v.ok{color:var(--green)}
+.stat .l{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:2px}
+.chips-plan{display:flex;flex-wrap:wrap;gap:10px}
+.pchip{display:flex;align-items:center;gap:0;background:var(--card-hi);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;transition:transform .25s var(--spring),border-color .2s,box-shadow .25s}
+.pchip:hover{border-color:rgba(244,206,106,.36);transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(0,0,0,.7)}
+.pchip .ord{width:28px;align-self:stretch;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#0b0910}
+.pchip .body{padding:8px 11px;cursor:pointer}
+.pchip .nm{font-weight:600;font-size:13.5px;line-height:1.12}
+.pchip .dys{font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+.pchip .ctrls{display:flex;align-items:center;gap:1px;padding:0 7px 0 2px}
+.minib{width:25px;height:25px;border-radius:8px;border:1px solid transparent;background:rgba(255,255,255,.05);color:var(--mute);
+  cursor:pointer;font-size:13px;display:grid;place-items:center;transition:transform .15s var(--spring),background .12s,color .12s;font-family:var(--mono)}
+.minib:hover{background:rgba(244,206,106,.18);color:var(--gold);transform:scale(1.12)}
+.minib:active{transform:scale(.9)}
+.minib.rm:hover{background:rgba(255,90,77,.2);color:var(--red)}
+.nstep{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;color:var(--mute);padding:0 4px}
+.nstep b{color:var(--paper);min-width:18px;text-align:center;font-size:13px}
+.itin-add{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.itin-add .lbl{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.08em}
+.addchip{font-family:var(--mono);font-size:11px;cursor:pointer;border:1px dashed var(--line);background:transparent;color:var(--mute);
+  border-radius:999px;padding:6px 12px;transition:transform .18s var(--spring),border-color .14s,color .14s}
+.addchip:hover{border-color:var(--gold);color:var(--gold);border-style:solid;transform:translateY(-1px)}
+.itin-toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
+.tool{font-family:var(--mono);font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--line);
+  background:rgba(255,255,255,.03);color:var(--mute);border-radius:999px;padding:8px 14px;transition:transform .18s var(--spring),color .15s,border-color .15s}
+.tool:hover{color:var(--paper);border-color:rgba(244,206,106,.4);transform:translateY(-1px)}
+.tool.warn:hover{color:var(--red);border-color:rgba(255,90,77,.5)}
+
+/* ---------- PROPOSALS ---------- */
+.props{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px;margin-top:26px}
+.prop{background:var(--card-hi);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:11px;
+  transition:transform .35s var(--ease-out),border-color .35s,box-shadow .35s}
+.prop:hover{transform:translateY(-5px);border-color:rgba(244,206,106,.42);box-shadow:var(--shadow-lift)}
+.prop h3{font-family:var(--serif);font-weight:600;font-size:20px}
+.prop .pz{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.06em}
+.prop p{font-size:13.5px;color:var(--mute);flex:1;line-height:1.55}
+.prop .route-mini{font-family:var(--mono);font-size:11px;color:#CDBFAE;line-height:1.55}
+.prop .load{font-family:var(--mono);font-weight:600;font-size:12px;cursor:pointer;align-self:flex-start;
+  border:1px solid rgba(244,206,106,.4);background:rgba(244,206,106,.1);color:var(--gold);border-radius:999px;padding:8px 15px;
+  transition:transform .2s var(--spring),background .18s}
+.prop .load:hover{background:rgba(244,206,106,.22);transform:translateX(3px)}
+
+/* ---------- PRACTICAL ---------- */
+.cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(304px,1fr));gap:18px;margin-top:26px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;
+  transition:transform .35s var(--ease-out),border-color .35s,box-shadow .35s}
+.pcard:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:var(--line-soft)}
+.pcard.flag{border-color:rgba(255,90,77,.3);background:linear-gradient(180deg,rgba(255,90,77,.06),#0e0a13)}
+.pcard.flag:hover{border-color:rgba(255,90,77,.5)}
+.pcard h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.pcard h3 .ic{font-size:21px}
+.pcard .sub{font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:13px;letter-spacing:.05em}
+.pcard ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.pcard li{font-size:13.5px;color:var(--paper-dim);padding-left:17px;position:relative;line-height:1.5}
+.pcard li::before{content:"•";position:absolute;left:2px;color:var(--gold)}
+.pcard li b{color:#fff;font-weight:600}
+.btable{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.btable td{padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.06)}
+.btable td:last-child{text-align:right;font-family:var(--mono);color:var(--gold);white-space:nowrap}
+.btable tr.tot td{border-top:1.5px solid var(--line);border-bottom:0;font-weight:700;color:#fff;padding-top:10px}
+.btable tr.tot td:last-child{color:var(--jade)}
+.btable .hd td{color:var(--mute);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.check li{cursor:default}
+.check .when{font-family:var(--mono);font-size:10.5px;color:var(--coral);display:inline-block;margin-left:4px}
+
+footer{max-width:var(--maxw);margin:44px auto 0;padding:30px 20px 60px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--mute);text-align:center;line-height:1.8}
+footer b{color:var(--gold)}
+footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inline-block;margin-bottom:8px}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,32px);z-index:120;opacity:0;pointer-events:none;
+  font-family:var(--mono);font-size:12.5px;background:#1c1622;border:1px solid rgba(244,206,106,.4);color:var(--gold);
+  border-radius:999px;padding:12px 22px;box-shadow:0 24px 60px -24px rgba(0,0,0,.85);transition:transform .45s var(--spring),opacity .35s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:720px){
+  .ov.tl{max-width:none;left:10px;right:10px;top:10px}
+  .ov.tr{top:auto;bottom:12px;right:12px;flex-direction:row}
+  .stage{height:64vh}
+  .drawer{width:100%}
+  .hero{padding-top:18px}
+  section.block{padding-top:56px}
+}
+
+/* ---------- REVEAL ON SCROLL ---------- */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out);will-change:transform,opacity}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1!important;transform:none!important}}
+
+/* ---------- GALERIE (bande photo qui glisse) ---------- */
+.gallery{position:relative;margin-top:8px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.gallery-head{max-width:var(--maxw);margin:0 auto;padding:72px 20px 18px}
+.gtrack{display:flex;gap:16px;width:max-content;animation:slidetrack 88s linear infinite;will-change:transform}
+.gallery:hover .gtrack{animation-play-state:paused}
+@keyframes slidetrack{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.gallery{overflow-x:auto}.gtrack{animation:none}}
+.gcard{position:relative;flex:none;width:280px;height:204px;border-radius:var(--r);overflow:hidden;cursor:pointer;
+  border:1px solid var(--line);box-shadow:0 26px 56px -32px rgba(0,0,0,.85);background:#15111b;
+  transition:transform .5s var(--ease-out),box-shadow .5s,border-color .4s}
+.gcard:hover{transform:translateY(-6px);box-shadow:0 36px 70px -30px rgba(0,0,0,.9);border-color:rgba(244,206,106,.4)}
+.gcard img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease-out);filter:saturate(1.06)}
+.gcard:hover img{transform:scale(1.1)}
+.gcard .cap{position:absolute;inset:auto 0 0 0;padding:34px 15px 13px;
+  background:linear-gradient(0deg,rgba(7,5,10,.95),rgba(7,5,10,.2) 72%,transparent);
+  font-family:var(--serif);font-weight:600;font-size:18px;color:#fff;display:flex;align-items:baseline;gap:8px}
+.gcard .cap .zh{font-family:var(--cn);font-size:13px;color:var(--gold);opacity:.95}
+.gcard .badge{position:absolute;top:11px;left:11px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
+  color:#0b0910;border-radius:999px;padding:4px 10px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+
+/* photo dans le tiroir */
+.dr-photo{position:relative;height:166px;margin:-24px -24px 8px;overflow:hidden;background:#15111b}
+.dr-photo img{width:100%;height:100%;object-fit:cover;display:block;animation:slowzoom 20s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.dr-photo img{animation:none}}
+@keyframes slowzoom{from{transform:scale(1)}to{transform:scale(1.14)}}
+.dr-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#16111f,transparent 62%)}
+</style>
+</head>
+<body>
+<div class="bg-deco"></div>
+<div class="bg-veil"></div>
+<div class="bg-grain"></div>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="tb-back" href="/dashboard" title="Retour à l'application Balades">↩ Balades</a>
+    <div class="brand">
+      <span class="seal cn">中</span>
+      <span class="t">Chine <span class="yr">2026</span></span>
+    </div>
+    <div class="tb-spacer"></div>
+    <div class="tb-dates">
+      <b>28 sept → 4 nov 2026</b><br>
+      <span id="tb-progress">38 jours</span>
+    </div>
+    <button class="tb-btn" id="btn-share" title="Copier un lien qui contient votre plan">⤴ Partager</button>
+  </div>
+</header>
+
+<!-- ============ HERO + 3D STAGE ============ -->
+<div class="stage-wrap">
+  <div class="hero">
+    <span class="eyebrow">Notre carnet de voyage interactif</span>
+    <h1><span class="zh cn">中国之旅</span>La Chine, à deux</h1>
+    <p class="sub"><b>38 jours</b>, du 28 septembre au 4 novembre 2026. Deux recherches approfondies fusionnées en une carte vivante : tourne le globe, ouvre chaque étape, vote ❤, compare <b>deux approches</b> et <b>module l'itinéraire</b> ensemble.</p>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="scene"></canvas>
+    <div class="stage-glow"></div>
+    <div class="ov tl"><div class="filters" id="filters"></div></div>
+    <div class="ov tr">
+      <button class="icon-btn active" id="btn-rotate" title="Rotation automatique">↻</button>
+      <button class="icon-btn" id="btn-resetview" title="Recentrer la carte">⊙</button>
+    </div>
+    <div class="stage-hint" id="stage-hint">Glisse pour tourner · molette pour zoomer · clique un point pour l'ouvrir</div>
+    <div class="loader" id="loader"><div class="lantern"></div><p>关 · préparation de la carte…</p></div>
+  </div>
+</div>
+
+<!-- ============ GALERIE PHOTO ============ -->
+<div class="gallery-head">
+  <span class="kicker">Un avant-goût</span>
+  <h2 class="big">La Chine en images<span class="zh cn">风光</span></h2>
+  <p class="lede">La bande défile toute seule — survole pour la mettre en pause, clique une photo pour ouvrir l'étape. Photos d'illustration (Flickr CC).</p>
+</div>
+<section class="gallery" id="galerie" aria-label="Galerie photo des étapes">
+  <div class="gtrack" id="gtrack"></div>
+</section>
+
+<!-- ============ CALENDRIER ============ -->
+<section class="block" id="timeline">
+  <span class="kicker">Les 38 jours, jour par jour</span>
+  <h2 class="big">Notre fil du voyage<span class="zh cn">行程</span></h2>
+  <p class="lede">Chaque barre est une étape, large comme le nombre de jours qu'on y passe. La zone hachurée rouge est la <b>Golden Week (1–7 oct)</b> — la semaine la plus chargée de Chine. Le fil se met à jour quand tu modifies l'itinéraire plus bas.</p>
+  <div class="cal">
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-stops" id="cal-stops"></div>
+    <div class="cal-legend">
+      <span><i class="gw-key"></i> Golden Week — affluence nationale extrême (1–7 oct)</span>
+      <span id="cal-count"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEUX APPROCHES ============ -->
+<section class="block" id="approches">
+  <span class="kicker">Deux recherches, deux stratégies</span>
+  <h2 class="big">Les deux approches<span class="zh cn">两种思路</span></h2>
+  <p class="lede">On a lancé deux recherches approfondies : elles tombent d'accord sur l'essentiel mais proposent des <b>colonnes vertébrales différentes</b>. Les voici côte à côte — charge celle que tu préfères, puis remodèle-la.</p>
+  <div class="compare" id="compare"></div>
+  <div class="agree">
+    <h4>✓ Ce sur quoi les deux sont d'accord</h4>
+    <ul>
+      <li>Un <b>visa L</b> est indispensable (séjour &gt; 30 jours)</li>
+      <li>La <b>Golden Week (1–7 oct)</b> est la contrainte n°1</li>
+      <li>Réserver tout le <b>nominatif</b> dès l'ouverture des ventes</li>
+      <li><b>Départ de Shanghai</b> en fin de boucle</li>
+      <li><b>Dali, Yangshuo, Hangzhou</b> = les respirations lentes du couple</li>
+      <li>Octobre = l'un des <b>meilleurs mois</b> pour ce parcours</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ ITINERAIRE MODULABLE ============ -->
+<section class="block" id="editor">
+  <span class="kicker">À moduler ensemble</span>
+  <h2 class="big">Notre itinéraire<span class="zh cn">路线</span></h2>
+  <p class="lede">Réorganise les étapes (←/→), ajuste les jours (−/+), retire ou ajoute des envies. Tout est sauvegardé sur cet appareil, et <b>Partager</b> crée un lien à envoyer à l'autre.</p>
+  <div class="itin">
+    <div class="itin-stats" id="itin-stats"></div>
+    <div class="chips-plan" id="plan-chips"></div>
+    <div class="itin-add">
+      <span class="lbl">Ajouter une étape :</span>
+      <div id="add-pool" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+    </div>
+    <div class="itin-toolbar">
+      <button class="tool" id="btn-load-reco">★ Recharger l'approche Sud (conseillée)</button>
+      <button class="tool warn" id="btn-clear">Vider l'itinéraire</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AUTRES BASES ============ -->
+<section class="block" id="variants">
+  <span class="kicker">D'autres bases prêtes à charger</span>
+  <h2 class="big">Variantes de parcours<span class="zh cn">方案</span></h2>
+  <p class="lede">Des points de départ alternatifs à charger d'un clic puis remodeler. Charger remplace l'itinéraire en cours.</p>
+  <div class="props" id="props"></div>
+</section>
+
+<!-- ============ PRATIQUE ============ -->
+<section class="block" id="pratique">
+  <span class="kicker">L'intendance, sans prise de tête</span>
+  <h2 class="big">À savoir avant de partir<span class="zh cn">实用</span></h2>
+  <div class="cards2">
+
+    <div class="pcard flag">
+      <h3><span class="ic">🚧</span> Golden Week</h3>
+      <div class="sub">La contrainte n°1 · 1–7 octobre 2026</div>
+      <ul>
+        <li><b>888 millions</b> de déplacements en Chine sur cette seule semaine (2025).</li>
+        <li>Trains, vols et hôtels partent en <b>minutes</b> à l'ouverture des ventes.</li>
+        <li>Deux écoles : <b>fuir</b> vers le Sud/nature, ou <b>foncer à l'ouverture</b> des grands sites.</li>
+        <li>Mi-automne <b>25–27 sept</b> — second pic, ne fusionne pas cette année.</li>
+        <li><b>Samedi 10 oct</b> = jour travaillé de rattrapage (tiáoxiū).</li>
+      </ul>
+    </div>
+
+    <div class="pcard flag">
+      <h3><span class="ic">🛂</span> Visa</h3>
+      <div class="sub">Indispensable · séjour &gt; 30 jours sur le continent</div>
+      <ul>
+        <li>L'exemption de visa française <b>ne suffit pas</b> au-delà de 30 jours/entrée (valable jusqu'au 31/12/2026).</li>
+        <li>Il faut un <b>visa L touristique</b> (ou une sortie/réentrée intermédiaire).</li>
+        <li>≈ <b>111 € TTC</b>, délai standard ~6 jours ouvrés ; formulaire COVA en ligne au préalable.</li>
+        <li>À déposer dans les <b>3 mois</b> avant le départ.</li>
+        <li>Plus d'exigence COVID de routine à ce jour — <b>à reconfirmer J-30</b>.</li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">💴</span> Budget — couple</h3>
+      <div class="sub">38–42 j · hors vols internationaux</div>
+      <table class="btable">
+        <tr><td>Hébergement (≈37 nuits, 3–4★)</td><td>3 350–4 750 €</td></tr>
+        <tr><td>Transport interne (TGV + ~3 vols)</td><td>1 550–2 050 €</td></tr>
+        <tr><td>Repas</td><td>1 150–1 550 €</td></tr>
+        <tr><td>Activités &amp; spectacles</td><td>770–1 030 €</td></tr>
+        <tr><td>Contingence (~10 %)</td><td>640–900 €</td></tr>
+        <tr class="tot"><td>Total estimé (deux)</td><td>7 500–10 300 €</td></tr>
+      </table>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🎚️</span> Budget — par style</h3>
+      <div class="sub">Par personne · 6 semaines · chambre double partagée</div>
+      <table class="btable">
+        <tr class="hd"><td>Style</td><td>Par pers.</td></tr>
+        <tr><td>Routard</td><td>~2 600 €</td></tr>
+        <tr><td>Confort (conseillé)</td><td>~4 400 €</td></tr>
+        <tr><td>Luxe</td><td>~8 600 €</td></tr>
+        <tr class="tot"><td>Couple, confort</td><td>~8 800 €</td></tr>
+      </table>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🚄</span> Se déplacer</h3>
+      <div class="sub">TGV (HSR) partout où c'est possible</div>
+      <ul>
+        <li><b>Pékin → Xi'an</b> : HSR ~4 h 10</li>
+        <li><b>Xi'an → Chengdu</b> : HSR ~3 h</li>
+        <li><b>Chengdu → Guilin</b> : vol ~1 h 50</li>
+        <li><b>Dali → Lijiang</b> : HSR ~1 h 50 (~3 €)</li>
+        <li><b>Lijiang → Shanghai</b> : vol (pas de train direct)</li>
+        <li><b>Shanghai ↔ Hangzhou</b> : HSR ~45 min</li>
+        <li>Billets <b>nominatifs</b> : passeport exact, même orthographe partout.</li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🌤️</span> Météo d'octobre</h3>
+      <div class="sub">L'un des meilleurs mois pour ce parcours</div>
+      <ul>
+        <li><b>Sud</b> (Hong Kong, Guilin) : 19–27 °C, chaud, peu de pluie.</li>
+        <li><b>Sichuan / Zhangjiajie</b> : doux 15–20 °C, brume “Avatar”.</li>
+        <li><b>Yunnan</b> : doux 10–20 °C · <b>Shangri-La froid</b> (~0 °C la nuit, 3 200 m).</li>
+        <li><b>Xi'an / Pingyao</b> : ~15 °C le jour, frais et sec le soir.</li>
+        <li><b>Beijing</b> : superbe, ciel clair, feuillages dorés, meilleur AQI de l'année.</li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🎟️</span> Réservations à faire tôt</h3>
+      <div class="sub">Plus c'est star, plus ça part vite</div>
+      <ul class="check">
+        <li><b>Visa L</b> + vols internationaux <span class="when">dès maintenant</span></li>
+        <li><b>Hôtels Golden Week</b> (Guilin, Zhangjiajie, Chengdu) <span class="when">J-90</span></li>
+        <li><b>Train West Kowloon → Guilin</b> <span class="when">J-30</span></li>
+        <li><b>Croisière Li</b>, <b>Zhangjiajie</b>, spectacles <b>Impression</b> <span class="when">J-15</span></li>
+        <li><b>Base des pandas</b> (créneau 7 h 30) <span class="when">J-14</span></li>
+        <li><b>Armée de terre cuite</b> <span class="when">J-7 à J-10</span></li>
+        <li><b>Cité interdite</b> (vente ~20 h, en minutes) <span class="when">J-7</span></li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🥢</span> Tables à réserver</h3>
+      <div class="sub">Via l'hôtel ou le canal WeChat du lieu</div>
+      <ul>
+        <li><b>Quanjude</b> (Pékin) — canard laqué, Qianmen · ~150–300 ¥/pers.</li>
+        <li><b>De Fa Chang</b> (Xi'an) — banquet de raviolis, près de la Tour de la Cloche.</li>
+        <li><b>Lou Wai Lou</b> (Hangzhou) — cuisine du lac, après la balade au West Lake.</li>
+        <li><b>Banyan Tree</b> (Yangshuo) — soirée resort après la Yulong.</li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3><span class="ic">🎒</span> Dans la valise</h3>
+      <div class="sub">Voyage en couches</div>
+      <ul>
+        <li>Système de <b>couches</b> + une <b>doudoune légère</b> (Shangri-La, Beijing fin oct).</li>
+        <li><b>Chaussures de rando</b> à bonne adhérence (Zhangjiajie, Tiger Leaping Gorge, Huashan).</li>
+        <li><b>Crème solaire &amp; lunettes</b> — UV intenses en altitude au Yunnan.</li>
+        <li>Vêtement de <b>pluie léger</b> ; <b>passeport</b> = billet pour beaucoup de sites.</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <span class="seal cn">愿你们旅途愉快</span><br>
+  Carnet de voyage interactif · fusion de deux recherches approfondies (Claude &amp; GPT) · <b>tarifs &amp; horaires 2026 à reconfirmer J-7</b><br>
+  Vos votes et votre itinéraire sont sauvegardés sur cet appareil · « Partager » crée un lien à envoyer à l'autre.
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* =====================================================================
+   中国 2026 — carte 3D + itinéraire modulable
+   Données = fusion de DEUX recherches approfondies (28 sept → 4 nov 2026).
+   Pour enrichir : éditer DEST (étapes) et ROUTES (parcours).
+   ===================================================================== */
+
+const CHINA_GEO = /*GEO*/[[[124.515,40.22],[125.044,40.467],[125.016,40.534],[125.685,40.769],[125.708,40.867],[126.041,40.929],[126.539,41.367],[126.695,41.751],[126.8,41.703],[126.931,41.813],[127.254,41.487],[128.115,41.364],[128.318,41.576],[128.034,42],[128.953,42.026],[129.216,42.208],[129.344,42.452],[129.546,42.362],[129.704,42.427],[129.897,43.002],[130.278,42.892],[130.257,42.711],[130.435,42.553],[130.523,42.622],[130.646,42.427],[130.593,42.671],[130.407,42.732],[131.146,42.937],[131.314,43.393],[131.319,43.5],[131.2,43.532],[131.311,44.047],[131.112,44.71],[130.965,44.851],[131.502,44.978],[131.888,45.342],[132.954,45.023],[133.139,45.127],[133.144,45.431],[133.471,45.631],[133.468,45.835],[133.677,45.943],[133.706,46.163],[133.91,46.254],[133.949,46.401],[133.85,46.475],[134.011,46.638],[134.064,46.98],[134.222,47.105],[134.177,47.326],[134.568,47.478],[134.78,47.716],[134.554,47.982],[134.679,48.256],[135.096,48.438],[134.204,48.382],[133.546,48.121],[133.13,48.135],[132.661,47.945],[132.558,47.718],[131.03,47.695],[130.666,48.105],[130.845,48.296],[130.767,48.508],[130.621,48.496],[130.538,48.612],[130.681,48.881],[130.238,48.869],[129.73,49.288],[129.563,49.3],[129.518,49.424],[129.085,49.36],[128.761,49.482],[128.744,49.595],[127.815,49.594],[127.532,49.826],[127.603,50.239],[127.332,50.341],[127.295,50.755],[126.923,51.062],[126.984,51.319],[126.821,51.281],[126.909,51.407],[126.792,51.432],[126.837,51.536],[126.679,51.602],[126.734,51.711],[126.463,51.948],[126.556,52.136],[126.307,52.206],[126.433,52.299],[125.969,52.63],[126.117,52.768],[125.679,52.861],[125.743,52.994],[125.614,53.084],[125.142,53.204],[124.872,53.099],[123.517,53.558],[120.883,53.294],[120.032,52.774],[120.076,52.586],[120.462,52.645],[120.734,52.537],[120.627,52.324],[120.787,52.158],[120.657,51.926],[120.087,51.678],[119.764,51.092],[119.126,50.389],[119.358,50.359],[119.35,50.166],[119.09,49.986],[118.575,49.931],[117.809,49.521],[116.718,49.847],[115.8,48.515],[115.823,48.259],[115.529,48.155],[115.58,47.922],[115.939,47.683],[116.266,47.877],[116.791,47.898],[117.384,47.641],[117.814,48.016],[118.568,47.992],[119.716,47.196],[119.927,46.904],[119.912,46.67],[119.374,46.603],[118.914,46.775],[118.788,46.687],[118.316,46.739],[117.748,46.522],[117.42,46.582],[117.372,46.36],[116.834,46.384],[116.585,46.293],[116.272,45.967],[116.287,45.775],[116.175,45.689],[115.365,45.392],[114.551,45.387],[114.117,44.957],[113.631,44.745],[112.85,44.84],[112.439,45.072],[112.003,45.091],[111.765,44.969],[111.416,44.357],[111.87,43.94],[111.951,43.693],[111.02,43.33],[110.437,42.781],[109.292,42.436],[107.466,42.459],[105.742,41.949],[105.009,41.583],[104.524,41.662],[104.53,41.875],[103.869,41.802],[103.419,41.882],[102.712,42.153],[102.07,42.232],[101.804,42.504],[100.863,42.671],[99.512,42.568],[97.173,42.795],[96.386,42.728],[96.364,42.901],[95.88,43.28],[95.527,44.007],[95.327,44.029],[95.414,44.299],[94.999,44.253],[94.723,44.341],[93.509,44.968],[90.882,45.192],[90.677,45.582],[91.028,46.023],[90.9,46.312],[91.079,46.559],[91.054,46.718],[90.561,47.207],[90.385,47.644],[90.135,47.723],[90.066,47.884],[89.762,47.836],[89.569,48.038],[89.078,47.987],[88.638,48.184],[88.523,48.403],[87.973,48.576],[88.091,48.72],[87.742,48.881],[87.912,48.98],[87.821,49.174],[87.437,49.075],[86.888,49.132],[86.732,48.995],[86.781,48.731],[86.58,48.539],[85.792,48.419],[85.587,48.192],[85.532,48.046],[85.701,47.289],[85.546,47.058],[85.277,47.069],[84.955,46.861],[84.748,47.01],[83.933,46.97],[83.027,47.215],[82.267,45.62],[82.547,45.426],[82.563,45.205],[81.921,45.233],[81.788,45.384],[80.898,45.127],[80.112,45.053],[79.888,44.909],[79.999,44.794],[80.17,44.845],[80.4,44.629],[80.394,44.127],[80.755,43.494],[80.686,43.334],[80.804,43.178],[80.379,43.032],[80.603,42.894],[80.262,42.829],[80.164,42.63],[80.292,42.26],[80.142,42.035],[79.924,42.042],[79.776,41.892],[79.326,41.81],[78.65,41.467],[78.164,41.383],[78.129,41.228],[77.836,41.153],[77.781,41.023],[76.886,41.027],[76.54,40.464],[76.333,40.343],[76.28,40.439],[75.709,40.281],[75.733,40.474],[75.6,40.66],[75.242,40.449],[74.844,40.521],[74.795,40.443],[74.909,40.339],[74.7,40.346],[74.357,40.089],[74.023,40.085],[73.845,39.831],[73.954,39.6],[73.868,39.483],[73.502,39.384],[73.84,39.008],[73.699,38.858],[73.799,38.611],[74.012,38.525],[74.148,38.677],[74.422,38.648],[74.863,38.484],[74.804,38.167],[75.006,37.771],[74.892,37.668],[75.14,37.355],[74.911,37.233],[74.511,37.24],[74.499,37.072],[74.847,37.057],[74.894,36.94],[75.032,37.017],[75.414,36.955],[75.459,36.721],[75.634,36.772],[75.871,36.667],[76.061,36.225],[75.949,36.07],[76.097,36.023],[76.16,35.824],[76.558,35.923],[76.769,35.654],[77.196,35.519],[78.14,35.495],[78.017,35.228],[78.281,34.623],[79.04,34.335],[78.91,34.143],[78.661,34.087],[78.78,33.733],[78.685,33.654],[79.152,33.184],[79.308,32.597],[78.971,32.332],[78.782,32.48],[78.742,32.704],[78.395,32.53],[78.47,32.128],[78.762,31.947],[78.655,31.819],[78.846,31.61],[78.74,31.533],[78.755,31.356],[79.097,30.992],[79.332,30.969],[79.405,31.072],[79.598,30.926],[79.669,30.98],[80.044,30.604],[81.035,30.247],[81.132,30.016],[81.256,30.012],[81.269,30.153],[81.394,30.199],[81.418,30.421],[82.105,30.346],[82.178,30.068],[82.561,29.955],[82.831,29.688],[83.267,29.571],[83.596,29.174],[83.912,29.323],[84.117,29.286],[84.234,28.889],[84.483,28.735],[84.857,28.568],[85.126,28.676],[85.196,28.624],[85.113,28.345],[85.601,28.254],[85.721,28.372],[86.002,27.907],[86.125,27.923],[86.087,28.09],[86.191,28.167],[86.232,27.974],[86.415,27.905],[86.569,28.103],[86.7,28.102],[87.228,27.813],[87.727,27.803],[87.827,27.928],[88.112,27.865],[88.645,28.111],[88.764,28.068],[88.889,27.847],[88.783,27.467],[88.985,27.209],[89.183,27.374],[89.095,27.472],[89.239,27.797],[89.79,28.241],[90.592,28.021],[90.702,28.076],[91.026,27.857],[91.31,28.058],[91.465,28.003],[91.612,27.891],[91.585,27.541],[92.065,27.391],[92.109,26.855],[93.568,26.938],[93.842,27.046],[93.849,27.168],[94.277,27.581],[94.886,27.743],[95.74,28.275],[96.275,28.228],[97.098,27.741],[97.387,27.883],[97.35,28.236],[97.518,28.328],[97.57,28.542],[97.686,28.52],[97.801,28.327],[97.908,28.363],[98.139,28.142],[98.317,27.519],[98.444,27.665],[98.707,27.553],[98.782,26.621],[98.72,26.127],[98.575,26.118],[98.706,25.855],[98.529,25.841],[98.315,25.543],[98.171,25.62],[98.137,25.382],[97.94,25.215],[97.839,25.271],[97.72,25.081],[97.797,24.846],[97.547,24.739],[97.53,24.443],[97.67,24.453],[97.665,24.297],[97.767,24.258],[97.528,23.927],[97.647,23.841],[98.091,24.086],[98.877,24.151],[98.673,23.961],[98.669,23.801],[98.882,23.62],[98.804,23.541],[98.912,23.426],[98.89,23.209],[99.106,23.087],[99.528,23.066],[99.563,22.926],[99.447,22.935],[99.315,22.738],[99.382,22.493],[99.252,22.393],[99.22,22.111],[99.972,22.053],[99.991,21.704],[100.132,21.7],[100.131,21.504],[100.235,21.467],[100.437,21.533],[100.579,21.452],[101.124,21.772],[101.222,21.234],[101.765,21.148],[101.829,21.617],[101.547,22.238],[101.672,22.475],[102.27,22.42],[102.511,22.775],[103.03,22.441],[103.323,22.808],[103.529,22.593],[103.642,22.795],[103.965,22.502],[104.118,22.809],[104.262,22.842],[104.376,22.69],[104.738,22.826],[104.86,22.971],[104.804,23.11],[105.325,23.39],[105.575,23.066],[105.879,22.917],[106.154,22.989],[106.366,22.858],[106.526,22.947],[106.839,22.803],[106.56,22.456],[106.689,22.26],[106.698,21.96],[107,21.948],[107.018,21.819],[107.311,21.734],[107.364,21.602],[107.864,21.651],[108.108,21.509],[108.241,21.6],[108.23,21.491],[108.626,21.68],[109.139,21.568],[109.04,21.458],[109.139,21.389],[109.612,21.557],[109.895,21.442],[109.758,21.347],[109.656,20.929],[109.929,20.212],[110.349,20.259],[110.541,20.42],[110.393,20.816],[110.184,20.892],[110.209,21.051],[110.796,21.375],[111.973,21.603],[111.956,21.71],[112.137,21.794],[112.353,21.707],[112.446,21.803],[112.647,21.758],[112.793,21.921],[112.93,21.839],[113.087,22.126],[113.267,21.872],[113.567,22.075],[113.666,22.439],[113.574,22.412],[113.74,22.534],[113.678,22.726],[113.894,22.443],[114.382,22.602],[114.507,22.439],[114.629,22.514],[114.515,22.655],[114.71,22.788],[114.746,22.582],[114.885,22.539],[115.19,22.819],[115.575,22.651],[115.654,22.866],[115.829,22.735],[116.303,22.952],[116.505,22.931],[116.566,23.134],[116.807,23.201],[116.889,23.502],[117.464,23.585],[117.91,24.012],[118.159,24.27],[118.049,24.418],[118.122,24.57],[118.513,24.608],[118.614,24.522],[118.786,24.777],[118.648,24.844],[118.989,24.879],[118.916,25.257],[119.074,25.211],[119.119,25.013],[119.132,25.223],[119.269,25.16],[119.381,25.25],[119.145,25.388],[119.22,25.469],[119.353,25.412],[119.359,25.522],[119.453,25.494],[119.597,25.335],[119.675,25.468],[119.867,25.455],[119.786,25.668],[119.675,25.475],[119.479,25.632],[119.603,25.685],[119.724,26.012],[119.604,26.169],[119.955,26.353],[119.788,26.583],[119.578,26.622],[119.665,26.726],[119.874,26.643],[119.943,26.784],[120.062,26.769],[119.828,26.524],[120.138,26.638],[120.054,26.864],[120.233,26.908],[120.283,27.09],[120.546,27.157],[120.709,27.683],[120.942,27.897],[121.192,27.823],[120.992,27.95],[121.059,28.096],[121.261,28.035],[121.489,28.302],[121.628,28.252],[121.693,28.407],[121.541,28.656],[121.775,28.864],[121.608,29.169],[121.988,29.111],[122,29.582],[121.833,29.653],[122.14,29.902],[121.721,29.993],[121.058,30.564],[121.681,30.819],[121.905,30.814],[122.133,30.595],[121.993,30.695],[121.947,31.066],[121.344,31.512],[121.434,31.591],[121.982,31.464],[121.856,31.955],[121.459,32.177],[121.39,32.461],[120.962,32.612],[120.834,33.275],[120.312,34.307],[119.641,34.569],[119.44,34.785],[119.238,34.799],[119.211,34.982],[119.428,35.121],[119.662,35.589],[119.925,35.637],[119.926,35.76],[120.014,35.714],[120.064,35.873],[120.305,35.972],[120.117,36.103],[120.181,36.204],[120.362,36.196],[120.286,36.047],[120.712,36.127],[120.694,36.39],[120.829,36.467],[120.872,36.367],[120.965,36.466],[120.847,36.619],[121.029,36.573],[121.565,36.831],[121.485,36.786],[121.652,36.724],[121.632,36.801],[122.009,36.962],[122.174,36.843],[122.532,36.901],[122.583,37.037],[122.467,37.037],[122.484,37.129],[122.714,37.392],[122.166,37.439],[122.15,37.557],[121.571,37.441],[121.391,37.625],[121.217,37.583],[121.136,37.724],[120.733,37.834],[120.228,37.694],[120.247,37.557],[119.844,37.377],[119.892,37.264],[119.74,37.134],[119.328,37.116],[119.204,37.28],[119.001,37.319],[118.989,37.621],[119.275,37.74],[118.974,38.094],[118.704,38.151],[118.552,38.056],[118.019,38.202],[117.897,38.279],[117.958,38.376],[117.781,38.374],[117.645,38.528],[117.741,38.7],[117.646,38.829],[117.848,38.856],[117.838,39.057],[118.033,39.22],[118.491,38.909],[118.605,38.971],[118.579,39.131],[118.926,39.123],[119.317,39.411],[119.366,39.735],[119.541,39.888],[120.492,40.2],[120.619,40.46],[121.126,40.869],[121.816,40.895],[122.265,40.48],[121.94,40.242],[121.995,40.128],[121.779,39.943],[121.472,39.802],[121.45,39.625],[121.227,39.555],[121.27,39.374],[121.515,39.287],[121.725,39.364],[121.589,39.263],[121.632,39.078],[121.591,39.155],[121.508,39.034],[121.089,38.922],[121.138,38.723],[121.709,38.873],[121.671,39.01],[121.921,38.97],[121.853,39.036],[122.062,39.06],[122.367,39.391],[123.275,39.754],[123.812,39.831],[124.151,39.746],[124.515,40.22]],[[110.106,20.027],[109.658,20.012],[109.498,19.873],[109.301,19.918],[108.645,19.35],[108.645,18.487],[109.585,18.144],[109.75,18.194],[109.785,18.34],[110.071,18.376],[110.246,18.61],[110.499,18.652],[110.677,19.286],[111.062,19.612],[111.044,19.763],[110.966,20.018],[110.688,20.164],[110.106,20.027]],[[120.444,22.441],[120.641,22.242],[120.702,21.927],[120.873,21.897],[120.981,22.528],[121.43,23.137],[121.644,24.098],[121.886,24.53],[121.845,24.836],[122.013,25.001],[121.623,25.295],[121.025,25.041],[120.102,23.701],[120.019,23.073],[120.133,23.001],[120.274,22.56],[120.444,22.441]]]/*GEO*/;
+
+const CATS = {
+  ville:    {label:'Villes & énergie',     color:'#F4CE6A', icon:'🏙️'},
+  nature:   {label:'Nature & paysages',    color:'#4FD0B4', icon:'⛰️'},
+  histoire: {label:'Histoire & patrimoine',color:'#FF6A53', icon:'🏯'},
+  culture:  {label:'Culture & spirituel',  color:'#B98BE6', icon:'🛕'},
+  gastro:   {label:'Saveurs & vie locale', color:'#F2884E', icon:'🍜'},
+  sport:    {label:'Rando & sport',        color:'#5BD27A', icon:'🥾'},
+};
+const PRIO = {immanquable:'Immanquable', recommande:'Très recommandé', interessant:'Intéressant'};
+
+/* ---- Étapes (days = jours par défaut quand ajoutée seule) ---- */
+const DEST = [
+  { id:'hongkong', name:'Hong Kong', cn:'香港', region:'Sud', lng:114.17, lat:22.32,
+    cat:'ville', duo:true, days:3, prio:'recommande', niveau:'Faible', transport:'Vol — point d’arrivée possible (approche Sud)',
+    tag:'Choc Est-Ouest, douce décompression après le vol long-courrier.',
+    sites:[
+      {n:'The Peak au crépuscule', d:'Peak Tram A/R', p:'~88 HK$ sem · 108 HK$ we'},
+      {n:'A Symphony of Lights', d:'20 h · ~13 min', p:'Gratuit', c:'depuis l’Avenue of Stars'},
+      {n:'Star Ferry & Tsim Sha Tsui', d:'soirée'},
+    ],
+    couple:['The Peak au coucher du soleil puis Symphony of Lights sur le port'],
+    food:['Dim sum à volonté — l’une des capitales gastronomiques d’Asie'],
+    note:'Symphony of Lights brièvement suspendue fin 2025 puis reprise — à reconfirmer.' },
+
+  { id:'beijing', name:'Beijing', cn:'北京', region:'Nord', lng:116.41, lat:39.90,
+    cat:'histoire', duo:false, days:4, prio:'immanquable', niveau:'Modéré (muraille)', transport:'Vol — point d’arrivée possible (approche Classique) · TGV depuis Pingyao ~4 h',
+    tag:'Cité interdite, Grande Muraille, parcs impériaux et canard laqué.',
+    sites:[
+      {n:'Cité interdite', d:'½ j · fermé lundi', p:'60 ¥ (40 ¥ dès 1 nov)', c:'Réserver J-7 à 20 h (en minutes), passeport · Tian’anmen séparé'},
+      {n:'Grande Muraille — Mutianyu', d:'½–1 j · téléphérique + luge', p:'40 ¥ (+~195 ¥ pratique)', c:'~73 km, restaurée'},
+      {n:'Grande Muraille — Jinshanling', d:'rando', p:'65 ¥', c:'~130 km, sauvage, peu de monde'},
+      {n:'Palais d’Été', d:'3–4 h · superbe au lac', p:'30 ¥ parc · 50 ¥ complet'},
+      {n:'Temple du Ciel', d:'2–3 h au petit matin', p:'15 ¥ parc · 34 ¥ combiné'},
+    ],
+    couple:['Marche au lever du jour sur une section sauvage de la muraille', 'Barque sur le lac Kunming au Palais d’Été'],
+    food:['Canard laqué chez Quanjude (Qianmen), ~150–300 ¥/pers'],
+    note:'Haute saison tarifaire jusqu’au 31/10, basse saison dès le 1 nov.' },
+
+  { id:'xian', name:'Xi’an', cn:'西安', region:'Shaanxi', lng:108.94, lat:34.34,
+    cat:'histoire', duo:false, days:3, prio:'immanquable', niveau:'Faible', transport:'Vol depuis le Yunnan · ou TGV Pékin → Xi’an ~4 h 10',
+    tag:'L’Armée de terre cuite et les remparts Ming au coucher du soleil.',
+    sites:[
+      {n:'Armée de terre cuite', d:'½ j · ouverture 8 h 30', p:'120 ¥', c:'Réserver J-7/J-10, passeport · y être au 1er créneau'},
+      {n:'Remparts à vélo au coucher du soleil', d:'2–3 h', p:'54 ¥ (+ tandem ~99 ¥/pers)'},
+      {n:'Grande Pagode de l’Oie sauvage', d:'½ journée'},
+      {n:'Mont Huashan (option sportive)', d:'journée', p:'~340 ¥ pratique', c:'marches & dénivelé majeurs'},
+    ],
+    couple:['Tour des remparts à vélo tandem au crépuscule'],
+    food:['Quartier musulman, biang biang noodles, roujiamo', 'Banquet de raviolis chez De Fa Chang (~120–250 ¥/pers)'] },
+
+  { id:'huashan', name:'Mont Huashan', cn:'华山', region:'Shaanxi', lng:110.09, lat:34.48,
+    cat:'sport', duo:false, days:1, prio:'interessant', niveau:'Soutenu (vertige)', transport:'TGV + navette depuis Xi’an (excursion journée)',
+    tag:'L’une des cinq montagnes sacrées, arêtes vertigineuses et téléphériques.',
+    sites:[
+      {n:'Montagne + navette + téléphérique', d:'journée · départ très tôt', p:'~340 ¥ pratique', c:'Voie pédestre ouverte même de nuit'},
+    ],
+    couple:['Lever de soleil au sommet Est après une nuit en altitude'],
+    food:['Casse-croûte de montagne'],
+    note:'Déconseillé en cas de mobilité réduite ou vertige : même avec téléphérique, marches et à-pics restent majeurs.' },
+
+  { id:'chengdu', name:'Chengdu', cn:'成都', region:'Sichuan', lng:104.07, lat:30.57,
+    cat:'gastro', duo:false, days:4, prio:'immanquable', niveau:'Faible', transport:'TGV Zhangjiajie → Chengdu ~4–5,5 h · ou Xi’an → Chengdu ~3 h',
+    tag:'Pandas, hotpot et maisons de thé — le refuge idéal en pleine Golden Week.',
+    sites:[
+      {n:'Base de recherche des pandas géants', d:'7 h 30–9 h 30 (le meilleur créneau)', p:'55 ¥ (+30 ¥ bus)', c:'Réservation en ligne obligatoire, passeport'},
+      {n:'Opéra du Sichuan (Shufeng Yayun)', d:'20 h · ~80–90 min', p:'dès ~148 ¥'},
+      {n:'Leshan — Grand Bouddha', d:'journée', p:'80 ¥ (50 ¥ dès 8 oct)', c:'vue bateau pour éviter les escaliers'},
+      {n:'Dujiangyan + mont Qingcheng', d:'journée nature/culture', p:'~80 ¥ chacun'},
+    ],
+    couple:['Après-midi lente en maison de thé au People’s Park'],
+    food:['Hotpot sichuanais, mapo tofu, cuisine épicée légendaire'],
+    note:'Grande métropole : excellent « tampon » pour absorber la fin de la Golden Week.' },
+
+  { id:'leshan', name:'Leshan', cn:'乐山', region:'Sichuan', lng:103.77, lat:29.55,
+    cat:'culture', duo:false, days:1, prio:'recommande', niveau:'Faible-modéré', transport:'TGV depuis Chengdu (excursion journée)',
+    tag:'Le plus grand Bouddha de pierre du monde, taillé dans la falaise.',
+    sites:[
+      {n:'Grand Bouddha de Leshan', d:'matin ou bateau', p:'80 ¥ (50 ¥ dès 8 oct)', c:'7 h 30–18 h 30 (haute saison)'},
+      {n:'Croisière au pied de la falaise', d:'~1 h', p:'~70 ¥'},
+    ],
+    couple:['Vue du Bouddha en lumière douce depuis le bateau'],
+    food:['Tofu de Leshan, brochettes (chuàn chuàn)'] },
+
+  { id:'guilin', name:'Guilin · Yangshuo', cn:'桂林·阳朔', region:'Guangxi', lng:110.40, lat:25.10,
+    cat:'nature', duo:true, days:3, prio:'immanquable', niveau:'Faible-modéré', transport:'TGV West Kowloon → Guilin ~3–3,5 h · ou vol Chengdu → Guilin ~1 h 50',
+    tag:'Les pains de sucre karstiques et la rivière Li, carte postale absolue.',
+    sites:[
+      {n:'Croisière sur la rivière Li (Guilin → Yangshuo)', d:'~4–5 h', p:'dès ~229 ¥ (3★)', c:'Réserver bien à l’avance'},
+      {n:'Radeau de bambou sur la Yulong', d:'1–3 h · 8–10 h le matin', p:'~255 ¥/radeau 2 pers.'},
+      {n:'Spectacle « Impression Liu Sanjie »', d:'20 h · ~70 min', p:'268–828 ¥', c:'à vivre une fois, par temps sec'},
+      {n:'Rizières en terrasses de Longji', d:'journée / nuit sur place', p:'80 ¥', c:'lever de soleil si l’on dort en terrasse'},
+    ],
+    couple:['Radeau sur la Yulong au lever du jour, puis Liu Sanjie le soir'],
+    food:['Poisson à la bière, snacks de West Street, dîner resort au Banyan Tree'],
+    note:'Si vous traversez la Golden Week ici : croisière et spectacle à réserver impérativement à l’avance.' },
+
+  { id:'longji', name:'Rizières de Longji', cn:'龙脊梯田', region:'Guangxi', lng:110.10, lat:25.92,
+    cat:'nature', duo:true, days:1, prio:'recommande', niveau:'Modéré (marches)', transport:'~2 h en route depuis Guilin (excursion ou nuit sur place)',
+    tag:'L’« épine du dragon » : des terrasses sculptées à flanc de montagne.',
+    sites:[
+      {n:'Villages Ping’an / Jinkeng / Huangluo', d:'journée ou nuit', p:'80 ¥', c:'site ouvert en continu'},
+    ],
+    couple:['Nuit en chambre d’hôte pour le lever de soleil sur les terrasses'],
+    food:['Riz cuit dans le bambou, poulet des montagnes'],
+    note:'Topographie : marches et ruelles de village, peu adapté à une mobilité réduite.' },
+
+  { id:'zhangjiajie', name:'Zhangjiajie', cn:'张家界', region:'Hunan', lng:110.48, lat:29.12,
+    cat:'nature', duo:false, days:3, prio:'immanquable', niveau:'Modéré', transport:'TGV depuis Guilin (via Changsha) ou vol',
+    tag:'Les pics flottants qui ont inspiré « Avatar », dans la brume.',
+    sites:[
+      {n:'Parc forestier national', d:'2 jours', p:'Billet 4 j ~225 ¥', c:'Quota 53 000/j — réserver en ligne'},
+      {n:'Ascenseur Bailong & téléphériques', d:'Tianzi · Yangjiajie · Huangshizhai'},
+      {n:'Pont de verre du Grand Canyon', d:'½ journée'},
+    ],
+    couple:['Lever de soleil sur la mer de pics depuis un belvédère'],
+    food:['Cuisine du Hunan, fumée et pimentée'],
+    note:'Golden Week : foule présente, mais téléphériques et grands espaces la diluent.' },
+
+  { id:'dali', name:'Dali', cn:'大理', region:'Yunnan', lng:100.17, lat:25.70,
+    cat:'culture', duo:true, days:3, prio:'recommande', niveau:'Faible', transport:'Vol Chengdu → Kunming + TGV Kunming → Dali ~2 h · ou vol direct',
+    tag:'Le lac Erhai, la vieille ville Bai et le rythme lent par excellence.',
+    sites:[
+      {n:'Tour du lac Erhai (vélo / croisière)', d:'1 journée', p:'croisière ~142 ¥'},
+      {n:'Vieille ville Bai', d:'flâneries'},
+      {n:'Chongsheng — les Trois Pagodes', d:'2–3 h · 8 h–19 h', p:'121 ¥'},
+      {n:'Xizhou + marché', d:'½ journée'},
+    ],
+    couple:['Croisière sur l’Erhai au coucher du soleil, arrêts café au bord de l’eau'],
+    food:['Cuisine Bai, fromage rúshàn, galettes xǐzhōu'],
+    note:'L’étape « ralentir » du voyage : ne pas la surcharger.' },
+
+  { id:'lijiang', name:'Lijiang', cn:'丽江', region:'Yunnan', lng:100.23, lat:26.87,
+    cat:'culture', duo:true, days:3, prio:'immanquable', niveau:'Faible-modéré', transport:'TGV Dali → Lijiang ~1,5–2,5 h · 48–80 ¥',
+    tag:'La vieille ville Naxi labyrinthique et la Montagne du Dragon de Jade.',
+    sites:[
+      {n:'Vieille ville Naxi (UNESCO)', d:'tôt le matin / après 21 h', p:'libre', c:'magique hors des heures de groupes'},
+      {n:'Montagne du Dragon de Jade', d:'½–1 j', c:'Téléphérique >4 500 m — mal d’altitude possible'},
+      {n:'Spectacle « Impression Lijiang » (Zhang Yimou)', d:'~1 h · 3 100 m', p:'280 ¥ · VIP 346 ¥'},
+      {n:'Shuhe & Black Dragon Pool', d:'½ journée'},
+    ],
+    couple:['« Impression Lijiang » face au glacier, en plein air'],
+    food:['Nouilles « crossing-the-bridge », cuisine Naxi'] },
+
+  { id:'tigerleaping', name:'Tiger Leaping Gorge', cn:'虎跳峡', region:'Yunnan', lng:100.12, lat:27.18,
+    cat:'sport', duo:false, days:2, prio:'recommande', niveau:'Soutenu', transport:'Van depuis Lijiang · ~160 ¥/van',
+    tag:'L’un des plus beaux treks d’Asie, suspendu au-dessus du Yangtsé.',
+    sites:[
+      {n:'High Trail (2 jours, ~20 km)', d:'nuit à Halfway Guesthouse', p:'Entrée ~65 ¥'},
+      {n:'Les « 28 lacets »', d:'jour 1 · ~800 m de dénivelé'},
+    ],
+    couple:['Nuit à la Halfway Guesthouse, terrasse face à la gorge'],
+    food:['Cuisine de refuge, simple et roborative'],
+    note:'Descentes vers la rivière (Middle Gorge) fermées pour travaux en 2025 ; High Trail OK. Ni guide ni permis obligatoires.' },
+
+  { id:'shangrila', name:'Shangri-La', cn:'香格里拉', region:'Yunnan', lng:99.71, lat:27.83,
+    cat:'culture', duo:false, days:2, prio:'interessant', niveau:'Modéré (altitude 3 200 m)', transport:'Bus depuis la gorge · retour TGV/vol via Lijiang',
+    tag:'Premier souffle du plateau tibétain et le monastère de Songzanlin.',
+    sites:[
+      {n:'Monastère de Songzanlin', d:'½ journée'},
+      {n:'Vieille ville tibétaine', d:'flâneries'},
+      {n:'Parc national de Pudacuo', d:'1 journée'},
+    ],
+    couple:['Tour du grand moulin à prières doré au crépuscule'],
+    food:['Thé au beurre de yak, momos'],
+    note:'Froid (~0 °C la nuit), altitude. Étape « sacrifiable » si l’on veut alléger.' },
+
+  { id:'pingyao', name:'Pingyao', cn:'平遥', region:'Shanxi', lng:112.18, lat:37.20,
+    cat:'histoire', duo:true, days:2, prio:'recommande', niveau:'Faible', transport:'TGV Xi’an Nord → Pingyao Gucheng ~3 h · ~150 ¥',
+    tag:'Une cité Ming/Qing intacte, ambiance « vieille Chine » au calme.',
+    sites:[
+      {n:'Cité fortifiée intra-muros (UNESCO)', d:'1–2 jours', c:'Billet combiné'},
+      {n:'Nuit dans une cour traditionnelle', d:'1 nuit'},
+    ],
+    couple:['Lanternes sur les remparts à la tombée de la nuit'],
+    food:['Nouilles du Shanxi, vinaigre noir'] },
+
+  { id:'shanghai', name:'Shanghai', cn:'上海', region:'Est', lng:121.47, lat:31.23,
+    cat:'ville', duo:true, days:3, prio:'immanquable', niveau:'Faible', transport:'TGV Beijing → Shanghai ~4,5–6 h · vol Lijiang → Shanghai',
+    tag:'Le Bund, les néons de Pudong et l’Art déco de la concession française.',
+    sites:[
+      {n:'Croisière sur le Huangpu (au crépuscule)', d:'~45–60 min', p:'~120–150 ¥', c:'Pier Shiliupu'},
+      {n:'Top of Shanghai Observatory (Tour)', d:'fin d’après-midi', p:'180 ¥', c:'8 h 30–22 h, jour + nuit'},
+      {n:'Jardin Yu & vieille ville', d:'½ journée', p:'40 ¥ haute · 30 ¥'},
+      {n:'Zhujiajiao — bourg d’eau (day-trip)', d:'4–5 h', p:'60 ¥ combiné', c:'en semaine, beaucoup plus calme'},
+      {n:'Rooftop face au Bund', d:'soirée', c:'FLAIR · The Roof EDITION · Sir Elly’s (Bar Rouge fermé)'},
+    ],
+    couple:['Observatoire au coucher du soleil puis croisière sur le Huangpu'],
+    food:['Xiaolongbao, concession française, scène internationale'] },
+
+  { id:'zhujiajiao', name:'Zhujiajiao', cn:'朱家角', region:'Est', lng:121.05, lat:31.11,
+    cat:'culture', duo:true, days:1, prio:'interessant', niveau:'Faible', transport:'Métro/bus depuis Shanghai (excursion ½ journée)',
+    tag:'Un bourg d’eau Ming aux ponts de pierre, la « Venise de Shanghai ».',
+    sites:[
+      {n:'Billet combiné des sites', d:'8 h 30–17 h', p:'60 ¥'},
+      {n:'Barque à la rame sur les canaux', d:'15–20 min', p:'200–300 ¥/barque'},
+    ],
+    couple:['Barque à deux sous les ponts en pierre, en semaine'],
+    food:['Cuisses de cochon zòngzi, en-cas de canal'] },
+
+  { id:'suzhou', name:'Suzhou', cn:'苏州', region:'Est', lng:120.62, lat:31.30,
+    cat:'culture', duo:true, days:1, prio:'interessant', niveau:'Faible', transport:'TGV Shanghai → Suzhou ~25 min · ~35 ¥',
+    tag:'Les jardins classiques et les canaux — la « Venise de l’Orient ».',
+    sites:[
+      {n:'Jardin de l’Humble Administrateur', d:'matin', p:'80 ¥ haute · 70 ¥', c:'7 h 30–17 h 30 — y aller tôt'},
+      {n:'Balade des canaux', d:'½ journée'},
+    ],
+    couple:['Barque sur les canaux de la vieille ville'],
+    food:['Cuisine raffinée du Jiangnan'] },
+
+  { id:'hangzhou', name:'Hangzhou', cn:'杭州', region:'Est', lng:120.15, lat:30.27,
+    cat:'nature', duo:true, days:2, prio:'recommande', niveau:'Faible', transport:'TGV Shanghai → Hangzhou ~45 min · 65–77 ¥',
+    tag:'Le Lac de l’Ouest et les plantations de thé Longjing, pour finir en douceur.',
+    sites:[
+      {n:'Croisière sur le Lac de l’Ouest', d:'1–3 h · golden hour', p:'~55–70 ¥', c:'lac gratuit à pied, bateaux payants'},
+      {n:'« Impression West Lake » (Zhang Yimou)', d:'19 h 40, tous les soirs', p:'360 ¥ · VIP 430 ¥', c:'saisonnier, météo-dépendant'},
+      {n:'Plantations de thé Longjing', d:'½ journée'},
+    ],
+    couple:['Spectacle nocturne « Impression West Lake » sur le lac'],
+    food:['Poisson du Lac de l’Ouest chez Lou Wai Lou, cuisine du Jiangnan'],
+    note:'Départ le lendemain depuis Shanghai Pudong (PVG), à ~45 min de TGV.' },
+
+  { id:'huangshan', name:'Huangshan', cn:'黄山', region:'Anhui', lng:118.17, lat:30.13,
+    cat:'nature', duo:true, days:2, prio:'recommande', niveau:'Modéré-soutenu', transport:'Hangzhou → Huangshan ~1,25–2,5 h · 77–120 ¥',
+    tag:'Les Montagnes Jaunes, mer de nuages, pins et granite — variante nature.',
+    sites:[
+      {n:'Ascension & West Sea Canyon', d:'2 j / 1 nuit au sommet', p:'190 ¥ haute', c:'Navette obligatoire 19 ¥ · réservation nominative passeport'},
+      {n:'Téléphériques', d:'aller/retour', p:'80–100 ¥'},
+      {n:'Sources thermales au pied du mont', d:'~42 °C'},
+    ],
+    couple:['Nuit au sommet pour le lever de soleil sur la mer de nuages'],
+    food:['Cuisine de l’Anhui, pousses de bambou'],
+    note:'Variante : remplace le duo Suzhou + Hangzhou en fin de boucle (densifie la fin).' },
+];
+
+const BY_ID = Object.fromEntries(DEST.map(d=>[d.id,d]));
+const st = (id,days)=>({id,days}); // raccourci
+
+/* ---- Photos d'illustration (Flickr CC via loremflickr, repli picsum) ---- */
+const IMG = {
+  hongkong:'hongkong,skyline,harbour', beijing:'beijing,forbidden,city', xian:'xian,terracotta,army',
+  huashan:'huashan,mountain,china', chengdu:'chengdu,panda', leshan:'leshan,giant,buddha',
+  guilin:'guilin,li,river,karst', longji:'longji,rice,terraces', zhangjiajie:'zhangjiajie,mountains',
+  dali:'dali,erhai,yunnan', lijiang:'lijiang,old,town', tigerleaping:'tiger,leaping,gorge',
+  shangrila:'shangri-la,tibet,monastery', pingyao:'pingyao,ancient,town', shanghai:'shanghai,bund,skyline',
+  zhujiajiao:'water,town,china', suzhou:'suzhou,garden,canal', hangzhou:'hangzhou,west,lake',
+  huangshan:'huangshan,mountains,clouds',
+};
+function hashLock(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h%100000; }
+function photoURL(id,w,h){ const k=IMG[id]||'china,landscape'; return `https://loremflickr.com/${w}/${h}/${k}?lock=${hashLock(id)}`; }
+const imgFB = (id,w,h)=>`this.onerror=null;this.src='https://picsum.photos/seed/${id}/${w}/${h}'`;
+
+/* ---- Parcours pré-construits. stops = [{id,days}] ---- */
+const ROUTES = [
+  { id:'sud', name:'Approche Sud', zh:'南线', color:'#4FD0B4', src:'Recherche Claude',
+    blurb:'Anti-Golden Week : on commence par Hong Kong et le Sud, on fuit la foule dans les grands espaces, et on garde les sites stars du Nord pour après le 20 octobre.',
+    stops:[st('hongkong',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',4),st('dali',3),st('lijiang',3),st('tigerleaping',2),st('shangrila',2),st('xian',3),st('pingyao',2),st('beijing',4),st('shanghai',3),st('suzhou',1),st('hangzhou',1)] },
+  { id:'classique', name:'Approche Classique', zh:'经典', color:'#F4CE6A', src:'Recherche GPT',
+    blurb:'La colonne vertébrale historique : Pékin d’abord, puis Xi’an, Chengdu, Guilin et la branche Yunnan, avant un final urbain et lent à Shanghai et Hangzhou. On accepte deux ou trois grands sites tôt le matin, on compense par des séjours lents.',
+    stops:[st('beijing',6),st('xian',4),st('chengdu',6),st('guilin',5),st('dali',5),st('lijiang',4),st('shanghai',6),st('hangzhou',2)] },
+  { id:'leger', name:'Version allégée', zh:'轻松', color:'#F2884E', src:'dérivé · approche Sud',
+    blurb:'On retire Shangri-La (altitude/froid) pour respirer et étaler un peu plus les belles étapes.',
+    stops:[st('hongkong',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',4),st('dali',4),st('lijiang',3),st('tigerleaping',2),st('xian',3),st('pingyao',2),st('beijing',4),st('shanghai',3),st('suzhou',1),st('hangzhou',2)] },
+  { id:'douceur', name:'Romance au ralenti', zh:'慢旅', color:'#EE6E93', src:'le meilleur des deux',
+    blurb:'Moins d’étapes, plus de nuits : on troque quelques icônes contre des séjours longs et lents à Dali, Yangshuo et Hangzhou — la philosophie commune aux deux recherches.',
+    stops:[st('hongkong',3),st('chengdu',4),st('guilin',6),st('dali',6),st('lijiang',5),st('hangzhou',4),st('shanghai',6),st('suzhou',3)] },
+];
+
+/* ---- Dates ---- */
+const TRIP_START = new Date(Date.UTC(2026,8,28));
+const TRIP_DAYS = 38;
+const MONTHS = ['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+function dayDate(i){ const d=new Date(TRIP_START); d.setUTCDate(d.getUTCDate()+i); return d; }
+function isGoldenWeek(d){ const t=d.getTime(); return t>=Date.UTC(2026,9,1) && t<=Date.UTC(2026,9,7); }
+function isWeekend(d){ const w=d.getUTCDay(); return w===0||w===6; }
+
+function haversine(a,b){
+  const R=6371, rad=Math.PI/180;
+  const dLat=(b.lat-a.lat)*rad, dLng=(b.lng-a.lng)*rad, la1=a.lat*rad, la2=b.lat*rad;
+  const x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+/* =================== ÉTAT =================== */
+const STORE='chine-2026-plan';
+let state = { plan: ROUTES[0].stops.map(s=>({...s})), votes:{}, filters:{} };
+Object.keys(CATS).forEach(c=>state.filters[c]=true);
+
+function loadState(){
+  try{
+    if(location.hash.length>3){
+      const data=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))));
+      if(data.plan) state.plan=data.plan.filter(s=>BY_ID[s.id]);
+      if(data.votes) state.votes=data.votes;
+      toast('Plan partagé chargé ✦');
+      history.replaceState(null,'',location.pathname); saveState(); return;
+    }
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(STORE);
+    if(raw){ const d=JSON.parse(raw);
+      if(d.plan) state.plan=d.plan.filter(s=>BY_ID[s.id]);
+      if(d.votes) state.votes=d.votes;
+      if(d.filters) Object.assign(state.filters,d.filters);
+    }
+  }catch(e){}
+}
+let saveTimer=null;
+function saveState(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE,JSON.stringify(state)); }catch(e){} },300); }
+
+function inPlan(id){ return state.plan.some(s=>s.id===id); }
+function planTotalDays(){ return state.plan.reduce((s,x)=>s+x.days,0); }
+function planDistance(){ let km=0; for(let i=1;i<state.plan.length;i++){ km+=haversine(BY_ID[state.plan[i-1].id],BY_ID[state.plan[i].id]); } return km; }
+
+/* =================== TOAST =================== */
+let toastTimer=null;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* =================== FILTRES =================== */
+function buildFilters(){
+  const box=document.getElementById('filters');
+  box.innerHTML=Object.entries(CATS).map(([k,c])=>
+    `<button class="chip ${state.filters[k]?'':'off'}" data-cat="${k}"><i class="dotc" style="background:${c.color}"></i>${c.icon} ${c.label.split(' ')[0]}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+    const k=ch.dataset.cat; state.filters[k]=!state.filters[k];
+    ch.classList.toggle('off',!state.filters[k]); saveState(); mapView && mapView.applyFilter();
+  }));
+}
+
+/* =================== DRAWER =================== */
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
+let openId=null;
+function openDest(id){
+  const d=BY_ID[id]; if(!d) return; openId=id;
+  const c=CATS[d.cat], v=state.votes[id];
+  const site=s=>`<div class="site"><div class="sn">${s.n}</div><div class="si">${s.d?`<span>⏱ ${s.d}</span>`:''}${s.p?`<span class="p">${s.p}</span>`:''}${s.c?`<span class="c">${s.c}</span>`:''}</div></div>`;
+  drawer.innerHTML=`
+    <div class="dr-head">
+      <div class="dr-photo"><img src="${photoURL(id,560,320)}" alt="${d.name}" loading="lazy" onerror="${imgFB(id,560,320)}"></div>
+      <div class="glow" style="background:radial-gradient(120% 100% at 80% 0%, ${c.color}33, transparent 60%)"></div>
+      <button class="dr-close" id="dr-close" aria-label="Fermer">✕</button>
+      <div class="dr-cat" style="color:${c.color}">${c.icon} ${c.label} · ${d.region}</div>
+      <h2>${d.name}</h2><div class="zh cn">${d.cn}</div>
+      <div class="dr-meta">
+        <span class="pill prio-${d.prio}">${PRIO[d.prio]}</span>
+        ${d.duo?'<span class="pill duo">💞 Spécial duo</span>':''}
+        <span class="pill">🥾 ${d.niveau}</span>
+      </div>
+    </div>
+    <div class="dr-body">
+      <p class="dr-tag">${d.tag}</p>
+      <div class="dr-sec"><h4>À vivre</h4>${d.sites.map(site).join('')}</div>
+      ${d.couple?`<div class="dr-sec"><h4>Moment à deux 💞</h4><ul class="bul">${d.couple.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+      ${d.food?`<div class="dr-sec"><h4>Dans l’assiette</h4><ul class="bul">${d.food.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+      <div class="dr-sec"><h4>Y aller</h4><ul class="bul"><li>${d.transport}</li></ul></div>
+      ${d.note?`<div class="note">⚠ <b>À noter</b> — ${d.note}</div>`:''}
+    </div>
+    <div class="dr-actions">
+      <div class="vote" role="group" aria-label="Notre avis">
+        <button class="vbtn ${v==='yes'?'on-yes':''}" data-v="yes">❤ On adore</button>
+        <button class="vbtn ${v==='maybe'?'on-maybe':''}" data-v="maybe">? À voir</button>
+        <button class="vbtn ${v==='no'?'on-no':''}" data-v="no">✕ On zappe</button>
+      </div>
+      <button class="add-btn ${inPlan(id)?'in-plan':''}" id="dr-add">${inPlan(id)?'✓ Dans l’itinéraire — retirer':'+ Ajouter à l’itinéraire'}</button>
+    </div>`;
+  drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+  document.getElementById('dr-close').onclick=closeDrawer;
+  drawer.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
+    const nv=b.dataset.v; if(state.votes[id]===nv) delete state.votes[id]; else state.votes[id]=nv;
+    saveState(); openDest(id); renderEditor();
+  });
+  document.getElementById('dr-add').onclick=()=>{
+    if(inPlan(id)){ state.plan=state.plan.filter(s=>s.id!==id); toast(d.name+' retiré'); }
+    else{ state.plan.push({id,days:d.days}); toast(d.name+' ajouté ✦'); }
+    afterPlanChange(); openDest(id);
+  };
+  mapView && mapView.focus(id);
+}
+function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); openId=null; mapView && mapView.refresh && mapView.refresh(); }
+scrim.addEventListener('click',closeDrawer);
+window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+/* =================== CALENDRIER =================== */
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid'); let h='';
+  for(let i=0;i<TRIP_DAYS;i++){ const d=dayDate(i), gw=isGoldenWeek(d), we=isWeekend(d);
+    h+=`<div class="cal-d ${gw?'gw':''} ${we?'we':''}" title="${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}"><span class="dn">${d.getUTCDate()}</span><span class="mo">${MONTHS[d.getUTCMonth()]}</span></div>`;
+  }
+  grid.innerHTML=h;
+  const stops=document.getElementById('cal-stops'); let s='', day=0;
+  for(const it of state.plan){ const d=BY_ID[it.id]; if(!d) continue; if(day>=TRIP_DAYS) break;
+    const span=Math.max(1,Math.min(it.days,TRIP_DAYS-day));
+    s+=`<button class="cal-stop" style="grid-column:${day+1}/${day+1+span};background:${CATS[d.cat].color}" data-id="${d.id}" title="${d.name} · ${it.days} j">${d.name}</button>`;
+    day+=it.days;
+  }
+  if(day<TRIP_DAYS) s+=`<button class="cal-stop depart" style="grid-column:${day+1}/${TRIP_DAYS+1}" disabled>✈ Départ / marge</button>`;
+  stops.innerHTML=s;
+  stops.querySelectorAll('.cal-stop:not(.depart)').forEach(b=>b.addEventListener('click',()=>openDest(b.dataset.id)));
+  const tot=planTotalDays();
+  document.getElementById('cal-count').innerHTML=`${state.plan.length} étapes · <b style="color:${tot>TRIP_DAYS?'#FF6A53':(tot>=TRIP_DAYS-1?'#5BD27A':'#F4CE6A')}">${tot} jours planifiés</b> / ${TRIP_DAYS}`;
+}
+
+/* =================== ÉDITEUR =================== */
+function renderEditor(){
+  const tot=planTotalDays(), dist=Math.round(planDistance()), diff=tot-TRIP_DAYS;
+  const totCls= tot>TRIP_DAYS?'warn':(tot>=TRIP_DAYS-1?'ok':'');
+  document.getElementById('itin-stats').innerHTML=`
+    <div class="stat"><div class="v">${state.plan.length}</div><div class="l">Étapes</div></div>
+    <div class="stat"><div class="v ${totCls}">${tot} / ${TRIP_DAYS}</div><div class="l">Jours ${diff>0?'(+'+diff+' à retirer)':diff<0?'('+(-diff)+' libres)':'(parfait ✓)'}</div></div>
+    <div class="stat"><div class="v">${dist.toLocaleString('fr-FR')} km</div><div class="l">Distance cumulée</div></div>
+    <div class="stat"><div class="v" style="color:#5BD27A">${Object.values(state.votes).filter(v=>v==='yes').length}</div><div class="l">Coups de cœur ❤</div></div>`;
+  const chips=document.getElementById('plan-chips');
+  chips.innerHTML=state.plan.map((it,i)=>{ const d=BY_ID[it.id], c=CATS[d.cat];
+    return `<div class="pchip" data-id="${it.id}">
+      <div class="ord" style="background:${c.color}">${i+1}</div>
+      <div class="body"><div class="nm">${d.name}</div><div class="dys">${d.cn} · ${d.region}</div></div>
+      <div class="ctrls">
+        <button class="minib mv" data-dir="-1" title="Avancer" ${i===0?'disabled style=opacity:.25':''}>←</button>
+        <button class="minib mv" data-dir="1" title="Reculer" ${i===state.plan.length-1?'disabled style=opacity:.25':''}>→</button>
+        <span class="nstep"><button class="minib nd" data-d="-1" title="−1 jour">−</button><b>${it.days}j</b><button class="minib nd" data-d="1" title="+1 jour">+</button></span>
+        <button class="minib rm" title="Retirer">✕</button>
+      </div></div>`;
+  }).join('') || `<p style="color:var(--mute);font-family:var(--mono);font-size:13px">Itinéraire vide — charge une approche ci-dessus ou ajoute des étapes.</p>`;
+  chips.querySelectorAll('.pchip').forEach(chip=>{
+    const id=chip.dataset.id, idx=state.plan.findIndex(s=>s.id===id);
+    chip.querySelector('.body').addEventListener('click',()=>openDest(id));
+    chip.querySelectorAll('.mv').forEach(b=>b.addEventListener('click',()=>{ const dir=+b.dataset.dir,j=idx+dir; if(j<0||j>=state.plan.length)return; const a=state.plan;[a[idx],a[j]]=[a[j],a[idx]]; afterPlanChange(); }));
+    chip.querySelectorAll('.nd').forEach(b=>b.addEventListener('click',()=>{ state.plan[idx].days=Math.max(1,state.plan[idx].days+ +b.dataset.d); afterPlanChange(); }));
+    chip.querySelector('.rm').addEventListener('click',()=>{ state.plan.splice(idx,1); afterPlanChange(); });
+  });
+  const pool=document.getElementById('add-pool');
+  const missing=DEST.filter(d=>!inPlan(d.id));
+  pool.innerHTML=missing.length? missing.map(d=>`<button class="addchip" data-id="${d.id}">+ ${d.name}</button>`).join('') : `<span style="color:var(--mute);font-size:12px;font-family:var(--mono)">Toutes les étapes sont dans l’itinéraire.</span>`;
+  pool.querySelectorAll('.addchip').forEach(b=>b.addEventListener('click',()=>{ const d=BY_ID[b.dataset.id]; state.plan.push({id:d.id,days:d.days}); toast(d.name+' ajouté ✦'); afterPlanChange(); }));
+}
+
+function afterPlanChange(){
+  saveState(); renderEditor(); renderCalendar();
+  document.getElementById('tb-progress').textContent=`${state.plan.length} étapes · ${planTotalDays()}/${TRIP_DAYS} j`;
+  if(openId) { const d=BY_ID[openId]; const btn=document.getElementById('dr-add');
+    if(btn){ btn.className='add-btn '+(inPlan(openId)?'in-plan':''); btn.textContent=inPlan(openId)?'✓ Dans l’itinéraire — retirer':'+ Ajouter à l’itinéraire'; } }
+  mapView && mapView.rebuildRoute();
+}
+
+/* =================== DEUX APPROCHES + VARIANTES =================== */
+function loadRoute(r){
+  if(state.plan.length && !confirm('Remplacer l’itinéraire en cours par « '+r.name+' » ?')) return;
+  state.plan=r.stops.map(s=>({...s})); toast('« '+r.name+' » chargé ✦'); afterPlanChange();
+  document.getElementById('editor').scrollIntoView({behavior:'smooth'});
+}
+function renderApproaches(){
+  const box=document.getElementById('compare');
+  const A=ROUTES[0], B=ROUTES[1];
+  const days=r=>r.stops.reduce((s,x)=>s+x.days,0);
+  const list=r=>r.stops.map(x=>BY_ID[x.id].name).join(' › ');
+  box.innerHTML=`
+    <div class="capproach a">
+      <span class="src">${A.src}</span>
+      <h3>${A.name} <span class="cn" style="font-size:.7em;color:var(--jade)">${A.zh}</span></h3>
+      <p class="phil">${A.blurb}</p>
+      <dl>
+        <div class="row"><dt>Arrivée</dt><dd>Hong Kong</dd></div>
+        <div class="row"><dt>Golden Week</dt><dd>On la <b>fuit</b> dans les grands espaces (Yangshuo, Zhangjiajie, Chengdu)</dd></div>
+        <div class="row"><dt>Signature</dt><dd>Zhangjiajie · Tiger Leaping Gorge · Shangri-La · Pingyao</dd></div>
+        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:#CDBFAE">${list(A)}</dd></div>
+        <div class="row"><dt>Format</dt><dd>${A.stops.length} étapes · ${days(A)} j</dd></div>
+      </dl>
+      <button class="load" data-r="${A.id}">Charger l’approche Sud →</button>
+    </div>
+    <div class="capproach b">
+      <span class="src">${B.src}</span>
+      <h3>${B.name} <span class="cn" style="font-size:.7em;color:var(--gold)">${B.zh}</span></h3>
+      <p class="phil">${B.blurb}</p>
+      <dl>
+        <div class="row"><dt>Arrivée</dt><dd>Pékin</dd></div>
+        <div class="row"><dt>Golden Week</dt><dd>On <b>fonce tôt le matin</b> sur les grands sites, séjours lents en compensation</dd></div>
+        <div class="row"><dt>Signature</dt><dd>Palais d’Été · Huashan · Leshan · Longji · Zhujiajiao</dd></div>
+        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:#CDBFAE">${list(B)}</dd></div>
+        <div class="row"><dt>Format</dt><dd>${B.stops.length} étapes · ${days(B)} j (cadre 42 j à l’origine)</dd></div>
+      </dl>
+      <button class="load" data-r="${B.id}">Charger l’approche Classique →</button>
+    </div>`;
+  box.querySelectorAll('.load').forEach(b=>b.addEventListener('click',()=>loadRoute(ROUTES.find(r=>r.id===b.dataset.r))));
+}
+function renderProps(){
+  const box=document.getElementById('props');
+  const variants=ROUTES.filter(r=>r.id!=='sud'&&r.id!=='classique');
+  box.innerHTML=variants.map(r=>{ const days=r.stops.reduce((s,x)=>s+x.days,0);
+    return `<div class="prop">
+      <div class="pz" style="color:${r.color}">${r.zh} · ${r.src} · ${r.stops.length} étapes · ${days} j</div>
+      <h3>${r.name}</h3><p>${r.blurb}</p>
+      <div class="route-mini">${r.stops.map(x=>BY_ID[x.id].name).join(' › ')}</div>
+      <button class="load" data-r="${r.id}" style="border-color:${r.color}66;color:${r.color};background:${r.color}1a">Charger ce parcours →</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.load').forEach(b=>b.addEventListener('click',()=>loadRoute(ROUTES.find(r=>r.id===b.dataset.r))));
+}
+
+document.getElementById('btn-load-reco').addEventListener('click',()=>{ state.plan=ROUTES[0].stops.map(s=>({...s})); toast('Approche Sud rechargée ✦'); afterPlanChange(); });
+document.getElementById('btn-clear').addEventListener('click',()=>{ if(!confirm('Vider complètement l’itinéraire ?'))return; state.plan=[]; afterPlanChange(); });
+document.getElementById('btn-share').addEventListener('click',async()=>{
+  const payload=btoa(unescape(encodeURIComponent(JSON.stringify({plan:state.plan,votes:state.votes}))));
+  const url=location.origin+location.pathname+'#'+payload;
+  try{ await navigator.clipboard.writeText(url); toast('Lien copié — envoie-le à l’autre ✦'); }
+  catch(e){ prompt('Copie ce lien et envoie-le :',url); }
+});
+
+/* =====================================================================
+   CARTE 3D + repli 2D
+   ===================================================================== */
+let mapView=null;
+const REDUCED = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+const PROJ = (()=>{
+  let minLng=1e9,maxLng=-1e9,minLat=1e9,maxLat=-1e9;
+  for(const poly of CHINA_GEO) for(const [x,y] of poly){ if(x<minLng)minLng=x; if(x>maxLng)maxLng=x; if(y<minLat)minLat=y; if(y>maxLat)maxLat=y; }
+  if(!isFinite(minLng)){ minLng=73.5;maxLng=135.1;minLat=18;maxLat=53.6; }
+  const cLng=(minLng+maxLng)/2, cLat=(minLat+maxLat)/2, kx=Math.cos(cLat*Math.PI/180);
+  const S=140/Math.max((maxLng-minLng)*kx,(maxLat-minLat));
+  return { cLng,cLat,kx,S,minLng,maxLng,minLat,maxLat, x:lng=>(lng-cLng)*kx*S, y:lat=>(lat-cLat)*S };
+})();
+
+async function bootMap(){
+  const loader=document.getElementById('loader');
+  try{
+    const THREE = await import('three');
+    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    init3D(THREE, OrbitControls);
+  }catch(err){
+    console.warn('[Chine] WebGL/Three indisponible, repli 2D', err);
+    try{ init2D(); }catch(e){ console.error(e); }
+  }
+  loader.classList.add('hide'); setTimeout(()=>loader.style.display='none',700);
+}
+
+function init3D(THREE, OrbitControls){
+  const canvas=document.getElementById('scene'), stage=document.getElementById('stage');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(42,1,.5,4000);
+
+  const controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=.07;
+  controls.maxPolarAngle=1.47; controls.minPolarAngle=.18;
+  controls.autoRotate=!REDUCED; controls.autoRotateSpeed=.22; controls.enablePan=false;
+  controls.rotateSpeed=.85; controls.zoomSpeed=.8;
+
+  // ----- lights -----
+  scene.add(new THREE.AmbientLight(0x9aa6c8,1.05));
+  const key=new THREE.DirectionalLight(0xffeacb,1.35); key.position.set(70,140,50); scene.add(key);
+  const fill=new THREE.DirectionalLight(0x5a78ff,.55); fill.position.set(-90,50,-70); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xff8a6a,.4); rim.position.set(20,30,-120); scene.add(rim);
+
+  // The world group is rotated flat; the map is built in projected coords
+  // (centred on the bounding-box centre), so its geometric centre is ~origin.
+  const world=new THREE.Group(); world.rotation.x=-Math.PI/2; scene.add(world);
+  const TOPZ=6;
+  const shapes=CHINA_GEO.map(poly=>{ const sh=new THREE.Shape();
+    poly.forEach(([lng,lat],i)=>{ const x=PROJ.x(lng),y=PROJ.y(lat); i?sh.lineTo(x,y):sh.moveTo(x,y); }); return sh; });
+  const geo=new THREE.ExtrudeGeometry(shapes,{depth:TOPZ,bevelEnabled:true,bevelThickness:.5,bevelSize:.5,bevelSegments:2});
+  // Brighter, warmer land so the WHOLE country reads — not just the glowing pins.
+  const landMat=new THREE.MeshStandardMaterial({color:0x224a55,metalness:.2,roughness:.62,emissive:0x123038,emissiveIntensity:.7,flatShading:false});
+  const sideMat=new THREE.MeshStandardMaterial({color:0x123038,metalness:.35,roughness:.85,emissive:0x0a1c22,emissiveIntensity:.4});
+  const land=new THREE.Mesh(geo,[landMat,sideMat]); land.castShadow=false; world.add(land);
+  // crisp gold coastline
+  CHINA_GEO.forEach(poly=>{ const pts=poly.map(([lng,lat])=>new THREE.Vector3(PROJ.x(lng),PROJ.y(lat),TOPZ+0.06));
+    world.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xF7DD93,transparent:true,opacity:.7}))); });
+
+  // subtle reflective sea plane beneath the country
+  (function(){ const box=new THREE.Box3().setFromObject(land); const cx=(box.min.x+box.max.x)/2, cy=(box.min.y+box.max.y)/2;
+    const r=Math.max(box.max.x-box.min.x,box.max.y-box.min.y)*1.6;
+    const sea=new THREE.Mesh(new THREE.CircleGeometry(r,64),
+      new THREE.MeshBasicMaterial({color:0x0a1620,transparent:true,opacity:.5}));
+    sea.position.set(cx,cy,-1.5); world.add(sea);
+  })();
+
+  // ----- starfield -----
+  const sp=[]; for(let i=0;i<520;i++) sp.push((Math.random()-.5)*1100,(Math.random()-.15)*500,(Math.random()-.5)*1100);
+  const starGeo=new THREE.BufferGeometry(); starGeo.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+  const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xfff2d8,size:1.2,transparent:true,opacity:.55})); scene.add(stars);
+
+  function haloTex(color){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+    const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,color); g.addColorStop(.25,color); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g; x.fillRect(0,0,128,128); return new THREE.CanvasTexture(c); }
+  const haloCache={}; const halo=col=>haloCache[col]||(haloCache[col]=haloTex(col));
+  function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function labelSprite(name,cn){ const c=document.createElement('canvas'), ctx=c.getContext('2d');
+    ctx.font='600 34px Outfit, sans-serif'; const w=Math.max(ctx.measureText(name).width, 60)+46; c.width=w; c.height=94;
+    const x=c.getContext('2d'); x.fillStyle='rgba(11,9,16,.82)'; rr(x,2,2,w-4,90,20); x.fill();
+    x.strokeStyle='rgba(247,221,147,.55)'; x.lineWidth=2; rr(x,2,2,w-4,90,20); x.stroke();
+    x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#F4ECE0'; x.font='600 34px Outfit, sans-serif'; x.fillText(name,w/2,37);
+    x.fillStyle='#9C8F81'; x.font='500 22px "Noto Serif SC", serif'; x.fillText(cn,w/2,70);
+    const t=new THREE.CanvasTexture(c); t.anisotropy=4;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,depthWrite:false}));
+    s.scale.set(w/94*7.2,7.2,1); s.renderOrder=10; return s; }
+
+  const pinGroup=new THREE.Group(); world.add(pinGroup);
+  const hitMeshes=[], pins={};
+  DEST.forEach(d=>{ const x=PROJ.x(d.lng), y=PROJ.y(d.lat), col=CATS[d.cat].color, stemH=11;
+    const g=new THREE.Group(); g.position.set(x,y,0);
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,stemH,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5}));
+    stem.position.set(0,0,TOPZ+stemH/2); stem.rotation.x=Math.PI/2; g.add(stem);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.6,1.1,24),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.55,side:THREE.DoubleSide}));
+    ring.position.set(0,0,TOPZ+0.12); g.add(ring);
+    const sph=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,20),new THREE.MeshBasicMaterial({color:col})); sph.position.set(0,0,TOPZ+stemH); g.add(sph);
+    const hs=new THREE.Sprite(new THREE.SpriteMaterial({map:halo(col),color:col,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false}));
+    hs.scale.set(7,7,1); hs.position.copy(sph.position); g.add(hs);
+    const lab=labelSprite(d.name,d.cn); lab.position.set(0,0,TOPZ+stemH+5.6); g.add(lab);
+    const hit=new THREE.Mesh(new THREE.SphereGeometry(4.5,8,8),new THREE.MeshBasicMaterial({visible:false})); hit.position.copy(sph.position); hit.userData.id=d.id; g.add(hit); hitMeshes.push(hit);
+    pinGroup.add(g); pins[d.id]={g,sph,ring,halo:hs,lab,base:new THREE.Vector3(x,y,TOPZ),cat:d.cat};
+  });
+
+  const routeGroup=new THREE.Group(); world.add(routeGroup); let comets=[];
+  function rebuildRoute(){ while(routeGroup.children.length) routeGroup.remove(routeGroup.children[0]); comets=[];
+    const plan=state.plan.filter(s=>pins[s.id]);
+    for(let i=1;i<plan.length;i++){ const a=pins[plan[i-1].id].base, b=pins[plan[i].id].base, dist=a.distanceTo(b);
+      const mid=a.clone().add(b).multiplyScalar(.5); mid.z+=Math.min(dist*.38,46)+6;
+      const curve=new THREE.QuadraticBezierCurve3(a.clone(),mid,b.clone());
+      routeGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve,44,.34,8,false),new THREE.MeshBasicMaterial({color:0xF4CE6A,transparent:true,opacity:.58})));
+      const cm=new THREE.Sprite(new THREE.SpriteMaterial({map:halo('#FFE9B0'),color:0xFFF0C8,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false})); cm.scale.set(4.5,4.5,1);
+      routeGroup.add(cm); comets.push({cm,curve,off:i*0.18}); }
+  }
+  rebuildRoute();
+  function applyFilter(){ DEST.forEach(d=>{ pins[d.id].g.visible=state.filters[d.cat]; }); refreshLabels(); }
+  function refreshLabels(hoverId){ DEST.forEach(d=>{ const p=pins[d.id];
+    p.lab.visible=(inPlan(d.id)||d.id===openId||d.id===hoverId)&&p.g.visible; p.sph.scale.setScalar(d.id===openId?1.5:1); }); }
+  applyFilter();
+
+  /* ============================================================
+     FIT-TO-BOUNDS — the core fix for "impossible de la centrer".
+     We measure the real bounds of the country in WORLD space,
+     point the orbit target at its true centre, and place the
+     camera at a distance that frames the whole shape with margin,
+     accounting for both the vertical AND horizontal field of view.
+     ============================================================ */
+  let HOME={pos:new THREE.Vector3(0,150,165), target:new THREE.Vector3(0,0,0)};
+  function computeHome(margin){
+    world.updateMatrixWorld(true);
+    const box=new THREE.Box3().setFromObject(land);     // country only — ignore tall route arcs
+    const center=box.getCenter(new THREE.Vector3());
+    const sphere=box.getBoundingSphere(new THREE.Sphere());
+    const r=sphere.radius*(margin||1.18);
+    const vFov=camera.fov*Math.PI/180;
+    const hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect);
+    const dist=r/Math.sin(Math.min(vFov,hFov)/2);        // fit the tighter axis
+    // a gently tilted bird's-eye angle (elevation ~ 48°)
+    const elev=0.84, azim=-0.18;
+    const pos=new THREE.Vector3(
+      center.x + dist*Math.cos(elev)*Math.sin(azim),
+      center.y + dist*Math.sin(elev),
+      center.z + dist*Math.cos(elev)*Math.cos(azim)
+    );
+    controls.minDistance=dist*0.45; controls.maxDistance=dist*1.9;
+    return {pos,target:center.clone()};
+  }
+  function applyHome(){ camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); }
+  let flyId=0;
+  function flyTo(pos,target,ms){
+    cancelAnimationFrame(flyId);
+    const p0=camera.position.clone(), t0=controls.target.clone(), t1=performance.now(), dur=ms||900;
+    const wasRot=controls.autoRotate; controls.autoRotate=false;
+    (function step(){ const k=Math.min(1,(performance.now()-t1)/dur), e=1-Math.pow(1-k,3);
+      camera.position.lerpVectors(p0,pos,e); controls.target.lerpVectors(t0,target,e); controls.update();
+      if(k<1) flyId=requestAnimationFrame(step); else controls.autoRotate=wasRot&&!REDUCED; })();
+  }
+  function recenter(){ HOME=computeHome(); btnRot.classList.toggle('active',controls.autoRotate);
+    flyTo(HOME.pos,HOME.target,850); }
+
+  const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let down=null, hoverId=null;
+  function ndc(e){ const r=canvas.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; }
+  function pick(){ world.updateMatrixWorld(); ray.setFromCamera(mouse,camera); const h=ray.intersectObjects(hitMeshes,false); return h.length?h[0].object.userData.id:null; }
+  canvas.addEventListener('pointerdown',e=>{ down={x:e.clientX,y:e.clientY,t:Date.now()}; });
+  canvas.addEventListener('pointerup',e=>{ if(!down)return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y), dt=Date.now()-down.t; down=null;
+    if(moved<7&&dt<420){ ndc(e); const id=pick(); if(id) openDest(id); } });
+  canvas.addEventListener('pointermove',e=>{ ndc(e); const id=pick(); if(id!==hoverId){ hoverId=id; canvas.style.cursor=id?'pointer':'grab'; refreshLabels(id); } });
+  const hint=document.getElementById('stage-hint'); canvas.addEventListener('pointerdown',()=>{ if(hint) hint.style.opacity='0'; },{once:true});
+
+  const btnRot=document.getElementById('btn-rotate'); btnRot.classList.toggle('active',controls.autoRotate);
+  btnRot.addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; btnRot.classList.toggle('active',controls.autoRotate); });
+  document.getElementById('btn-resetview').addEventListener('click',recenter);
+
+  function resize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+    const home=computeHome(); HOME=home;                 // keep framing correct on every resize
+    // only snap the camera home automatically before the user has interacted
+    if(!userMoved) applyHome();
+  }
+  let userMoved=false; controls.addEventListener('start',()=>{ userMoved=true; });
+  resize(); new ResizeObserver(resize).observe(stage);
+
+  // intro: frame the country, then a graceful dolly-in
+  HOME=computeHome(); applyHome();
+  (function intro(){
+    const start=computeHome(2.1);                         // begin pulled back...
+    camera.position.copy(start.pos); controls.target.copy(start.target); controls.update();
+    const end=computeHome(1.18); HOME=end;
+    flyTo(end.pos,end.target,1400);
+  })();
+
+  let running=true; document.addEventListener('visibilitychange',()=>{ running=!document.hidden; if(running) loop(); });
+  const clock=new THREE.Clock();
+  function loop(){ if(!running) return; requestAnimationFrame(loop); const t=clock.getElapsedTime(); controls.update();
+    stars.rotation.y=t*0.006;
+    DEST.forEach((d,i)=>{ const p=pins[d.id]; if(!p.g.visible) return; const pulse=1+(REDUCED?0:Math.sin(t*2.2+i)*0.16); p.halo.scale.setScalar(7*pulse*(d.id===openId?1.4:1));
+      if(p.ring) p.ring.rotation.z=t*0.5+i; });
+    if(!REDUCED) comets.forEach(c=>c.cm.position.copy(c.curve.getPointAt((t*0.16+c.off)%1)));
+    renderer.render(scene,camera); }
+  loop();
+
+  mapView={
+    focus(id){ const p=pins[id]; if(!p) return; controls.autoRotate=false; btnRot.classList.remove('active'); refreshLabels();
+      const target=p.base.clone().applyMatrix4(world.matrixWorld);
+      // glide the camera in toward the selected pin while keeping the whole map readable
+      const dir=camera.position.clone().sub(controls.target).normalize();
+      const pos=target.clone().add(dir.multiplyScalar(Math.max(controls.minDistance*1.5,HOME.pos.distanceTo(HOME.target)*0.62)));
+      flyTo(pos,target,800); },
+    recenter,
+    rebuildRoute(){ rebuildRoute(); refreshLabels(); },
+    applyFilter(){ applyFilter(); },
+    refresh(){ refreshLabels(); },
+  };
+}
+
+function init2D(){
+  const canvas=document.getElementById('scene'), stage=document.getElementById('stage'), ctx=canvas.getContext('2d');
+  let W,H,sc,ox,oy; document.getElementById('stage-hint').textContent='Carte 2D (mode léger) · clique un point pour l’ouvrir';
+  const sx=lng=>ox+(lng-PROJ.cLng)*PROJ.kx*sc, sy=lat=>oy-(lat-PROJ.cLat)*sc;
+  function fit(){ const r=stage.getBoundingClientRect(); W=canvas.width=r.width*devicePixelRatio; H=canvas.height=r.height*devicePixelRatio;
+    canvas.style.width=r.width+'px'; canvas.style.height=r.height+'px';
+    sc=Math.min(W/((PROJ.maxLng-PROJ.minLng)*PROJ.kx*1.15),H/((PROJ.maxLat-PROJ.minLat)*1.18)); ox=W/2; oy=H/2; draw(); }
+  function draw(){ ctx.clearRect(0,0,W,H); ctx.beginPath();
+    CHINA_GEO.forEach(poly=>{ poly.forEach(([lng,lat],i)=>{ const X=sx(lng),Y=sy(lat); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.closePath(); });
+    ctx.fillStyle='rgba(22,50,61,.55)'; ctx.fill(); ctx.strokeStyle='rgba(244,206,106,.55)'; ctx.lineWidth=1.4*devicePixelRatio; ctx.stroke();
+    const plan=state.plan.filter(s=>BY_ID[s.id]); ctx.strokeStyle='rgba(244,206,106,.85)'; ctx.lineWidth=2*devicePixelRatio; ctx.beginPath();
+    plan.forEach((s,i)=>{ const d=BY_ID[s.id],X=sx(d.lng),Y=sy(d.lat); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
+    DEST.forEach(d=>{ if(!state.filters[d.cat])return; const X=sx(d.lng),Y=sy(d.lat);
+      ctx.beginPath(); ctx.arc(X,Y,(d.id===openId?7:5)*devicePixelRatio,0,7); ctx.fillStyle=CATS[d.cat].color; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1.5*devicePixelRatio; ctx.stroke();
+      if(inPlan(d.id)||d.id===openId){ ctx.fillStyle='#F3E9DD'; ctx.font=`${12*devicePixelRatio}px Outfit, sans-serif`; ctx.textAlign='center'; ctx.fillText(d.name,X,Y-10*devicePixelRatio); } });
+  }
+  canvas.addEventListener('click',e=>{ const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*devicePixelRatio,my=(e.clientY-r.top)*devicePixelRatio;
+    let best=null,bd=1e9; DEST.forEach(d=>{ if(!state.filters[d.cat])return; const dd=Math.hypot(mx-sx(d.lng),my-sy(d.lat)); if(dd<bd){bd=dd;best=d.id;} });
+    if(best&&bd<22*devicePixelRatio) openDest(best); });
+  fit(); new ResizeObserver(fit).observe(stage);
+  mapView={ focus(){draw();}, rebuildRoute(){draw();}, applyFilter(){draw();}, refresh(){draw();} };
+}
+
+/* =================== GALERIE + ANIMATIONS =================== */
+function buildGallery(){
+  const track=document.getElementById('gtrack');
+  const cards=DEST.map(d=>{ const c=CATS[d.cat];
+    return `<div class="gcard" data-id="${d.id}">
+      <img loading="lazy" src="${photoURL(d.id,536,392)}" alt="${d.name}" onerror="${imgFB(d.id,536,392)}">
+      <span class="badge" style="background:${c.color}">${c.icon} ${PRIO[d.prio]}</span>
+      <div class="cap">${d.name} <span class="zh cn">${d.cn}</span></div>
+    </div>`; }).join('');
+  track.innerHTML=cards+cards; // doublé pour une boucle continue
+  track.querySelectorAll('.gcard').forEach(g=>g.addEventListener('click',()=>openDest(g.dataset.id)));
+}
+function setupReveal(){
+  const sels=['.gallery-head','.kicker','h2.big','.lede','.cal','.compare .capproach','.agree','.itin-stats','.props .prop','.cards2 .pcard'];
+  const els=[]; sels.forEach(s=>document.querySelectorAll(s).forEach(e=>{ if(!e.classList.contains('reveal')){ e.classList.add('reveal'); els.push(e);} }));
+  if(REDUCED || !('IntersectionObserver' in window)){ els.forEach(e=>e.classList.add('in')); return; }
+  const io=new IntersectionObserver(ent=>ent.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} }),{threshold:.12,rootMargin:'0px 0px -7% 0px'});
+  els.forEach((e,i)=>{ e.style.transitionDelay=(Math.min(i%6,5)*0.05)+'s'; io.observe(e); });
+}
+function setupHeroParallax(){
+  if(REDUCED) return; const hero=document.querySelector('.hero'); if(!hero) return;
+  addEventListener('scroll',()=>{ const y=Math.min(scrollY,520); hero.style.transform=`translateY(${y*0.14}px)`; hero.style.opacity=String(Math.max(0,1-y/460)); },{passive:true});
+}
+
+function setupTopbar(){
+  const bar=document.querySelector('.topbar'); if(!bar) return;
+  const onScroll=()=>bar.classList.toggle('scrolled',scrollY>12);
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+}
+/* Subtle magnetic pull on the primary controls — a high-touch detail. */
+function setupMagnetic(){
+  if(REDUCED || matchMedia('(pointer:coarse)').matches) return;
+  document.querySelectorAll('.tb-btn,.icon-btn,.add-btn').forEach(el=>{
+    el.addEventListener('pointermove',e=>{ const r=el.getBoundingClientRect();
+      const dx=(e.clientX-(r.left+r.width/2))/r.width, dy=(e.clientY-(r.top+r.height/2))/r.height;
+      el.style.transform=`translate(${dx*6}px,${dy*6-1}px)`; });
+    el.addEventListener('pointerleave',()=>{ el.style.transform=''; });
+  });
+}
+
+/* =================== INIT =================== */
+loadState();
+buildFilters();
+buildGallery();
+renderApproaches();
+renderCalendar();
+renderEditor();
+renderProps();
+setupReveal();
+setupHeroParallax();
+setupTopbar();
+setupMagnetic();
+document.getElementById('tb-progress').textContent=`${state.plan.length} étapes · ${planTotalDays()}/${TRIP_DAYS} j`;
+bootMap();
+</script>
+</body>
+</html>

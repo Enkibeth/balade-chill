@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const LINKS = [
+const LINKS: { href: string; label: string; external?: boolean }[] = [
   { href: '/dashboard', label: 'Carte' },
   { href: '/generate', label: 'Générer' },
   { href: '/history', label: 'Historique' },
   { href: '/settings', label: 'Réglages' },
   { href: '/autre', label: 'Léman' },
+  { href: '/chine.html', label: 'Chine', external: true },
 ]
 
 export function Nav() {
@@ -35,16 +36,23 @@ export function Nav() {
           {LINKS.map((link) => {
             const active =
               pathname === link.href || pathname.startsWith(link.href + '/')
+            const className = `rounded-lg px-3 py-1.5 text-sm transition ${
+              active
+                ? 'bg-amber-300/15 text-amber-200'
+                : 'text-amber-100/55 hover:text-amber-100'
+            }`
+            // The China sub-site is a standalone page served outside the app
+            // shell, so use a real navigation (not next/link) to leave the
+            // Balades chrome behind entirely.
+            if (link.external) {
+              return (
+                <a key={link.href} href={link.href} className={className}>
+                  {link.label}
+                </a>
+              )
+            }
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                  active
-                    ? 'bg-amber-300/15 text-amber-200'
-                    : 'text-amber-100/55 hover:text-amber-100'
-                }`}
-              >
+              <Link key={link.href} href={link.href} className={className}>
                 {link.label}
               </Link>
             )
