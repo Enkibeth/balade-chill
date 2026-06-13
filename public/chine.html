@@ -1557,58 +1557,54 @@ function initMapbox(token, styleUrl){
 function hideLoader(){ const l=document.getElementById('loader');
   if(l){ l.classList.add('hide'); setTimeout(()=>{ l.style.display='none'; },700); } }
 
-/* Diagnostic visible : on note pourquoi la carte bascule, lisible dans la
-   console ET via l'attribut data-map sur <html> (inspectable sur l'iPad). */
+/* Diagnostic visible sur l'appareil : badge en bas de la carte qui indique
+   le mode réel (Mapbox / repli) et la raison. Touchez-le pour le fermer. */
 function noteMap(state, why){
   document.documentElement.setAttribute('data-map', state);
-  if(why){ document.documentElement.setAttribute('data-map-why', why); console.warn('[Chine] carte :', state, '—', why); }
-  else console.info('[Chine] carte :', state);
+  if(why) document.documentElement.setAttribute('data-map-why', why);
+  (why?console.warn:console.info)('[Chine] carte :', state, why||'');
+  let b=document.getElementById('map-debug');
+  if(!b){ b=document.createElement('button'); b.id='map-debug'; b.type='button';
+    b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:3000;max-width:88%;'
+      +'padding:7px 11px;border:0;border-radius:11px;text-align:left;color:#fff;'
+      +'font:600 11px/1.35 system-ui,-apple-system,sans-serif;background:rgba(0,0,0,.66);'
+      +'-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,.35)';
+    b.onclick=()=>b.remove();
+    (document.getElementById('stage')||document.body).appendChild(b); }
+  const ok=state.indexOf('mapbox')===0;
+  b.textContent=(ok?'🗺️ '+state:'⚠️ '+state)+(why?' · '+why:'')+'  ✕';
 }
 
-// Styles classiques (légers, compatibles GL JS ancien, rapides en cellulaire).
-// Servent de palier intermédiaire AVANT le repli SVG : on garde une vraie carte.
+// Style classique léger (rapide et fiable sur Safari iOS), suivant le thème.
 const CLASSIC_STYLE=()=>document.documentElement.getAttribute('data-theme')==='light'
   ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
 
-// Lance une carte Mapbox et résout quand le style est chargé (ou rejette).
-function tryMapbox(token, styleUrl, timeoutMs){
-  return new Promise((resolve,reject)=>{
-    let map, done=false;
-    const finish=(ok,why)=>{ if(done) return; done=true;
-      if(ok) resolve(map);
-      else { try{ map&&map.remove(); }catch(e){}
-        const host=document.getElementById('map2d'); if(host) host.innerHTML=''; reject(new Error(why)); }
-    };
-    try{ map=initMapbox(token, styleUrl); }catch(e){ finish(false,'init: '+(e&&e.message||e)); return; }
-    map.on('load',()=>finish(true));
-    map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; const s=(e&&e.error&&e.error.status)||0;
-      if(s===401||s===403||/access token|unauthorized|forbidden|not authorized|failed to load.*style|style is not done/i.test(m))
-        finish(false,'erreur Mapbox ('+(s||'?')+') '+m); });
-    setTimeout(()=>{ if(map&&map.isStyleLoaded&&map.isStyleLoaded()) finish(true);
-      else finish(false,'délai dépassé ('+(timeoutMs/1000)+' s)'); }, timeoutMs);
-  });
-}
-
-async function bootMap(){
+function bootMap(){
   const token=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
-  // En GL JS v3, mapboxgl.supported() n'existe plus : présence du module = WebGL géré par la lib.
-  const webgl = !!window.mapboxgl;
-  if(token && webgl){
-    // 1) Style « Standard » (3D, jour/nuit). Délai court : s'il traîne en mobile, on n'attend pas.
-    try{ const map=await tryMapbox(token, 'mapbox://styles/mapbox/standard', 9000);
-      noteMap('mapbox-standard'); hideLoader(); return; }
-    catch(e1){ noteMap('repli-standard', e1.message);
-      // 2) Palier : style classique léger (souvent le bon compromis sur réseau lent/ancien appareil).
-      try{ const map=await tryMapbox(token, CLASSIC_STYLE(), 9000);
-        noteMap('mapbox-classic'); hideLoader(); return; }
-      catch(e2){ noteMap('repli-svg', e2.message); }
-    }
-  } else {
-    noteMap('repli-svg', !token ? 'jeton Mapbox absent' : 'WebGL/Mapbox indisponible');
+  const webgl = !!window.mapboxgl; // GL JS v3 : présence du module = WebGL géré par la lib.
+  // SVG seulement si Mapbox ne peut PAS démarrer (pas de jeton / pas de WebGL).
+  if(!token || !webgl){
+    noteMap('repli-svg', !token ? 'jeton Mapbox absent' : 'Mapbox/WebGL indisponible');
+    try{ buildMap2D(); }catch(e){ console.error(e); } hideLoader(); return;
   }
-  // 3) Dernier recours : carte SVG hors-ligne (toujours affichée).
-  try{ buildMap2D(); }catch(err){ console.error('[Chine] carte 2D indisponible', err); }
-  hideLoader();
+  let map;
+  try{ map=initMapbox(token, CLASSIC_STYLE()); }
+  catch(e){ noteMap('repli-svg','échec init: '+(e&&e.message||e));
+    try{ buildMap2D(); }catch(_){} hideLoader(); return; }
+
+  // On NE détruit JAMAIS la carte sur minuteur : on la laisse charger (réseau lent).
+  let recovered=false;
+  map.on('style.load',()=>noteMap('mapbox'+(recovered?' (streets)':'')));
+  map.on('load',()=>hideLoader());
+  // Sur une vraie erreur fatale (jeton/style), on tente une bascule de style — sans repli SVG.
+  map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; const s=(e&&e.error&&e.error.status)||0;
+    console.warn('[Chine] Mapbox error', s, m);
+    const fatal=s===401||s===403||/access token|unauthorized|forbidden|not authorized|failed to load.*style|style is not done/i.test(m);
+    if(fatal && !recovered){ recovered=true; noteMap('mapbox-retry','('+(s||'?')+') '+m);
+      try{ map.setStyle('mapbox://styles/mapbox/streets-v12'); }catch(_){}}
+  });
+  // Filet anti-spinner : on masque le loader même si « load » tarde — SANS retirer la carte.
+  setTimeout(hideLoader, 7000);
 }
 
 /* =================== GALERIE + ANIMATIONS =================== */
