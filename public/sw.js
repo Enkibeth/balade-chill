@@ -1,5 +1,5 @@
 /* Balades — vanilla service worker (no Workbox). */
-const CACHE = 'balades-v4'
+const CACHE = 'balades-v5'
 
 // Mapbox tiles/assets are large — never intercept them.
 const MAPBOX_HOSTS = [
