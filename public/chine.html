@@ -8,14 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Noto+Serif+SC:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Mapbox GL JS (zoom + géolocalisation). Repli automatique sur la carte SVG si indisponible (ex. réseau bloqué).
-     NB : le style « Standard » exige GL JS >= 3.21 (cf. metadata mapbox:compatibility). Une version trop
-     ancienne (3.9) charge mal le style mis à jour côté serveur -> écran vide puis repli SVG. -->
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.js"></script>
-<!-- Jeton Mapbox récupéré au runtime via /api/map-token (source unique = env Vercel,
-     jamais codé en dur ici). On peut surcharger avec content="pk...." si besoin. -->
-<meta name="mapbox-token" content="">
+<!-- Leaflet : carte en tuiles <img> (PAS de WebGL) — fiable sur Safari iOS,
+     comme la carte du tableau de bord. Fond Carto/OpenStreetMap (sans jeton). -->
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -239,6 +235,17 @@ img{display:block}
 .mb-pop .mapboxgl-popup-tip{border-top-color:var(--glass-card);border-bottom-color:var(--glass-card)}
 .mb-pop .pv-photo{height:122px;background:var(--ink2)}
 .mb-pop .pv-photo img{width:100%;height:100%;object-fit:cover;display:block}
+/* ---- Leaflet : marqueurs sans cadre + popups au même style que .mb-pop ---- */
+.leaflet-div-icon{background:transparent;border:none}
+.leaflet-container{background:var(--ink2);font:inherit}
+.mb-pop.leaflet-popup .leaflet-popup-content-wrapper{padding:0;border-radius:15px;overflow:hidden;
+  background:var(--glass-card);border:1px solid var(--line);border-top:2px solid var(--pc,var(--gold));
+  box-shadow:0 26px 64px -26px rgba(0,0,0,.6)}
+.mb-pop.leaflet-popup .leaflet-popup-content{margin:0;width:248px!important;line-height:1.4}
+.mb-pop.leaflet-popup .leaflet-popup-close-button{width:27px;height:27px;font-size:16px;color:#fff;
+  background:rgba(0,0,0,.5);border-radius:50%;top:7px;right:7px;line-height:25px;padding:0}
+.mb-pop.leaflet-popup .leaflet-popup-close-button:hover{background:rgba(255,90,77,.7)}
+.mb-pop.leaflet-popup .leaflet-popup-tip{background:var(--glass-card)}
 .stage-glow{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(76% 70% at 50% 46%, transparent 60%, rgba(7,5,10,.55))}
 
@@ -1473,43 +1480,56 @@ function buildMap2D(){
    Mêmes marqueurs, mêmes fiches (photo + jours selon l'itinéraire).
    La basemap suit le thème (preset jour/nuit du style Standard).
    ===================================================================== */
-function initMapbox(token, styleUrl){
+function tileURL(light){
+  return light
+    ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+}
+
+// Carte Leaflet : tuiles <img> (pas de WebGL) -> fiable sur Safari iOS.
+function initLeaflet(){
   const stage=document.getElementById('stage'), host=document.getElementById('map2d');
-  mapboxgl.accessToken=token;
   const isLight=()=>document.documentElement.getAttribute('data-theme')==='light';
-  const map=new mapboxgl.Map({
-    container:host, style:styleUrl||'mapbox://styles/mapbox/standard',
-    center:[110,33], zoom:3.1, attributionControl:true, cooperativeGestures:true });
 
-  map.addControl(new mapboxgl.NavigationControl({visualizePitch:true}),'top-right');
-  map.addControl(new mapboxgl.GeolocateControl({
-    positionOptions:{enableHighAccuracy:true}, trackUserLocation:true, showUserHeading:true }),'top-right');
-  map.addControl(new mapboxgl.ScaleControl({maxWidth:90,unit:'metric'}),'bottom-left');
+  const map=L.map(host,{ zoomControl:false, attributionControl:true, scrollWheelZoom:true })
+    .setView([33,110],4);
+  L.control.zoom({position:'topright'}).addTo(map); // top-left est occupé par les filtres
 
-  const applyPreset=()=>{ try{ map.setConfigProperty('basemap','lightPreset',isLight()?'day':'night'); }catch(e){} };
+  let tiles=L.tileLayer(tileURL(isLight()),{ subdomains:'abcd', maxZoom:19, detectRetina:true,
+    attribution:'© OpenStreetMap, © CARTO' }).addTo(map);
 
-  // marqueurs HTML
+  // Marqueurs HTML (mêmes pastilles/badges qu'avant) via divIcon Leaflet.
   const marks={};
   DEST.forEach(d=>{ const col=CATS[d.cat].color;
-    const el=document.createElement('div'); el.className='mb-mk'; el.style.setProperty('--mc',col);
-    el.innerHTML=`<span class="mb-dot"></span><span class="mb-badge" hidden></span><span class="mb-name">${d.name}</span>`;
-    el.addEventListener('click',e=>{ e.stopPropagation(); showPreview(d.id); });
-    new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([d.lng,d.lat]).addTo(map);
-    marks[d.id]={el, dot:el.querySelector('.mb-dot'), badge:el.querySelector('.mb-badge')};
+    const html=`<div class="mb-mk" style="--mc:${col}"><span class="mb-dot"></span>`
+      +`<span class="mb-badge" hidden></span><span class="mb-name">${d.name}</span></div>`;
+    const icon=L.divIcon({className:'', html, iconSize:[0,0], iconAnchor:[0,0]});
+    const mk=L.marker([d.lat,d.lng],{icon}).addTo(map);
+    mk.on('click',()=>showPreview(d.id));
+    marks[d.id]={mk};
   });
+  function mkEl(id){ const m=marks[id].mk; return m._icon?m._icon.querySelector('.mb-mk'):null; }
+  function mkBadge(id){ const e=mkEl(id); return e?e.querySelector('.mb-badge'):null; }
 
   function daysOf(id){ const s=state.plan.find(s=>s.id===id); return s?s.days:0; }
-  function applyFilter(){ DEST.forEach(d=>{ marks[d.id].el.classList.toggle('off',!state.filters[d.cat]); }); }
+  function applyFilter(){ DEST.forEach(d=>{ const e=mkEl(d.id); if(e) e.classList.toggle('off',!state.filters[d.cat]); }); }
+
+  let glow=null, line=null;
   function rebuildRoute(){
-    DEST.forEach(d=>{ const m=marks[d.id], on=inPlan(d.id);
-      m.el.classList.toggle('in',on);
-      if(on){ m.badge.hidden=false; m.badge.textContent=daysOf(d.id); } else m.badge.hidden=true; });
+    DEST.forEach(d=>{ const e=mkEl(d.id), b=mkBadge(d.id), on=inPlan(d.id);
+      if(e) e.classList.toggle('in',on);
+      if(b){ if(on){ b.hidden=false; b.textContent=daysOf(d.id); } else b.hidden=true; } });
     const plan=state.plan.filter(s=>BY_ID[s.id]);
-    const data={type:'Feature',geometry:{type:'LineString',coordinates:plan.map(s=>{ const d=BY_ID[s.id]; return [d.lng,d.lat]; })}};
-    const src=map.getSource('cn-route'); if(src) src.setData(data);
+    const latlngs=plan.map(s=>{ const d=BY_ID[s.id]; return [d.lat,d.lng]; });
+    if(glow){ map.removeLayer(glow); glow=null; }
+    if(line){ map.removeLayer(line); line=null; }
+    if(latlngs.length>=2){
+      glow=L.polyline(latlngs,{color:'#F4CE6A',weight:7,opacity:.22}).addTo(map);
+      line=L.polyline(latlngs,{color:'#F4CE6A',weight:2.6,opacity:.9}).addTo(map);
+      glow.bringToBack();
+    }
   }
 
-  let curPopup=null;
   function previewNode(id){ const d=BY_ID[id], days=daysOf(id), inP=inPlan(id), col=CATS[d.cat].color;
     const n=document.createElement('div'); n.className='pv'; n.style.setProperty('--pc',col);
     n.innerHTML=`
@@ -1521,46 +1541,42 @@ function initMapbox(token, styleUrl){
         <p class="pv-days">${ inP ? `📅 <b>${days} jour${days>1?'s':''}</b> prévus · ${currentRouteName()}` : `Pas dans l’itinéraire actuel` }</p>
         <button class="pv-more" type="button">Voir le détail →</button>
       </div>`;
-    n.querySelector('.pv-more').onclick=()=>{ if(curPopup) curPopup.remove(); openDest(id); };
+    n.querySelector('.pv-more').onclick=()=>{ map.closePopup(); openDest(id); };
     return n;
   }
   function showPreview(id){ const d=BY_ID[id]; if(!d) return;
-    if(curPopup) curPopup.remove();
-    curPopup=new mapboxgl.Popup({offset:16,closeButton:true,maxWidth:'248px',className:'mb-pop'})
-      .setLngLat([d.lng,d.lat]).setDOMContent(previewNode(id)).addTo(map);
-    map.flyTo({center:[d.lng,d.lat], zoom:Math.max(map.getZoom(),5.4), duration:750});
+    L.popup({offset:[0,-6],closeButton:true,maxWidth:248,minWidth:248,className:'mb-pop',autoPan:true})
+      .setLatLng([d.lat,d.lng]).setContent(previewNode(id)).openOn(map);
+    map.flyTo([d.lat,d.lng], Math.max(map.getZoom(),5), {duration:.7});
   }
 
-  // (Ré)ajoute le tracé d'itinéraire : appelé à chaque chargement de style
-  // (style initial ET après un changement de thème via setStyle).
-  function ensureRoute(){
-    applyPreset();
-    if(!map.getSource('cn-route')){
-      map.addSource('cn-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
-      map.addLayer({id:'cn-route-glow',type:'line',source:'cn-route',
-        layout:{'line-cap':'round','line-join':'round'},
-        paint:{'line-color':'#F4CE6A','line-width':7,'line-opacity':.22,'line-blur':4}});
-      map.addLayer({id:'cn-route-line',type:'line',source:'cn-route',
-        layout:{'line-cap':'round','line-join':'round'},
-        paint:{'line-color':'#F4CE6A','line-width':2.4,'line-opacity':.9}});
-    }
-    rebuildRoute(); applyFilter();
-  }
-  map.on('style.load', ensureRoute);
+  // Bouton « me localiser »
+  const locBtn=L.control({position:'topright'});
+  locBtn.onAdd=function(){ const b=L.DomUtil.create('button','cn-loc');
+    b.type='button'; b.title='Me localiser'; b.textContent='◎';
+    b.style.cssText='width:34px;height:34px;border:0;border-radius:8px;background:#fff;color:#222;'
+      +'font-size:18px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)';
+    L.DomEvent.disableClickPropagation(b);
+    b.onclick=()=>{ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(
+      p=>{ const ll=[p.coords.latitude,p.coords.longitude];
+        L.circleMarker(ll,{radius:8,color:'#fff',weight:2,fillColor:'#3b82f6',fillOpacity:1}).addTo(map);
+        map.flyTo(ll,9,{duration:1}); }); };
+    return b; };
+  locBtn.addTo(map);
 
-  map.on('load',()=>{
-    const b=new mapboxgl.LngLatBounds(); DEST.forEach(d=>b.extend([d.lng,d.lat]));
-    map.fitBounds(b,{padding:{top:70,bottom:70,left:50,right:50},duration:0,maxZoom:6});
-    const loader=document.getElementById('loader');
-    if(loader){ loader.classList.add('hide'); setTimeout(()=>{loader.style.display='none';},700); }
-  });
-
-  new ResizeObserver(()=>map.resize()).observe(stage);
+  // Cadrage initial sur toutes les étapes.
+  const b=L.latLngBounds(DEST.map(d=>[d.lat,d.lng]));
+  map.fitBounds(b,{padding:[60,46]});
+  rebuildRoute(); applyFilter();
+  setTimeout(()=>map.invalidateSize(),200);
+  new ResizeObserver(()=>map.invalidateSize()).observe(stage);
+  noteMap('carto'+(isLight()?'-clair':'-sombre'));
+  hideLoader();
 
   mapView={ applyFilter, rebuildRoute,
     focus(id){ showPreview(id); },
-    refresh(){ map.resize(); },
-    setTheme(){ if(MAP_STYLE) map.setStyle(MAP_STYLE(isLight())); else applyPreset(); } };
+    refresh(){ map.invalidateSize(); },
+    setTheme(){ tiles.setUrl(tileURL(isLight())); } };
   return map;
 }
 
@@ -1585,51 +1601,14 @@ function noteMap(state, why){
   b.textContent=(ok?'🗺️ '+state:'⚠️ '+state)+(why?' · '+why:'')+'  ✕';
 }
 
-/* Fond de carte en TUILES RASTER (Carto/OpenStreetMap), rendu par Mapbox GL.
-   Indépendant du jeton Mapbox et de ses scopes : aucune requête de tuile vers
-   api.mapbox.com -> ne peut pas tomber en 403. Fiable sur Safari iOS. Suit le thème. */
-function MAP_STYLE(light){
-  const base=light
-    ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
-    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png';
-  const tiles=['a','b','c','d'].map(s=>base.replace('{s}',s));
-  return { version:8,
-    sources:{ carto:{ type:'raster', tiles, tileSize:256, maxzoom:20,
-      attribution:'© OpenStreetMap, © CARTO' } },
-    layers:[
-      { id:'bg', type:'background', paint:{'background-color': light?'#e7e3da':'#0b0e14'} },
-      { id:'carto', type:'raster', source:'carto' } ] };
-}
-
-// Jeton : seulement pour instancier GL JS (les tuiles viennent de Carto, pas de Mapbox).
-async function getMapToken(){
-  const meta=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
-  if(meta) return meta;
-  try{ const r=await fetch('/api/map-token',{cache:'no-store'}); if(r.ok){ const j=await r.json(); if(j&&j.token) return j.token; } }
-  catch(e){ console.warn('[Chine] /api/map-token indisponible', e); }
-  return '';
-}
-
-async function bootMap(){
-  const webgl = !!window.mapboxgl; // GL JS v3 : présence du module = WebGL géré par la lib.
-  if(!webgl){ noteMap('repli-svg','Mapbox/WebGL indisponible');
+function bootMap(){
+  // Leaflet = tuiles <img>, pas de WebGL -> rendu fiable sur Safari iOS.
+  if(!window.L){ noteMap('repli-svg','Leaflet indisponible');
     try{ buildMap2D(); }catch(e){ console.error(e); } hideLoader(); return; }
-  // GL JS exige un accessToken non vide pour s'initialiser, même si on n'utilise
-  // pas de tuiles Mapbox. On prend le jeton dispo, sinon un placeholder (les
-  // tuiles Carto ne le valident jamais).
-  const token=(await getMapToken()) || 'pk.placeholder';
-  const isLight=document.documentElement.getAttribute('data-theme')==='light';
-  let map;
-  try{ map=initMapbox(token, MAP_STYLE(isLight)); }
-  catch(e){ noteMap('repli-svg','échec init: '+(e&&e.message||e));
-    try{ buildMap2D(); }catch(_){} hideLoader(); return; }
-
-  // On NE détruit JAMAIS la carte : fond Carto sans dépendance jeton.
-  map.on('style.load',()=>noteMap('carto'+(isLight?'-clair':'-sombre')));
-  map.on('load',()=>hideLoader());
-  map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; console.warn('[Chine] Mapbox error', m); });
-  // Filet anti-spinner : masque le loader même si « load » tarde — SANS retirer la carte.
-  setTimeout(hideLoader, 7000);
+  try{ initLeaflet(); }
+  catch(e){ console.error('[Chine] Leaflet KO, repli SVG', e);
+    noteMap('repli-svg','échec init: '+(e&&e.message||e));
+    try{ buildMap2D(); }catch(_){} hideLoader(); }
 }
 
 /* =================== GALERIE + ANIMATIONS =================== */

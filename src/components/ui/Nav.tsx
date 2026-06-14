@@ -10,7 +10,7 @@ const LINKS: { href: string; label: string; external?: boolean }[] = [
   { href: '/history', label: 'Historique' },
   { href: '/settings', label: 'Réglages' },
   { href: '/autre', label: 'Léman' },
-  { href: '/chine.html?v=6', label: 'Chine', external: true },
+  { href: '/chine.html?v=7', label: 'Chine', external: true },
 ]
 
 export function Nav() {
