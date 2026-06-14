@@ -13,7 +13,9 @@
      ancienne (3.9) charge mal le style mis à jour côté serveur -> écran vide puis repli SVG. -->
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.js"></script>
-<meta name="mapbox-token" content="pk.eyJ1IjoiZW5raTkyOTM5NCIsImEiOiJjbXFjam9tMzEwb283MnJxemNmNzVjMXk3In0.9wmNJGDIC9nQbPC3ssa8Kg">
+<!-- Jeton Mapbox récupéré au runtime via /api/map-token (source unique = env Vercel,
+     jamais codé en dur ici). On peut surcharger avec content="pk...." si besoin. -->
+<meta name="mapbox-token" content="">
 <script type="importmap">
 {
   "imports": {
@@ -1573,14 +1575,25 @@ function noteMap(state, why){
     (document.getElementById('stage')||document.body).appendChild(b); }
   const ok=state.indexOf('mapbox')===0;
   b.textContent=(ok?'🗺️ '+state:'⚠️ '+state)+(why?' · '+why:'')+'  ✕';
+  // Carte Mapbox saine (fond chargé) : le badge s'efface seul. Sinon il reste (diagnostic).
+  if(state==='mapbox') setTimeout(()=>{ const x=document.getElementById('map-debug'); if(x) x.remove(); }, 3500);
 }
 
 // Style classique léger (rapide et fiable sur Safari iOS), suivant le thème.
 const CLASSIC_STYLE=()=>document.documentElement.getAttribute('data-theme')==='light'
   ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
 
-function bootMap(){
-  const token=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
+// Récupère le jeton depuis l'API (env Vercel), avec repli sur <meta>/window.
+async function getMapToken(){
+  const meta=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
+  if(meta) return meta;
+  try{ const r=await fetch('/api/map-token',{cache:'no-store'}); if(r.ok){ const j=await r.json(); if(j&&j.token) return j.token; } }
+  catch(e){ console.warn('[Chine] /api/map-token indisponible', e); }
+  return '';
+}
+
+async function bootMap(){
+  const token=await getMapToken();
   const webgl = !!window.mapboxgl; // GL JS v3 : présence du module = WebGL géré par la lib.
   // SVG seulement si Mapbox ne peut PAS démarrer (pas de jeton / pas de WebGL).
   if(!token || !webgl){
