@@ -26,6 +26,7 @@
   --ink:#0b0910; --ink2:#120e18; --ink3:#171120; --lacquer:#1b0f16;
   --card:linear-gradient(180deg,#17121f,#100b16);
   --card-hi:linear-gradient(180deg,#1d1626,#130d19);
+  --flag-bg:linear-gradient(180deg,rgba(255,90,77,.06),#0e0a13);
   /* — accents — */
   --red:#FF5A4D; --red-deep:#E0402E; --gold:#F4CE6A; --gold-soft:#F7DD93; --gold-deep:#E9B949;
   --jade:#4FD0B4; --violet:#B98BE6; --coral:#F2884E; --green:#5BD27A; --rose:#EE6E93;
@@ -60,7 +61,11 @@ html[data-theme="light"]{
   --ink:#fbf7ef; --ink2:#f3ecdf; --ink3:#ffffff; --lacquer:#fff3e8;
   --card:linear-gradient(180deg,#ffffff,#fbf5ea);
   --card-hi:linear-gradient(180deg,#ffffff,#f6efe0);
-  --paper:#2c2218; --paper-dim:#4d4234; --mute:#897b67; --faint:#b0a18c;
+  --paper:#2c2218; --paper-dim:#4d4234; --mute:#6e6049; --faint:#8a7b63;
+  /* accents réharmonisés pour rester lisibles sur fond clair */
+  --red:#C9362A; --red-deep:#A82B1D; --gold:#9A6A0E; --gold-soft:#8F6109; --gold-deep:#855906;
+  --jade:#0E8C73; --coral:#BD5318; --green:#1E8F42; --rose:#C44368;
+  --flag-bg:linear-gradient(180deg,rgba(224,64,46,.07),#fbf2e6);
   --line:rgba(180,135,35,.26); --line-soft:rgba(45,33,15,.10);
   --shadow:0 24px 56px -34px rgba(90,68,25,.34); --shadow-lift:0 36px 80px -40px rgba(90,68,25,.4);
   --bg-grad:linear-gradient(180deg,#fcf8f0,#fbf6ec 38%,#f4ecdb);
@@ -332,6 +337,11 @@ img{display:block}
 .vbtn.on-yes{background:var(--green);border-color:var(--green);color:#04210f;box-shadow:0 8px 22px -10px rgba(91,210,122,.7)}
 .vbtn.on-maybe{background:var(--gold);border-color:var(--gold);color:#2a2103;box-shadow:0 8px 22px -10px rgba(244,206,106,.7)}
 .vbtn.on-no{background:var(--red-deep);border-color:var(--red-deep);color:#fff;box-shadow:0 8px 22px -10px rgba(224,64,46,.7)}
+/* en mode clair, les accents pleins sont foncés → texte clair pour garder le contraste */
+html[data-theme="light"] .vbtn.on-yes,
+html[data-theme="light"] .vbtn.on-maybe,
+html[data-theme="light"] .rlist .when{color:#fff}
+html[data-theme="light"] .rlist .when.soft{color:var(--gold)}
 .add-btn{font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer;border-radius:13px;padding:12px;
   border:1px solid rgba(244,206,106,.4);background:linear-gradient(180deg,rgba(244,206,106,.2),rgba(244,206,106,.06));color:var(--gold);
   transition:transform .2s var(--spring),background .18s,border-color .18s}
@@ -387,7 +397,7 @@ h2.big .zh{font-family:var(--cn);font-size:.5em;color:var(--gold);margin-left:12
 .capproach dl{display:flex;flex-direction:column;gap:9px;margin-top:2px}
 .capproach .row{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13px;align-items:baseline}
 .capproach .row dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
-.capproach .row dd{color:#EFE5D8}
+.capproach .row dd{color:var(--paper-dim)}
 .capproach .load{margin-top:auto;font-family:var(--mono);font-weight:600;font-size:12.5px;cursor:pointer;align-self:flex-start;
   border-radius:999px;padding:10px 17px;transition:transform .2s var(--spring),background .18s}
 .capproach.a .load{border:1px solid rgba(79,208,180,.5);color:var(--jade);background:rgba(79,208,180,.1)}
@@ -446,7 +456,7 @@ h2.big .zh{font-family:var(--cn);font-size:.5em;color:var(--gold);margin-left:12
 .prop h3{font-family:var(--serif);font-weight:600;font-size:20px}
 .prop .pz{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.06em}
 .prop p{font-size:13.5px;color:var(--mute);flex:1;line-height:1.55}
-.prop .route-mini{font-family:var(--mono);font-size:11px;color:#CDBFAE;line-height:1.55}
+.prop .route-mini{font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.55}
 .prop .load{font-family:var(--mono);font-weight:600;font-size:12px;cursor:pointer;align-self:flex-start;
   border:1px solid rgba(244,206,106,.4);background:rgba(244,206,106,.1);color:var(--gold);border-radius:999px;padding:8px 15px;
   transition:transform .2s var(--spring),background .18s}
@@ -457,7 +467,7 @@ h2.big .zh{font-family:var(--cn);font-size:.5em;color:var(--gold);margin-left:12
 .pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;
   transition:transform .35s var(--ease-out),border-color .35s,box-shadow .35s}
 .pcard:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:var(--line-soft)}
-.pcard.flag{border-color:rgba(255,90,77,.3);background:linear-gradient(180deg,rgba(255,90,77,.06),#0e0a13)}
+.pcard.flag{border-color:rgba(255,90,77,.3);background:var(--flag-bg)}
 .pcard.flag:hover{border-color:rgba(255,90,77,.5)}
 .pcard h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
 .pcard h3 .ic{font-size:21px}
@@ -1309,7 +1319,7 @@ function renderApproaches(){
         <div class="row"><dt>Arrivée</dt><dd>Hong Kong</dd></div>
         <div class="row"><dt>Golden Week</dt><dd>On la <b>fuit</b> dans les grands espaces (Yangshuo, Zhangjiajie, Chengdu)</dd></div>
         <div class="row"><dt>Signature</dt><dd>Zhangjiajie · Tiger Leaping Gorge · Shangri-La · Pingyao</dd></div>
-        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:#CDBFAE">${list(A)}</dd></div>
+        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:var(--paper-dim)">${list(A)}</dd></div>
         <div class="row"><dt>Format</dt><dd>${A.stops.length} étapes · ${days(A)} j</dd></div>
       </dl>
       <button class="load" data-r="${A.id}">Charger l’approche Sud →</button>
@@ -1322,7 +1332,7 @@ function renderApproaches(){
         <div class="row"><dt>Arrivée</dt><dd>Hong Kong, puis Macao</dd></div>
         <div class="row"><dt>Golden Week</dt><dd>On l’<b>absorbe à Hong Kong & Macao</b> (entrée distincte du continent) — <b>pas de visa L</b> nécessaire</dd></div>
         <div class="row"><dt>Signature</dt><dd>Macao · Longji · Pékin impérial · Huangshan · villages Hongcun · Jiangnan</dd></div>
-        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:#CDBFAE">${list(B)}</dd></div>
+        <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:var(--paper-dim)">${list(B)}</dd></div>
         <div class="row"><dt>Format</dt><dd>${B.stops.length} étapes · ${days(B)} j (≈ 37 nuits + marge)</dd></div>
       </dl>
       <button class="load" data-r="${B.id}">Charger ce parcours →</button>
