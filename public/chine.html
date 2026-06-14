@@ -1531,16 +1531,24 @@ function initMapbox(token, styleUrl){
     map.flyTo({center:[d.lng,d.lat], zoom:Math.max(map.getZoom(),5.4), duration:750});
   }
 
-  map.on('load',()=>{
+  // (Ré)ajoute le tracé d'itinéraire : appelé à chaque chargement de style
+  // (style initial ET après un changement de thème via setStyle).
+  function ensureRoute(){
     applyPreset();
-    map.addSource('cn-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
-    map.addLayer({id:'cn-route-glow',type:'line',source:'cn-route',
-      layout:{'line-cap':'round','line-join':'round'},
-      paint:{'line-color':'#F4CE6A','line-width':7,'line-opacity':.22,'line-blur':4}});
-    map.addLayer({id:'cn-route-line',type:'line',source:'cn-route',
-      layout:{'line-cap':'round','line-join':'round'},
-      paint:{'line-color':'#F4CE6A','line-width':2.4,'line-opacity':.9}});
+    if(!map.getSource('cn-route')){
+      map.addSource('cn-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
+      map.addLayer({id:'cn-route-glow',type:'line',source:'cn-route',
+        layout:{'line-cap':'round','line-join':'round'},
+        paint:{'line-color':'#F4CE6A','line-width':7,'line-opacity':.22,'line-blur':4}});
+      map.addLayer({id:'cn-route-line',type:'line',source:'cn-route',
+        layout:{'line-cap':'round','line-join':'round'},
+        paint:{'line-color':'#F4CE6A','line-width':2.4,'line-opacity':.9}});
+    }
     rebuildRoute(); applyFilter();
+  }
+  map.on('style.load', ensureRoute);
+
+  map.on('load',()=>{
     const b=new mapboxgl.LngLatBounds(); DEST.forEach(d=>b.extend([d.lng,d.lat]));
     map.fitBounds(b,{padding:{top:70,bottom:70,left:50,right:50},duration:0,maxZoom:6});
     const loader=document.getElementById('loader');
@@ -1552,7 +1560,7 @@ function initMapbox(token, styleUrl){
   mapView={ applyFilter, rebuildRoute,
     focus(id){ showPreview(id); },
     refresh(){ map.resize(); },
-    setTheme(){ applyPreset(); } };
+    setTheme(){ if(MAP_STYLE) map.setStyle(MAP_STYLE(isLight())); else applyPreset(); } };
   return map;
 }
 
@@ -1560,7 +1568,7 @@ function hideLoader(){ const l=document.getElementById('loader');
   if(l){ l.classList.add('hide'); setTimeout(()=>{ l.style.display='none'; },700); } }
 
 /* Diagnostic visible sur l'appareil : badge en bas de la carte qui indique
-   le mode réel (Mapbox / repli) et la raison. Touchez-le pour le fermer. */
+   le mode réel de la carte. Touchez-le pour le fermer. */
 function noteMap(state, why){
   document.documentElement.setAttribute('data-map', state);
   if(why) document.documentElement.setAttribute('data-map-why', why);
@@ -1573,17 +1581,27 @@ function noteMap(state, why){
       +'-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,.35)';
     b.onclick=()=>b.remove();
     (document.getElementById('stage')||document.body).appendChild(b); }
-  const ok=state.indexOf('mapbox')===0;
+  const ok=state.indexOf('repli')!==0;
   b.textContent=(ok?'🗺️ '+state:'⚠️ '+state)+(why?' · '+why:'')+'  ✕';
-  // Carte Mapbox saine (fond chargé) : le badge s'efface seul. Sinon il reste (diagnostic).
-  if(state==='mapbox') setTimeout(()=>{ const x=document.getElementById('map-debug'); if(x) x.remove(); }, 3500);
 }
 
-// Style classique léger (rapide et fiable sur Safari iOS), suivant le thème.
-const CLASSIC_STYLE=()=>document.documentElement.getAttribute('data-theme')==='light'
-  ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
+/* Fond de carte en TUILES RASTER (Carto/OpenStreetMap), rendu par Mapbox GL.
+   Indépendant du jeton Mapbox et de ses scopes : aucune requête de tuile vers
+   api.mapbox.com -> ne peut pas tomber en 403. Fiable sur Safari iOS. Suit le thème. */
+function MAP_STYLE(light){
+  const base=light
+    ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png';
+  const tiles=['a','b','c','d'].map(s=>base.replace('{s}',s));
+  return { version:8,
+    sources:{ carto:{ type:'raster', tiles, tileSize:256, maxzoom:20,
+      attribution:'© OpenStreetMap, © CARTO' } },
+    layers:[
+      { id:'bg', type:'background', paint:{'background-color': light?'#e7e3da':'#0b0e14'} },
+      { id:'carto', type:'raster', source:'carto' } ] };
+}
 
-// Récupère le jeton depuis l'API (env Vercel), avec repli sur <meta>/window.
+// Jeton : seulement pour instancier GL JS (les tuiles viennent de Carto, pas de Mapbox).
 async function getMapToken(){
   const meta=(document.querySelector('meta[name="mapbox-token"]')||{}).content || window.MAPBOX_TOKEN || '';
   if(meta) return meta;
@@ -1593,30 +1611,24 @@ async function getMapToken(){
 }
 
 async function bootMap(){
-  const token=await getMapToken();
   const webgl = !!window.mapboxgl; // GL JS v3 : présence du module = WebGL géré par la lib.
-  // SVG seulement si Mapbox ne peut PAS démarrer (pas de jeton / pas de WebGL).
-  if(!token || !webgl){
-    noteMap('repli-svg', !token ? 'jeton Mapbox absent' : 'Mapbox/WebGL indisponible');
-    try{ buildMap2D(); }catch(e){ console.error(e); } hideLoader(); return;
-  }
+  if(!webgl){ noteMap('repli-svg','Mapbox/WebGL indisponible');
+    try{ buildMap2D(); }catch(e){ console.error(e); } hideLoader(); return; }
+  // GL JS exige un accessToken non vide pour s'initialiser, même si on n'utilise
+  // pas de tuiles Mapbox. On prend le jeton dispo, sinon un placeholder (les
+  // tuiles Carto ne le valident jamais).
+  const token=(await getMapToken()) || 'pk.placeholder';
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
   let map;
-  try{ map=initMapbox(token, CLASSIC_STYLE()); }
+  try{ map=initMapbox(token, MAP_STYLE(isLight)); }
   catch(e){ noteMap('repli-svg','échec init: '+(e&&e.message||e));
     try{ buildMap2D(); }catch(_){} hideLoader(); return; }
 
-  // On NE détruit JAMAIS la carte sur minuteur : on la laisse charger (réseau lent).
-  let recovered=false;
-  map.on('style.load',()=>noteMap('mapbox'+(recovered?' (streets)':'')));
+  // On NE détruit JAMAIS la carte : fond Carto sans dépendance jeton.
+  map.on('style.load',()=>noteMap('carto'+(isLight?'-clair':'-sombre')));
   map.on('load',()=>hideLoader());
-  // Sur une vraie erreur fatale (jeton/style), on tente une bascule de style — sans repli SVG.
-  map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; const s=(e&&e.error&&e.error.status)||0;
-    console.warn('[Chine] Mapbox error', s, m);
-    const fatal=s===401||s===403||/access token|unauthorized|forbidden|not authorized|failed to load.*style|style is not done/i.test(m);
-    if(fatal && !recovered){ recovered=true; noteMap('mapbox-retry','('+(s||'?')+') '+m);
-      try{ map.setStyle('mapbox://styles/mapbox/streets-v12'); }catch(_){}}
-  });
-  // Filet anti-spinner : on masque le loader même si « load » tarde — SANS retirer la carte.
+  map.on('error',(e)=>{ const m=(e&&e.error&&e.error.message)||''; console.warn('[Chine] Mapbox error', m); });
+  // Filet anti-spinner : masque le loader même si « load » tarde — SANS retirer la carte.
   setTimeout(hideLoader, 7000);
 }
 

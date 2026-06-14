@@ -1,5 +1,5 @@
 /* Balades — vanilla service worker (no Workbox). */
-const CACHE = 'balades-v5'
+const CACHE = 'balades-v6'
 
 // Mapbox tiles/assets are large — never intercept them.
 const MAPBOX_HOSTS = [
@@ -60,8 +60,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
 
-  // Bypass Mapbox entirely — let the browser handle it.
-  if (MAPBOX_HOSTS.includes(url.hostname)) return
+  // Bypass map tile hosts entirely (Mapbox + Carto basemap) — let the browser handle them.
+  if (MAPBOX_HOSTS.includes(url.hostname) || url.hostname.endsWith('basemaps.cartocdn.com')) return
 
   // API routes: network only, with a JSON offline fallback.
   if (url.pathname.startsWith('/api/')) {
