@@ -2,8 +2,13 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MapPin, Lightbulb, Eye, Check, Stethoscope } from 'lucide-react'
+import { MapPin, Lightbulb, Eye, Check } from 'lucide-react'
 import type { Etape, ThemeColor } from '@/types'
+import {
+  bonusBadge,
+  bonusCategoryDef,
+  resolveBonusCategory,
+} from '@/lib/llm/bonus'
 import { CipherBlock } from './CipherBlock'
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']
@@ -162,46 +167,50 @@ export function EtapeCard({
           color={theme.primary}
         />
 
-        {/* Bonus médical */}
-        {etape.medical_bonus && (
-          <>
-            <section className="rounded-lg border border-teal-400/40 bg-teal-400/5 p-4">
-              <p className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-teal-300">
-                <Stethoscope size={13} /> Bonus médecine
-              </p>
-              <span className="mb-2 inline-block rounded-full bg-teal-500 px-2.5 py-0.5 text-[9px] uppercase tracking-wider text-white">
-                {etape.medical_bonus.specialty}
-              </span>
-              <p className="text-sm leading-relaxed text-amber-100/80">
-                {etape.medical_bonus.question}
-              </p>
-              <button
-                onClick={() => setShowMedical((v) => !v)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-teal-400/40 px-3 py-1.5 text-xs text-teal-300 transition hover:bg-teal-400/10"
-              >
-                <Eye size={13} /> {showMedical ? 'Masquer' : 'Voir la réponse'}
-              </button>
-              <Reveal open={showMedical}>
-                <div className="mt-3 space-y-2 rounded-lg border-l-2 border-teal-400/60 bg-teal-400/5 p-3 text-sm text-teal-100/85">
-                  {etape.medical_bonus.hint && (
-                    <p className="text-xs italic text-teal-200/60">
-                      Indice : {etape.medical_bonus.hint}
-                    </p>
-                  )}
-                  <p className="whitespace-pre-line">
-                    {etape.medical_bonus.answer}
+        {/* Bonus question (médecine, histoire, anecdote, blague…) */}
+        {etape.medical_bonus &&
+          (() => {
+            const bonus = etape.medical_bonus
+            const cat = bonusCategoryDef(resolveBonusCategory(bonus))
+            const isMedical = cat.id === 'medical'
+            return (
+              <>
+                <section className="rounded-lg border border-teal-400/40 bg-teal-400/5 p-4">
+                  <p className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-teal-300">
+                    <span aria-hidden>{cat.emoji}</span> {cat.blockTitle}
                   </p>
-                </div>
-              </Reveal>
-            </section>
-            <ScoreButton
-              done={medicalCorrect}
-              onClick={onToggleMedical}
-              label="Question médicale réussie"
-              color="#14b8a6"
-            />
-          </>
-        )}
+                  <span className="mb-2 inline-block rounded-full bg-teal-500 px-2.5 py-0.5 text-[9px] uppercase tracking-wider text-white">
+                    {bonusBadge(bonus)}
+                  </span>
+                  <p className="text-sm leading-relaxed text-amber-100/80">
+                    {bonus.question}
+                  </p>
+                  <button
+                    onClick={() => setShowMedical((v) => !v)}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-teal-400/40 px-3 py-1.5 text-xs text-teal-300 transition hover:bg-teal-400/10"
+                  >
+                    <Eye size={13} /> {showMedical ? 'Masquer' : 'Voir la réponse'}
+                  </button>
+                  <Reveal open={showMedical}>
+                    <div className="mt-3 space-y-2 rounded-lg border-l-2 border-teal-400/60 bg-teal-400/5 p-3 text-sm text-teal-100/85">
+                      {bonus.hint && (
+                        <p className="text-xs italic text-teal-200/60">
+                          Indice : {bonus.hint}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-line">{bonus.answer}</p>
+                    </div>
+                  </Reveal>
+                </section>
+                <ScoreButton
+                  done={medicalCorrect}
+                  onClick={onToggleMedical}
+                  label={isMedical ? 'Question médicale réussie' : 'Bonus réussi'}
+                  color="#14b8a6"
+                />
+              </>
+            )
+          })()}
 
         {/* Mission */}
         {etape.action_mission && (

@@ -1,6 +1,12 @@
-import type { Difficulty, EnigmeType, GenerationRequest } from '@/types'
+import type {
+  BonusCategory,
+  Difficulty,
+  EnigmeType,
+  GenerationRequest,
+} from '@/types'
 import type { GeocodedPlace } from '@/lib/llm/geocode'
 import { computeWalkBudget } from '@/lib/llm/routeMath'
+import { BONUS_CATEGORIES, bonusCategoryDef } from '@/lib/llm/bonus'
 
 const ENIGME_TYPES_BY_DIFFICULTY: Record<Difficulty, EnigmeType[]> = {
   // "facile" = jeux de langage, aucun chiffrement à décoder.
@@ -92,11 +98,13 @@ Tu réponds UNIQUEMENT avec un objet JSON valide. Aucun texte avant, aucun texte
         "answer": string,                 // la réponse exacte
         "answer_explanation": string      // explication du décodage pas à pas
       },
-      "medical_bonus": {
-        "specialty": string,              // cardiologie|neurologie|pneumologie|gastro|urgences
+      "medical_bonus": {                  // question bonus de l'étape (thème variable, voir ci-dessous) — ou null
+        "category": string,               // l'un des thèmes autorisés listés dans le message
+        "label": string,                  // étiquette courte affichée (ex. "Cardiologie", "Histoire", "Anecdote")
+        "specialty": string,              // UNIQUEMENT si category = "medical" : cardiologie|neurologie|pneumologie|gastro|urgences
         "question": string,
         "hint": string,
-        "answer": string                  // réponse détaillée avec raisonnement clinique
+        "answer": string                  // réponse détaillée (raisonnement clinique complet pour le thème médecine)
       }
     }
   ]
@@ -145,11 +153,10 @@ Reproduis EXACTEMENT ces formats d'encodage selon le type imposé :
 - vigenere (mot-clé annoncé dans l'instruction, ici AMOUR) → « PABN » ⇒ answer "PONT"
 - math_code (le calcul va dans "instruction", le résultat est la réponse) → instruction « Combien font 6 × 7 ? » ⇒ answer "42"
 
-## QUESTIONS MÉDICALES BONUS
-Hugo et Éloïse sont en D5 : les questions médicales sont TOUJOURS de niveau D5, exigeantes, même quand la difficulté de la balade est "facile" ("facile" ne réduit jamais le niveau médical).
-- Inclure au moins une question piège d'ECG OU de prise en charge d'AVC dans chaque balade.
-- Le raisonnement clinique attendu doit figurer en entier dans "answer".
-- Privilégie cardiologie et neurologie, complète avec les spécialités demandées.
+## QUESTIONS BONUS (champ "medical_bonus")
+Chaque étape porte une question bonus. Les THÈMES autorisés et les consignes précises sont fournis dans le message ci-dessous (ils varient selon ce que le joueur a choisi). Respecte-les strictement et renseigne "category" et "label" en conséquence.
+- Quand le thème "medical" est demandé : question TOUJOURS de niveau D5, exigeante, même si la balade est "facile" ; raisonnement clinique complet dans "answer" ; inclure au moins une question piège d'ECG OU de prise en charge d'AVC dans la balade.
+- Quand le thème médecine N'EST PAS demandé : n'inclus AUCUNE question médicale.
 
 ## DISTANCES & MARCHABILITÉ (RÈGLE CRITIQUE)
 La balade se fait INTÉGRALEMENT à pied. L'erreur la plus fréquente — et rédhibitoire — est de choisir des lieux trop éloignés : le parcours devient infaisable dans le temps imparti et la balade est AUTOMATIQUEMENT REJETÉE.
@@ -166,16 +173,56 @@ La balade se fait INTÉGRALEMENT à pied. L'erreur la plus fréquente — et ré
 - Ton romantique, complice, élégant — jamais niais.
 - Réponds dans la langue : français.`
 
+/** The bonus themes actually requested, defaulting to medical when none. */
+export function resolveBonusThemes(req: GenerationRequest): BonusCategory[] {
+  const themes = (req.bonus_themes ?? []).filter((t) =>
+    BONUS_CATEGORIES.some((c) => c.id === t),
+  )
+  return themes.length ? themes : ['medical']
+}
+
+/** Builds the "QUESTIONS BONUS" instructions for the selected themes. */
+function buildBonusSection(req: GenerationRequest): string[] {
+  const themes = resolveBonusThemes(req)
+  const lines: string[] = ['', 'QUESTIONS BONUS — thèmes autorisés :']
+  for (const id of themes) {
+    const def = bonusCategoryDef(id)
+    let guidance = def.guidance
+    if (id === 'medical') {
+      const specs =
+        req.medical_specialties.length > 0
+          ? req.medical_specialties.join(', ')
+          : 'cardiologie, neurologie'
+      guidance += ` Spécialités à privilégier : ${specs}.`
+    }
+    if (id === 'custom' && req.bonus_custom_theme?.trim()) {
+      guidance += ` Thème personnalisé du joueur : « ${req.bonus_custom_theme.trim()} ».`
+    }
+    lines.push(`- "${id}" — ${guidance}`)
+  }
+  if (themes.length > 1) {
+    lines.push(
+      'Répartis les thèmes ci-dessus sur les étapes (mélange-les pour la variété), un thème par étape.',
+    )
+  } else {
+    lines.push('Utilise ce thème pour la question bonus de chaque étape.')
+  }
+  lines.push(
+    'Pour chaque étape, renseigne "medical_bonus" avec "category" (l\'id du thème), "label", "question", "hint" et "answer".',
+  )
+  if (!themes.includes('medical')) {
+    lines.push(
+      "N'inclus AUCUNE question médicale : ignore toute consigne médicale du message système.",
+    )
+  }
+  return lines
+}
+
 /** The per-request user message describing the balade to generate. */
 export function buildGenerationPrompt(
   req: GenerationRequest,
-  opts: { pin?: GeocodedPlace | null } = {},
+  opts: { startPin?: GeocodedPlace | null; endPin?: GeocodedPlace | null } = {},
 ): string {
-  const specialties =
-    req.medical_specialties.length > 0
-      ? req.medical_specialties.join(', ')
-      : 'cardiologie, neurologie'
-
   const lines = [
     'Génère une balade avec les paramètres suivants :',
     `- Ville : ${req.city}`,
@@ -183,12 +230,13 @@ export function buildGenerationPrompt(
     `- Difficulté : ${req.difficulty}`,
     `- Durée cible : environ ${req.duration_target_min} minutes`,
     `- Nombre d'étapes : ${req.nb_etapes} (entre 3 et 6)`,
-    `- Spécialités médicales à privilégier : ${specialties}`,
   ]
 
   if (req.theme_preference && req.theme_preference.trim()) {
     lines.push(`- Préférence de thème : ${req.theme_preference.trim()}`)
   }
+
+  lines.push(...buildBonusSection(req))
 
   if (req.quiz_answers && req.quiz_answers.length > 0) {
     lines.push('')
@@ -207,19 +255,35 @@ export function buildGenerationPrompt(
   })
 
   // Important constraints go at the END — LLMs honor trailing rules best.
-  if (opts.pin) {
+  const { startPin, endPin } = opts
+  const isLoop =
+    startPin &&
+    endPin &&
+    startPin.lat === endPin.lat &&
+    startPin.lng === endPin.lng
+  if (startPin && isLoop) {
     lines.push('')
-    lines.push('RÈGLE OBLIGATOIRE — point de départ/arrivée imposé :')
-    lines.push(
-      `  L'étape 1 ET l'étape ${req.nb_etapes} DOIVENT être situées à :`,
-    )
-    lines.push(`  "${opts.pin.displayName}"`)
-    lines.push(
-      `  Coordonnées exactes : lat=${opts.pin.lat}, lng=${opts.pin.lng}.`,
-    )
+    lines.push('RÈGLE OBLIGATOIRE — point de départ/arrivée imposé (boucle) :')
+    lines.push(`  L'étape 1 ET l'étape ${req.nb_etapes} DOIVENT être situées à :`)
+    lines.push(`  "${startPin.displayName}"`)
+    lines.push(`  Coordonnées exactes : lat=${startPin.lat}, lng=${startPin.lng}.`)
     lines.push(
       '  Reprends ces coordonnées telles quelles pour ces deux étapes (boucle).',
     )
+  } else if (startPin || endPin) {
+    lines.push('')
+    lines.push('RÈGLE OBLIGATOIRE — points imposés :')
+    if (startPin) {
+      lines.push(
+        `  L'étape 1 (DÉPART) DOIT être à "${startPin.displayName}" — lat=${startPin.lat}, lng=${startPin.lng}.`,
+      )
+    }
+    if (endPin) {
+      lines.push(
+        `  L'étape ${req.nb_etapes} (ARRIVÉE) DOIT être à "${endPin.displayName}" — lat=${endPin.lat}, lng=${endPin.lng}.`,
+      )
+    }
+    lines.push('  Reprends ces coordonnées telles quelles pour ces étapes.')
   }
 
   // Concrete, computed distance ceilings — same budget the validator enforces.

@@ -116,6 +116,8 @@ export function ValidationScreen({
           enigme_type: e.enigme.type,
           avoid: e.location_name,
           wants_medical: Boolean(e.medical_bonus),
+          bonus_category: e.medical_bonus?.category ?? 'medical',
+          bonus_label: e.medical_bonus?.label ?? '',
           specialties: balade.medical_specs,
           prev: prev
             ? { location_name: prev.location_name, lat: prev.lat, lng: prev.lng }

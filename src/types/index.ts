@@ -32,6 +32,25 @@ export type MedicalSpecialty =
   | 'gastro'
   | 'urgences'
 
+/**
+ * The theme of the per-étape bonus question. "medical" is the historical
+ * default (kept for Hugo & Éloïse); the others broaden the app to anyone.
+ */
+export type BonusCategory =
+  | 'medical'
+  | 'histoire'
+  | 'anecdote_fun'
+  | 'science'
+  | 'blague'
+  | 'custom'
+
+/** A point placed on the map (or geocoded) for the start/end of a balade. */
+export interface GeoPoint {
+  lat: number
+  lng: number
+  label?: string
+}
+
 export interface User {
   id: string
   email: string
@@ -87,13 +106,21 @@ export interface Enigme {
   difficulty: Difficulty
 }
 
+/**
+ * A bonus question attached to an étape. Historically always medical (hence the
+ * `medical_bonus` field name kept for stored balades), now themable: `category`
+ * selects the kind of question and `label` is the badge shown to the player.
+ * Older rows have neither field — treat a missing `category` as 'medical'.
+ */
 export interface MedicalBonus {
   id: string
-  specialty: MedicalSpecialty
+  category?: BonusCategory // absent on legacy rows ⇒ 'medical'
+  label?: string // badge text (specialty for medical, theme name otherwise)
+  specialty?: MedicalSpecialty // only meaningful when category === 'medical'
   question: string
   hint: string
   answer: string // detailed answer with clinical reasoning
-  year_level: 5 // always 5 for D5
+  year_level?: 5 // 5 for D5 medical questions
 }
 
 export interface BaladeSession {
@@ -136,8 +163,19 @@ export interface GenerationRequest {
   nb_etapes: number
   theme_preference?: string
   special_instructions?: string
+  /**
+   * Which themes the per-étape bonus questions should draw from. When several
+   * are picked the generator mixes them across étapes. Defaults to ['medical'].
+   */
+  bonus_themes?: BonusCategory[]
+  /** Free-text theme used when 'custom' is among `bonus_themes`. */
+  bonus_custom_theme?: string
   /** Optional address that must be both the start and the end of a loop. */
   loop_address?: string
+  /** Optional map-placed start point (recommended). Forces étape 1. */
+  start_point?: GeoPoint
+  /** Optional map-placed end point. Forces the last étape (loop if = start). */
+  end_point?: GeoPoint
   /** Optional answers to the pre-generation orientation quiz. */
   quiz_answers?: QuizAnswer[]
 }
