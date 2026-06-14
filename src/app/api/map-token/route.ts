@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic'
  *
  * Source order:
  *  1. NEXT_PUBLIC_MAPBOX_TOKEN (env var, if configured on the host)
- *  2. a saved user setting (user_settings.mapbox_token) — same token the
- *     dashboard map uses. This is a public `pk.` token, safe to expose.
+ *  2. the saved user setting, read via the `shared_mapbox_token()` SECURITY
+ *     DEFINER function using the (already configured) anon key — no service
+ *     role key required. That function returns only the public `pk.` token.
  *
  * The token is never hardcoded in a committed file (avoids secret-scanning)
  * and stays in sync with what the user configured in the app.
@@ -20,15 +21,13 @@ export async function GET() {
 
   if (!token) {
     try {
-      const admin = createAdminClient()
-      const { data } = await admin
-        .from('user_settings')
-        .select('mapbox_token, updated_at')
-        .not('mapbox_token', 'is', null)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      token = data?.mapbox_token ?? ''
+      const sb = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      )
+      const { data } = await sb.rpc('shared_mapbox_token')
+      if (typeof data === 'string') token = data
     } catch {
       // Fall through with empty token; the page falls back to the SVG map.
     }
