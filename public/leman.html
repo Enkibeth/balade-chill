@@ -139,6 +139,35 @@ h2{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,36px);let
 .vbtn.on-maybe{background:var(--soleil);border-color:var(--soleil);color:#3A2B05}
 .vbtn.on-no{background:var(--rouge);border-color:var(--rouge);color:#fff}
 .empty{display:none;text-align:center;color:var(--gris);padding:40px 0;font-family:var(--mono);font-size:13px}
+.card .del{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gris);background:none;border:none;cursor:pointer;align-self:flex-start;padding:2px 0;border-bottom:1.5px solid transparent;transition:.12s}
+.card .del:hover{color:var(--rouge);border-bottom-color:var(--rouge)}
+.card .del:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
+.tag.new{background:#E3EEF6;color:var(--lac);font-weight:600}
+
+/* ---------- MODULE AJOUT D'ÉVÉNEMENT ---------- */
+.adder{background:#fff;border:1.5px solid #D5E2EB;border-radius:16px;margin:6px 0 20px;overflow:hidden}
+.adder summary{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--nuit);padding:14px 18px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+.adder summary::-webkit-details-marker{display:none}
+.adder summary::before{content:"+";display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:var(--nuit);color:#fff;font-weight:700}
+.adder[open] summary::before{content:"−"}
+.adder summary:focus-visible{outline:3px solid var(--lac);outline-offset:-2px}
+.adder-body{padding:4px 18px 18px;border-top:1px solid #EAF2F6}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--gris);font-weight:600}
+.field input[type=text],.field input[type=url],.field input[type=date],.field select,.field textarea{font-family:var(--body);font-size:14px;color:var(--encre);background:var(--brume);border:1.5px solid #D5E2EB;border-radius:9px;padding:9px 11px;width:100%}
+.field textarea{resize:vertical;min-height:60px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--lac)}
+.fchecks{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--encre)}
+.fchecks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.fchecks input{width:16px;height:16px;accent-color:var(--lac)}
+.fact{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+.fmsg{font-family:var(--mono);font-size:11.5px;color:var(--gris)}
+.fmsg.err{color:var(--rouge)}
+.restore{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gris);background:none;border:1.5px dashed #C9D8E2;border-radius:999px;padding:6px 14px;cursor:pointer;transition:.12s}
+.restore:hover{border-color:var(--nuit);color:var(--nuit)}
+.restore:focus-visible{outline:3px solid var(--lac);outline-offset:2px}
 
 /* ---------- WEEK-ENDS PRÊTS ---------- */
 .wk{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
@@ -225,13 +254,13 @@ footer b{color:#D7E4ED}
 <section id="planning">
   <span class="kicker">Le planning du lac</span>
   <h2>Qui joue quand</h2>
-  <p class="lede">Chaque barre couvre les dates réelles de l’événement dans votre fenêtre (dates 2026 vérifiées). Vos votes colorent les barres : cerclé de vert = validé, hachuré = peut-être, estompé = refusé. Cliquez sur une barre pour aller à sa fiche. Faites défiler horizontalement.</p>
+  <p class="lede">Chaque barre couvre les dates réelles de l’événement dans votre fenêtre. Vos votes colorent les barres : cerclé de vert = validé, hachuré = peut-être. Les plans <b>refusés ✗ ou supprimés disparaissent automatiquement</b> de cette timeline. Cliquez sur une barre pour aller à sa fiche. Faites défiler horizontalement.</p>
   <div class="gantt-wrap"><div class="gantt" id="gantt"></div></div>
   <div class="g-legend">
     <span><i class="g-key yes"></i>validé ✓</span>
     <span><i class="g-key maybe"></i>peut-être ?</span>
-    <span><i class="g-key no"></i>refusé ✗</span>
     <span><i class="g-key"></i>pas encore voté</span>
+    <span>✗ refusé / supprimé = retiré de la timeline</span>
   </div>
   <div class="bigwe-tags">
     <span class="bigwe"><b>WE 1</b> · 26–28 juin — lancement transfrontalier</span>
@@ -272,6 +301,72 @@ footer b{color:#D7E4ED}
     <button class="chip" data-v="etu">★ Bon plan étudiant</button>
     <button class="chip" data-v="duo">❤ Idées duo</button>
   </div>
+  <details class="adder" id="adder">
+    <summary>Ajouter un plan à la sélection</summary>
+    <div class="adder-body">
+      <form id="add-form" novalidate>
+        <div class="frow">
+          <div class="field full">
+            <label for="a-n">Nom du plan *</label>
+            <input type="text" id="a-n" name="n" placeholder="ex. Concert au bord du lac" required>
+          </div>
+          <div class="field">
+            <label for="a-r">Rive</label>
+            <select id="a-r" name="r">
+              <option value="ge">Genève</option>
+              <option value="vd">Lausanne · Nyon</option>
+              <option value="fr">Évian · Thonon</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a-t">Type</label>
+            <select id="a-t" name="t">
+              <option value="fest">Festivals &amp; musique</option>
+              <option value="lac">Lac &amp; sport</option>
+              <option value="cine">Ciné &amp; culture</option>
+              <option value="soir">Soirées &amp; danse</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a-start">Date de début *</label>
+            <input type="date" id="a-start" name="start" min="2026-06-26" max="2026-08-10" value="2026-06-26" required>
+          </div>
+          <div class="field">
+            <label for="a-end">Date de fin *</label>
+            <input type="date" id="a-end" name="end" min="2026-06-26" max="2026-08-10" value="2026-06-26" required>
+          </div>
+          <div class="field">
+            <label for="a-h">Horaires</label>
+            <input type="text" id="a-h" name="h" placeholder="ex. dès 18h">
+          </div>
+          <div class="field">
+            <label for="a-p">Prix</label>
+            <input type="text" id="a-p" name="p" placeholder="ex. Gratuit · étudiant 20">
+          </div>
+          <div class="field full">
+            <label for="a-w">Pourquoi ce plan</label>
+            <textarea id="a-w" name="w" placeholder="Une phrase pour vous rappeler pourquoi vous l'avez ajouté."></textarea>
+          </div>
+          <div class="field full">
+            <label for="a-u">Lien officiel</label>
+            <input type="url" id="a-u" name="u" placeholder="https://…">
+          </div>
+        </div>
+        <div class="fchecks">
+          <label><input type="checkbox" name="free"> Gratuit</label>
+          <label><input type="checkbox" name="etu"> ★ Bon plan étudiant</label>
+          <label><input type="checkbox" name="duo"> ❤ Idée duo</label>
+        </div>
+        <div class="fact">
+          <button type="submit" class="btn">Ajouter au planning</button>
+          <span class="fmsg" id="add-msg"></span>
+        </div>
+      </form>
+      <div class="fact" id="restore-wrap" style="display:none">
+        <button type="button" class="restore" id="btn-restore"></button>
+      </div>
+    </div>
+  </details>
   <p class="count" id="count"></p>
   <div class="grid" id="grid"></div>
   <p class="empty" id="empty">Aucun plan ne correspond à ces filtres — élargissez d’un cran.</p>
@@ -410,19 +505,38 @@ const ACT = [
 /* Persistance via localStorage : les votes restent enregistrés sur cet
    appareil/navigateur (iPad, ordinateur…) entre les sessions. */
 const STORE_KEY='leman-2026-votes';
+const CUSTOM_KEY='leman-2026-custom';   // plans ajoutés à la main
+const DEL_KEY='leman-2026-deleted';     // ids de plans intégrés supprimés
 let statuses={};            // id -> 'yes'|'maybe'|'no'
+let customActs=[];          // plans ajoutés par l'utilisateur
+let deleted={};             // id -> true (plans intégrés masqués)
 let storageOK=true;
+
+/* Liste effective = plans intégrés + plans ajoutés, moins les supprimés. */
+function getActs(){return [...ACT,...customActs].filter(a=>!deleted[a.id]);}
 
 function loadStatuses(){
   try{
     const raw=localStorage.getItem(STORE_KEY);
     if(raw){statuses=JSON.parse(raw)||{};}
+    const rc=localStorage.getItem(CUSTOM_KEY);
+    if(rc){customActs=JSON.parse(rc)||[];}
+    const rd=localStorage.getItem(DEL_KEY);
+    if(rd){deleted=JSON.parse(rd)||{};}
   }catch(e){
     /* localStorage indisponible (navigation privée stricte, etc.) */
     storageOK=false;
   }
-  setSaveState(storageOK?'Votes sauvegardés sur cet appareil':'Sauvegarde indisponible — votes valables pour cette session');
+  setSaveState(storageOK?'Choix sauvegardés sur cet appareil':'Sauvegarde indisponible — choix valables pour cette session');
   renderAll();
+}
+function saveCustom(){
+  if(!storageOK)return;
+  try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(customActs));}catch(e){}
+}
+function saveDeleted(){
+  if(!storageOK)return;
+  try{localStorage.setItem(DEL_KEY,JSON.stringify(deleted));}catch(e){}
 }
 let saveTimer=null;
 function saveStatuses(){
@@ -472,8 +586,9 @@ function buildGantt(){
   h+='</div>';
   for(const [label,reg] of GROUPS){
     h+=`<div class="g-group">${label}</div>`;
-    for(const a of ACT){
+    for(const a of getActs()){
       if(a.r!==reg||!a.g)continue;
+      if(statuses[a.id]==='no')continue;   // refusés retirés de la timeline
       const [s,e]=a.g, span=e-s+1;
       const st=statuses[a.id]?` st-${statuses[a.id]}`:'';
       const name=a.gn||a.n;
@@ -509,8 +624,9 @@ let fRegion='all',fType='all',fStatus='all',fExtra=new Set();
 
 function renderCards(){
   const grid=document.getElementById('grid');
+  const acts=getActs();
   let html='',n=0;
-  for(const a of ACT){
+  for(const a of acts){
     const st=statuses[a.id]||null;
     if(fRegion!=='all'&&a.r!==fRegion)continue;
     if(fType!=='all'&&a.t!==fType)continue;
@@ -531,37 +647,128 @@ function renderCards(){
         ${a.etu?'<span class="tag etu">★ étudiant</span>':''}
         ${a.duo?'<span class="tag duo">❤ duo</span>':''}
         ${a.warn?'<span class="tag warn">⚠ à re-vérifier</span>':''}
+        ${a.custom?'<span class="tag new">+ ajouté</span>':''}
       </div>
       <div class="meta">
         <span><b>${a.d}</b></span>
         <span>${a.h}</span>
         <span>${a.p}</span>
       </div>
-      <p class="why">${a.w}</p>
-      <a class="link" href="${a.u}" target="_blank" rel="noopener noreferrer">Site officiel ↗</a>
+      <p class="why">${a.w||''}</p>
+      ${a.u?`<a class="link" href="${a.u}" target="_blank" rel="noopener noreferrer">Site officiel ↗</a>`:''}
       <div class="vote" role="group" aria-label="Votre décision pour ${a.n}">
         <button class="vbtn${st==='yes'?' on-yes':''}" data-id="${a.id}" data-v="yes" aria-pressed="${st==='yes'}">✓ On y va</button>
         <button class="vbtn${st==='maybe'?' on-maybe':''}" data-id="${a.id}" data-v="maybe" aria-pressed="${st==='maybe'}">? Peut-être</button>
         <button class="vbtn${st==='no'?' on-no':''}" data-id="${a.id}" data-v="no" aria-pressed="${st==='no'}">✗ Non</button>
       </div>
+      <button class="del" data-del="${a.id}" title="Supprimer ce plan de la sélection">🗑 Supprimer ce plan</button>
     </article>`;
   }
   grid.innerHTML=html;
-  document.getElementById('count').textContent=`${n} plan${n>1?'s':''} affiché${n>1?'s':''} sur ${ACT.length}`;
+  document.getElementById('count').textContent=`${n} plan${n>1?'s':''} affiché${n>1?'s':''} sur ${acts.length}`;
   document.getElementById('empty').style.display=n?'none':'block';
+  renderRestore();
 }
 document.getElementById('grid').addEventListener('click',e=>{
-  const b=e.target.closest('.vbtn');if(!b)return;
-  setStatus(b.dataset.id,b.dataset.v);
+  const v=e.target.closest('.vbtn');
+  if(v){setStatus(v.dataset.id,v.dataset.v);return;}
+  const d=e.target.closest('.del');
+  if(d){deleteAct(d.dataset.del);}
+});
+
+/* ================= AJOUT / SUPPRESSION DE PLANS ================= */
+function deleteAct(id){
+  const a=getActs().find(x=>x.id===id);if(!a)return;
+  if(!confirm(`Supprimer « ${a.n} » ? Le plan disparaîtra de la liste et de la timeline.`))return;
+  if(customActs.some(x=>x.id===id)){
+    customActs=customActs.filter(x=>x.id!==id);saveCustom();
+  }else{
+    deleted[id]=true;saveDeleted();
+  }
+  if(statuses[id]){delete statuses[id];saveStatuses();}
+  renderAll();
+}
+
+/* Conversion date (AAAA-MM-JJ) -> index timeline (0 = 26 juin, 45 = 10 août) */
+const WIN_START=new Date(2026,5,26);
+function dateToIdx(str){
+  const d=new Date(str+'T00:00:00');
+  const diff=Math.round((d-WIN_START)/86400000);
+  return Math.max(0,Math.min(45,diff));
+}
+const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function fmtRange(s,e){
+  const ds=new Date(s+'T00:00:00'),de=new Date(e+'T00:00:00');
+  if(s===e)return `${ds.getDate()} ${MONTHS[ds.getMonth()]}`;
+  if(ds.getMonth()===de.getMonth())return `${ds.getDate()}–${de.getDate()} ${MONTHS[de.getMonth()]}`;
+  return `${ds.getDate()} ${MONTHS[ds.getMonth()]} – ${de.getDate()} ${MONTHS[de.getMonth()]}`;
+}
+function showMsg(t,err){
+  const m=document.getElementById('add-msg');
+  m.textContent=t;m.classList.toggle('err',!!err);
+}
+document.getElementById('add-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const f=e.target;
+  const name=f.n.value.trim();
+  if(!name){showMsg('Donnez au moins un nom au plan.',true);f.n.focus();return;}
+  let s=f.start.value,en=f.end.value;
+  if(!s||!en){showMsg('Indiquez une date de début et de fin.',true);return;}
+  if(en<s){const t=s;s=en;en=t;}            // on remet dans l'ordre
+  const si=dateToIdx(s),ei=dateToIdx(en);
+  const act={
+    id:'custom-'+Date.now().toString(36),
+    custom:true,
+    r:f.r.value,
+    t:f.t.value,
+    n:name,
+    d:fmtRange(s,en),
+    h:f.h.value.trim()||'Horaires à préciser',
+    p:f.p.value.trim()||'Prix à préciser',
+    w:f.w.value.trim(),
+    u:f.u.value.trim(),
+    g:[si,ei],
+    gn:name.length>16?name.slice(0,15)+'…':name
+  };
+  if(f.free.checked)act.free=1;
+  if(f.etu.checked)act.etu=1;
+  if(f.duo.checked)act.duo=1;
+  customActs.push(act);saveCustom();
+  f.reset();
+  showMsg(`« ${name} » ajouté à la timeline ✓`,false);
+  renderAll();
+  // mise en évidence de la nouvelle fiche
+  setTimeout(()=>{
+    const card=document.getElementById('card-'+act.id);
+    if(card){card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');}
+  },60);
+});
+
+/* Bouton de restauration des plans intégrés supprimés */
+function renderRestore(){
+  const wrap=document.getElementById('restore-wrap');
+  const btn=document.getElementById('btn-restore');
+  const n=Object.keys(deleted).length;
+  if(n){
+    wrap.style.display='flex';
+    btn.textContent=`Restaurer ${n} plan${n>1?'s':''} d'origine supprimé${n>1?'s':''}`;
+  }else{
+    wrap.style.display='none';
+  }
+}
+document.getElementById('btn-restore').addEventListener('click',()=>{
+  deleted={};saveDeleted();renderAll();
 });
 
 function renderScore(){
+  const acts=getActs();
   let y=0,m=0,no=0;
-  for(const a of ACT){
+  for(const a of acts){
     const s=statuses[a.id];
     if(s==='yes')y++;else if(s==='maybe')m++;else if(s==='no')no++;
   }
-  const u=ACT.length-y-m-no;
+  const u=acts.length-y-m-no;
   document.getElementById('score').innerHTML=
     `<span class="y"><b>${y}</b> validé${y>1?'s':''} ✓</span>`+
     `<span class="m"><b>${m}</b> peut-être ?</span>`+
@@ -616,10 +823,11 @@ function pItem(a,withIcon){
   </div>`;
 }
 function buildPrintSheet(){
-  const yes=sortByDate(ACT.filter(a=>statuses[a.id]==='yes'));
-  const maybe=sortByDate(ACT.filter(a=>statuses[a.id]==='maybe'));
-  const undec=sortByDate(ACT.filter(a=>!statuses[a.id]));
-  const no=sortByDate(ACT.filter(a=>statuses[a.id]==='no'));
+  const acts=getActs();
+  const yes=sortByDate(acts.filter(a=>statuses[a.id]==='yes'));
+  const maybe=sortByDate(acts.filter(a=>statuses[a.id]==='maybe'));
+  const undec=sortByDate(acts.filter(a=>!statuses[a.id]));
+  const no=sortByDate(acts.filter(a=>statuses[a.id]==='no'));
   let h=`<h1>Été 2026 autour du Léman — Hugo &amp; Éloïse</h1>
   <p class="psub">Fenêtre 26 juin → 10 août 2026 · ✓ validé · ? peut-être · ✗ refusé · imprimé le ${new Date().toLocaleDateString('fr-CH')}</p>`;
   if(yes.length){
