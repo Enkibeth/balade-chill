@@ -13,6 +13,7 @@ import {
 } from 'react-leaflet'
 import L from 'leaflet'
 import type { Balade } from '@/types'
+import { useIsLight } from '@/hooks/useTheme'
 
 export interface GlobeBalade {
   balade: Balade
@@ -131,6 +132,7 @@ export function BaladeGlobe({
   onSelect: (id: string) => void
   mapboxToken: string | null
 }) {
+  const light = useIsLight()
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null)
   const points = useMemo(
     () =>
@@ -161,14 +163,18 @@ export function BaladeGlobe({
   // otherwise the free, no-auth CARTO dark basemap.
   const tile = mapboxToken
     ? {
-        url: `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`,
+        url: `https://api.mapbox.com/styles/v1/mapbox/${
+          light ? 'light-v11' : 'dark-v11'
+        }/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`,
         tileSize: 512,
         zoomOffset: -1,
         attribution: '© Mapbox © OpenStreetMap',
         subdomains: 'abc',
       }
     : {
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        url: `https://{s}.basemaps.cartocdn.com/${
+          light ? 'light_all' : 'dark_all'
+        }/{z}/{x}/{y}{r}.png`,
         tileSize: 256,
         zoomOffset: 0,
         attribution: '© OpenStreetMap © CARTO',
@@ -197,7 +203,11 @@ export function BaladeGlobe({
         center={center}
         zoom={points[0] ? 12 : 4}
         scrollWheelZoom
-        style={{ height: '100%', width: '100%', background: '#1a0f08' }}
+        style={{
+          height: '100%',
+          width: '100%',
+          background: light ? '#f4ead6' : '#1a0f08',
+        }}
       >
         <TileLayer
           url={tile.url}
