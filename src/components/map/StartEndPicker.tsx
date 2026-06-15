@@ -82,10 +82,16 @@ export function StartEndPicker({
   const [query, setQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [resolving, setResolving] = useState(false)
   const [center, setCenter] = useState<[number, number] | null>(
     value.start ? [value.start.lat, value.start.lng] : null,
   )
   const didCenterCity = useRef(false)
+  // Monotonic id so a newer drop/drag supersedes a slower reverse-geocode.
+  const dropId = useRef(0)
+  // Latest value, so async label resolution doesn't clobber concurrent edits.
+  const valueRef = useRef(value)
+  valueRef.current = value
 
   // Centre the map on the balade's city the first time it's known, so the user
   // starts near the right place instead of the whole-country view.
@@ -111,13 +117,43 @@ export function StartEndPicker({
     }
   }, [city, country, value.start])
 
-  function setPoint(lat: number, lng: number, label?: string) {
-    const point: PickPoint = { lat, lng, label }
-    if (value.loop || active === 'start') {
-      onChange({ ...value, start: point })
-    } else {
-      onChange({ ...value, end: point })
+  function writePoint(target: 'start' | 'end', point: PickPoint) {
+    const v = valueRef.current
+    onChange(target === 'start' ? { ...v, start: point } : { ...v, end: point })
+  }
+
+  async function reverseLabel(
+    lat: number,
+    lng: number,
+  ): Promise<string | undefined> {
+    try {
+      const res = await fetch('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      })
+      const d = await res.json().catch(() => null)
+      if (res.ok && typeof d?.displayName === 'string') return d.displayName
+    } catch {
+      /* best-effort: keep the raw coordinates */
     }
+    return undefined
+  }
+
+  // Drop a point and resolve its exact place name in the background, so what we
+  // send to generation is always "coordinates + real location name".
+  async function dropPoint(target: 'start' | 'end', lat: number, lng: number) {
+    writePoint(target, { lat, lng })
+    const id = ++dropId.current
+    setResolving(true)
+    const label = await reverseLabel(lat, lng)
+    if (id !== dropId.current) return // superseded by a newer drop
+    setResolving(false)
+    if (label) writePoint(target, { lat, lng, label })
+  }
+
+  function clickTarget(): 'start' | 'end' {
+    return value.loop || active === 'start' ? 'start' : 'end'
   }
 
   async function handleSearch(e: React.FormEvent) {
@@ -137,7 +173,12 @@ export function StartEndPicker({
         return
       }
       setCenter([d.lat, d.lng])
-      setPoint(d.lat, d.lng, d.displayName)
+      dropId.current += 1 // cancel any in-flight reverse-geocode
+      writePoint(clickTarget(), {
+        lat: d.lat,
+        lng: d.lng,
+        label: d.displayName,
+      })
     } catch {
       setSearchError('Erreur réseau pendant la recherche.')
     } finally {
@@ -234,7 +275,9 @@ export function StartEndPicker({
             attribution="© OpenStreetMap © CARTO"
           />
           <Recenter center={center} />
-          <ClickCapture onPick={(lat, lng) => setPoint(lat, lng)} />
+          <ClickCapture
+            onPick={(lat, lng) => dropPoint(clickTarget(), lat, lng)}
+          />
           {line.length === 2 && (
             <Polyline
               positions={line}
@@ -249,10 +292,7 @@ export function StartEndPicker({
               eventHandlers={{
                 dragend: (e) => {
                   const ll = (e.target as L.Marker).getLatLng()
-                  onChange({
-                    ...value,
-                    start: { lat: ll.lat, lng: ll.lng },
-                  })
+                  dropPoint('start', ll.lat, ll.lng)
                 },
               }}
             />
@@ -265,7 +305,7 @@ export function StartEndPicker({
               eventHandlers={{
                 dragend: (e) => {
                   const ll = (e.target as L.Marker).getLatLng()
-                  onChange({ ...value, end: { lat: ll.lat, lng: ll.lng } })
+                  dropPoint('end', ll.lat, ll.lng)
                 },
               }}
             />
@@ -294,13 +334,34 @@ export function StartEndPicker({
         )}
       </div>
 
-      <p className="text-[11px] text-amber-100/35">
-        {value.start
-          ? value.loop
-            ? 'Départ et arrivée fixés sur ce point (boucle). Glisse le marqueur pour ajuster.'
-            : `Départ${value.end ? ' et arrivée placés' : ' placé'} sur la carte. Glisse les marqueurs pour ajuster.`
-          : 'Clique sur la carte ou cherche une adresse pour placer le point de départ. Recommandé pour éviter toute erreur de l’IA.'}
-      </p>
+      <div className="space-y-0.5 text-[11px] text-amber-100/45">
+        {value.start && (
+          <p>
+            <span className="text-emerald-300">●</span>{' '}
+            {value.loop ? 'Départ / arrivée' : 'Départ'} :{' '}
+            {value.start.label ??
+              `${value.start.lat.toFixed(4)}, ${value.start.lng.toFixed(4)}`}
+          </p>
+        )}
+        {showEnd && value.end && (
+          <p>
+            <span className="text-rose-300">●</span> Arrivée :{' '}
+            {value.end.label ??
+              `${value.end.lat.toFixed(4)}, ${value.end.lng.toFixed(4)}`}
+          </p>
+        )}
+        {resolving && (
+          <p className="flex items-center gap-1.5 text-amber-100/30">
+            <Loader2 size={11} className="animate-spin" /> Localisation du lieu…
+          </p>
+        )}
+        {!value.start && (
+          <p className="text-amber-100/35">
+            Clique sur la carte ou cherche une adresse pour placer le point de
+            départ. Recommandé pour éviter toute erreur de l’IA.
+          </p>
+        )}
+      </div>
     </div>
   )
 }

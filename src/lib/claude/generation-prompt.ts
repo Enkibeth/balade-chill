@@ -4,7 +4,7 @@ import type {
   EnigmeType,
   GenerationRequest,
 } from '@/types'
-import type { GeocodedPlace } from '@/lib/llm/geocode'
+import { shortenDisplayName, type GeocodedPlace } from '@/lib/llm/geocode'
 import { computeWalkBudget } from '@/lib/llm/routeMath'
 import { BONUS_CATEGORIES, bonusCategoryDef } from '@/lib/llm/bonus'
 
@@ -254,37 +254,9 @@ export function buildGenerationPrompt(
     lines.push(`  - Étape ${i + 1} : "${t}"`)
   })
 
-  // Important constraints go at the END — LLMs honor trailing rules best.
+  // The imposed start/end block is emitted LAST (see below) — LLMs honor
+  // trailing rules best, and getting these two anchors right matters most.
   const { startPin, endPin } = opts
-  const isLoop =
-    startPin &&
-    endPin &&
-    startPin.lat === endPin.lat &&
-    startPin.lng === endPin.lng
-  if (startPin && isLoop) {
-    lines.push('')
-    lines.push('RÈGLE OBLIGATOIRE — point de départ/arrivée imposé (boucle) :')
-    lines.push(`  L'étape 1 ET l'étape ${req.nb_etapes} DOIVENT être situées à :`)
-    lines.push(`  "${startPin.displayName}"`)
-    lines.push(`  Coordonnées exactes : lat=${startPin.lat}, lng=${startPin.lng}.`)
-    lines.push(
-      '  Reprends ces coordonnées telles quelles pour ces deux étapes (boucle).',
-    )
-  } else if (startPin || endPin) {
-    lines.push('')
-    lines.push('RÈGLE OBLIGATOIRE — points imposés :')
-    if (startPin) {
-      lines.push(
-        `  L'étape 1 (DÉPART) DOIT être à "${startPin.displayName}" — lat=${startPin.lat}, lng=${startPin.lng}.`,
-      )
-    }
-    if (endPin) {
-      lines.push(
-        `  L'étape ${req.nb_etapes} (ARRIVÉE) DOIT être à "${endPin.displayName}" — lat=${endPin.lat}, lng=${endPin.lng}.`,
-      )
-    }
-    lines.push('  Reprends ces coordonnées telles quelles pour ces étapes.')
-  }
 
   // Concrete, computed distance ceilings — same budget the validator enforces.
   // Trailing position + exact numbers make even strong models keep stops close.
@@ -308,6 +280,49 @@ export function buildGenerationPrompt(
     lines.push('')
     lines.push(
       `INSTRUCTIONS À RESPECTER : ${req.special_instructions.trim()}`,
+    )
+  }
+
+  // Imposed start/end — emitted LAST and stated as the top-priority rule. The
+  // place NAME (not just coords) is given so the étape's location_name, récit,
+  // énigme and mission are written ABOUT that exact place: this is what prevents
+  // the "right coordinates, wrong story" mismatch.
+  const isLoop = Boolean(
+    startPin &&
+      endPin &&
+      startPin.lat === endPin.lat &&
+      startPin.lng === endPin.lng,
+  )
+  const startName = startPin ? shortenDisplayName(startPin.displayName) : ''
+  const endName = endPin ? shortenDisplayName(endPin.displayName) : ''
+  if (startPin && isLoop) {
+    lines.push('')
+    lines.push('⚠️ RÈGLE PRIORITAIRE ABSOLUE — DÉPART ET ARRIVÉE IMPOSÉS (BOUCLE) :')
+    lines.push(
+      `  • L'ÉTAPE 1 et l'ÉTAPE ${req.nb_etapes} se déroulent TOUTES LES DEUX exactement à : « ${startName} » (lat=${startPin.lat}, lng=${startPin.lng}).`,
+    )
+    lines.push(
+      `  • Pour ces deux étapes : "location_name" = « ${startName} », et le récit, l'énigme et la mission sont ANCRÉS À CE LIEU précis. N'invente AUCUN autre lieu de départ ou d'arrivée.`,
+    )
+    lines.push('  • Reprends ces coordonnées telles quelles (boucle).')
+  } else if (startPin || endPin) {
+    lines.push('')
+    lines.push('⚠️ RÈGLE PRIORITAIRE ABSOLUE — DÉPART ET/OU ARRIVÉE IMPOSÉS :')
+    if (startPin) {
+      lines.push(
+        `  • L'ÉTAPE 1 (DÉPART) se déroule exactement à : « ${startName} » (lat=${startPin.lat}, lng=${startPin.lng}). Son "location_name" = « ${startName} », et son récit, son énigme et sa mission parlent de CE LIEU. C'est ici que commence l'histoire.`,
+      )
+    }
+    if (endPin) {
+      lines.push(
+        `  • L'ÉTAPE ${req.nb_etapes} (ARRIVÉE) se déroule exactement à : « ${endName} » (lat=${endPin.lat}, lng=${endPin.lng}). Son "location_name" = « ${endName} », et son récit, son énigme et sa mission parlent de CE LIEU. C'est ici que se termine l'histoire.`,
+      )
+    }
+    lines.push(
+      '  • Reprends ces coordonnées telles quelles. Les étapes intermédiaires relient logiquement ces points dans l\'ordre (du départ vers l\'arrivée), en itinéraire marchable.',
+    )
+    lines.push(
+      '  • Ne déplace JAMAIS le récit du départ vers un autre lieu : le nom du lieu, ses coordonnées et son histoire doivent désigner le MÊME endroit.',
     )
   }
 

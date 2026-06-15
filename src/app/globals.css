@@ -42,3 +42,94 @@ body {
   background: #4a3018;
   border-radius: 5px;
 }
+
+/* =====================================================================
+   LIGHT THEME
+   The app is dark-first (amber on near-black). Rather than rewrite every
+   component, `.light` on <html> remaps the recurring utility classes via a
+   few colour tokens, turning the sépia night palette into a warm parchment
+   day palette. Toggle lives in the nav; preference persists in localStorage.
+   ===================================================================== */
+:root.light {
+  --foreground: #3a2a18;
+  --lt: 58 42 24; /* primary text */
+  --lh: 146 64 14; /* headings (amber-200) */
+  --la: 180 83 9; /* accent (amber-300) */
+  --lb: 120 84 40; /* borders / amber-200 */
+  --ls: 255 253 247; /* lifted card surface */
+}
+:root.light body {
+  background: radial-gradient(
+    ellipse at top,
+    #fdf8ee 0%,
+    #f4ead6 60%,
+    #efe3cc 100%
+  );
+}
+:root.light ::-webkit-scrollbar-track {
+  background: #efe3cc;
+}
+:root.light ::-webkit-scrollbar-thumb {
+  background: #cbb389;
+}
+
+/* Primary text (amber-100 family) → warm dark, opacity preserved */
+:root.light .text-amber-100 { color: rgb(var(--lt)); }
+:root.light .text-amber-100\/80 { color: rgb(var(--lt) / 0.8); }
+:root.light .text-amber-100\/75 { color: rgb(var(--lt) / 0.78); }
+:root.light .text-amber-100\/70 { color: rgb(var(--lt) / 0.72); }
+:root.light .text-amber-100\/65 { color: rgb(var(--lt) / 0.7); }
+:root.light .text-amber-100\/60 { color: rgb(var(--lt) / 0.66); }
+:root.light .text-amber-100\/55 { color: rgb(var(--lt) / 0.62); }
+:root.light .text-amber-100\/50 { color: rgb(var(--lt) / 0.58); }
+:root.light .text-amber-100\/45 { color: rgb(var(--lt) / 0.55); }
+:root.light .text-amber-100\/40 { color: rgb(var(--lt) / 0.5); }
+:root.light .text-amber-100\/35 { color: rgb(var(--lt) / 0.46); }
+:root.light .text-amber-100\/30 { color: rgb(var(--lt) / 0.42); }
+:root.light .text-amber-100\/25 { color: rgb(var(--lt) / 0.4); }
+:root.light .text-amber-50 { color: #2a1c0f; }
+
+/* Headings & accents */
+:root.light .text-amber-200 { color: rgb(var(--lh)); }
+:root.light .text-amber-300 { color: rgb(var(--la)); }
+:root.light .text-amber-300\/60 { color: rgb(var(--la) / 0.7); }
+
+/* Surfaces (bg-black/*) → light lifted cards */
+:root.light .bg-black { background-color: #f6efe0; }
+:root.light .bg-black\/40 { background-color: rgb(var(--ls) / 0.85); }
+:root.light .bg-black\/30 { background-color: rgb(var(--ls) / 0.7); }
+:root.light .bg-black\/20 { background-color: rgb(var(--ls) / 0.5); }
+
+/* Borders (amber-200/*) → visible warm hairlines on cream */
+:root.light .border-amber-200\/10 { border-color: rgb(var(--lb) / 0.14); }
+:root.light .border-amber-200\/12 { border-color: rgb(var(--lb) / 0.16); }
+:root.light .border-amber-200\/15 { border-color: rgb(var(--lb) / 0.2); }
+:root.light .border-amber-200\/20 { border-color: rgb(var(--lb) / 0.26); }
+:root.light .border-amber-200\/25 { border-color: rgb(var(--lb) / 0.3); }
+:root.light .border-amber-200\/30 { border-color: rgb(var(--lb) / 0.34); }
+:root.light .border-amber-200\/35 { border-color: rgb(var(--lb) / 0.4); }
+:root.light .border-amber-200\/40 { border-color: rgb(var(--lb) / 0.46); }
+:root.light .border-amber-200\/45 { border-color: rgb(var(--lb) / 0.5); }
+
+/* Sticky/nav bars that hardcode the night bg */
+:root.light .bg-\[\#1a0f08\],
+:root.light .bg-\[\#1a0f08\]\/85,
+:root.light .bg-\[\#1a0f08\]\/90 {
+  background-color: rgb(247 240 228 / 0.88);
+}
+
+/* Teal (bonus blocks) & rose (errors) need darker ink on a light ground */
+:root.light .text-teal-300 { color: #0f766e; }
+:root.light .text-teal-200 { color: #115e59; }
+:root.light .text-teal-200\/60 { color: rgb(17 94 89 / 0.75); }
+:root.light .text-teal-100\/85 { color: rgb(17 76 70 / 0.95); }
+:root.light .text-rose-300 { color: #be123c; }
+:root.light .text-rose-300\/90 { color: rgb(190 18 60 / 0.95); }
+:root.light .text-rose-200 { color: #9f1239; }
+:root.light .text-emerald-400 { color: #047857; }
+
+/* Inputs: lift the field off the page so it reads on cream */
+:root.light input,
+:root.light textarea {
+  background-color: rgb(255 255 255 / 0.65);
+}
