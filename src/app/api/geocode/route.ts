@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
+import {
+  geocodeAddress,
+  reverseGeocode,
+  shortenDisplayName,
+} from '@/lib/llm/geocode'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -29,6 +33,26 @@ export async function POST(request: Request) {
   const query = typeof b.query === 'string' ? b.query.trim() : ''
   const city = typeof b.city === 'string' ? b.city.trim() : ''
   const country = typeof b.country === 'string' ? b.country.trim() : ''
+
+  // Reverse mode: a point dropped on the map sends { lat, lng } (no query) and
+  // gets back the exact place name so generation can anchor on coords + name.
+  const lat = typeof b.lat === 'number' ? b.lat : Number(b.lat)
+  const lng = typeof b.lng === 'number' ? b.lng : Number(b.lng)
+  if (!query && Number.isFinite(lat) && Number.isFinite(lng)) {
+    const place = await reverseGeocode(lat, lng)
+    if (!place) {
+      return NextResponse.json(
+        { error: 'Lieu introuvable à cet endroit.' },
+        { status: 404 },
+      )
+    }
+    return NextResponse.json({
+      lat: place.lat,
+      lng: place.lng,
+      displayName: shortenDisplayName(place.displayName),
+    })
+  }
+
   if (!query) {
     return NextResponse.json({ error: 'Adresse manquante' }, { status: 400 })
   }

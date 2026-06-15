@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ThemeToggle } from './ThemeToggle'
 
 const LINKS: { href: string; label: string; external?: boolean }[] = [
   { href: '/dashboard', label: 'Carte' },
@@ -57,6 +58,7 @@ export function Nav() {
               </Link>
             )
           })}
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             className="ml-1 rounded-lg px-3 py-1.5 text-sm text-amber-100/40 transition hover:text-rose-300"
