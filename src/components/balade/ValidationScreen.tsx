@@ -14,11 +14,13 @@ import {
   Sparkles,
   Navigation,
   Loader2,
+  Wand2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/claude/render-html'
 import { applyDistancesAndTime } from '@/lib/llm/routeMath'
 import { CipherBlock } from './CipherBlock'
+import { EtapeEditor } from './EtapeEditor'
 import type { Balade, Etape, ThemeColor } from '@/types'
 
 // A walk of ~30 min (~2.5 km) between two stops is long for a city stroll —
@@ -65,6 +67,8 @@ export function ValidationScreen({
   const [busy, setBusy] = useState<{ id: string; kind: 'ai' | 'geo' } | null>(
     null,
   )
+  // Which étape (by id) has its modify panel open, if any.
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // Distances/time recomputed live from the current coordinates, so editing or
   // regenerating an étape immediately updates the metrics and the "far" flags.
@@ -279,7 +283,8 @@ export function ValidationScreen({
               ? 'Une étape est éloignée à pied'
               : `${farCount} étapes sont éloignées à pied`}{' '}
             (marquée{farCount > 1 ? 's' : ''} ci-dessous). Utilise « Rapprocher »
-            pour la régénérer plus près, ou modifie le lieu puis « Géolocaliser ».
+            pour la régénérer plus près, « Modifier (IA) » pour la retravailler
+            ou choisir un lieu précis, ou modifie le nom puis « Géolocaliser ».
           </span>
         </div>
       )}
@@ -295,6 +300,7 @@ export function ValidationScreen({
           const aiBusy = busy?.id === e.id && busy.kind === 'ai'
           const geoBusy = busy?.id === e.id && busy.kind === 'geo'
           const anyBusy = busy !== null
+          const editorOpen = editingId === e.id
           return (
             <div
               key={e.id}
@@ -404,7 +410,33 @@ export function ValidationScreen({
                   )}
                   {geoBusy ? 'Géocodage…' : 'Géolocaliser le lieu'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingId(editorOpen ? null : e.id)}
+                  disabled={anyBusy}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] transition disabled:opacity-40 ${
+                    editorOpen
+                      ? 'border-amber-300/60 bg-amber-300/10 text-amber-100'
+                      : 'border-amber-200/20 text-amber-100/80 hover:border-amber-200/45'
+                  }`}
+                >
+                  <Wand2 size={12} />
+                  Modifier (IA)
+                </button>
               </div>
+
+              {editorOpen && (
+                <div className="pl-10">
+                  <EtapeEditor
+                    balade={balade}
+                    etape={e}
+                    prev={orderedEtapes[i - 1]}
+                    next={orderedEtapes[i + 1]}
+                    onApply={(patch) => patchEtape(i, patch)}
+                    onClose={() => setEditingId(null)}
+                  />
+                </div>
+              )}
             </div>
           )
         })}

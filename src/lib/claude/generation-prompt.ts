@@ -279,7 +279,20 @@ export function buildGenerationPrompt(
   if (req.special_instructions && req.special_instructions.trim()) {
     lines.push('')
     lines.push(
-      `INSTRUCTIONS À RESPECTER : ${req.special_instructions.trim()}`,
+      '⚠️ INSTRUCTIONS SPÉCIALES DU JOUEUR — PRIORITÉ ABSOLUE, NON NÉGOCIABLES :',
+    )
+    lines.push(`  « ${req.special_instructions.trim()} »`)
+    lines.push(
+      '  • Traite chaque demande ci-dessus comme une contrainte FERME, pas comme une simple suggestion.',
+    )
+    lines.push(
+      '  • Si le joueur veut passer devant un lieu, un monument ou un bâtiment précis, fais-en une étape à part entière (ou fais explicitement passer le parcours devant), avec ses coordonnées réelles.',
+    )
+    lines.push(
+      '  • Si le joueur impose un secteur, un quartier ou une zone à éviter, respecte-le strictement pour TOUTES les étapes.',
+    )
+    lines.push(
+      '  • Ces instructions priment sur tes préférences esthétiques ; ne les ignore et n\'en omets aucune. En cas de tension avec une autre règle, privilégie ces instructions tant que le parcours reste marchable.',
     )
   }
 

@@ -51,14 +51,25 @@ function parseNeighbour(v: unknown): Neighbour | null {
   return { location_name: asString(o.location_name), lat, lng }
 }
 
-const SYSTEM_PROMPT = `Tu es le maître du jeu d'une application de balades romantiques à énigmes pour un couple (Hugo et Éloïse, étudiants en médecine D5). On te demande de REGÉNÉRER UNE SEULE étape d'un parcours existant, parce que le lieu d'origine était trop éloigné des étapes voisines.
+// The three ways a single étape can be regenerated from the validation screen.
+//  - 'closer' : the original behaviour — find a real place near the neighbours
+//               because the current one is too far to walk to.
+//  - 'prompt' : a full AI rewrite steered by a free-text instruction from the
+//               user (e.g. "make it about a hidden bookshop, easier enigma").
+//  - 'place'  : the user pinned an exact point + place name on the map; we keep
+//               those coordinates and only (re)write a coherent story, mission
+//               and énigme anchored to that precise place.
+type RegenMode = 'closer' | 'prompt' | 'place'
+const REGEN_MODES: RegenMode[] = ['closer', 'prompt', 'place']
+
+const SYSTEM_PROMPT = `Tu es le maître du jeu d'une application de balades romantiques à énigmes pour un couple (Hugo et Éloïse, étudiants en médecine D5). On te demande de REGÉNÉRER UNE SEULE étape d'un parcours existant. Le message ci-dessous précise POURQUOI (rapprocher l'étape, la retravailler selon une demande, ou l'ancrer sur un lieu imposé) — suis cette consigne à la lettre.
 
 ## TA RÉPONSE
 Réponds UNIQUEMENT avec un objet JSON valide (premier caractère "{", dernier "}"). Aucun texte autour, aucun markdown.
 
 ## FORMAT
 {
-  "location_name": string,        // un lieu RÉEL et identifiable, proche des voisins
+  "location_name": string,        // un lieu RÉEL et identifiable
   "lat": number,                  // latitude GPS réelle
   "lng": number,                  // longitude GPS réelle
   "story_text": string,           // court fragment de récit pour cette étape (1 paragraphe)
@@ -84,8 +95,7 @@ Réponds UNIQUEMENT avec un objet JSON valide (premier caractère "{", dernier "
 }
 
 ## RÈGLES IMPÉRATIVES
-- Le NOUVEAU lieu doit être RÉEL et SITUÉ À QUELQUES MINUTES DE MARCHE (idéalement < 1 km) des deux étapes voisines fournies. C'est le but : rapprocher cette étape.
-- Coordonnées GPS exactes (elles seront re-vérifiées). Ne réutilise pas le lieu à éviter.
+- Coordonnées GPS exactes (elles seront re-vérifiées). Le récit, la mission et l'énigme doivent parler du lieu de cette étape : nom du lieu, coordonnées et histoire désignent le MÊME endroit.
 - Respecte EXACTEMENT le type d'énigme imposé. Pour tout chiffrement, "cipher_display" doit réellement encoder "answer".
 - Question médicale (si demandée) de niveau D5, exigeante, avec le raisonnement clinique complet dans "answer".
 - Ton romantique, complice, élégant, années 1920. Français.`
@@ -96,6 +106,9 @@ function buildPrompt(input: {
   difficulty: Difficulty
   order: number
   enigmeType: EnigmeType
+  mode: RegenMode
+  userPrompt: string
+  placed: Neighbour | null
   prev: Neighbour | null
   next: Neighbour | null
   avoid: string
@@ -109,9 +122,28 @@ function buildPrompt(input: {
     `Étape à regénérer : numéro ${input.order}.`,
     `Type d'énigme imposé (à respecter strictement) : "${input.enigmeType}".`,
   ]
-  if (input.avoid) {
+
+  // Mode-specific objective. Stated up front, then reinforced where it matters.
+  if (input.mode === 'place') {
+    lines.push(
+      '',
+      '⚠️ LIEU IMPOSÉ PAR LE JOUEUR — NE LE CHANGE PAS :',
+      `  • "location_name" = « ${input.placed?.location_name ?? ''} » (lat=${input.placed?.lat}, lng=${input.placed?.lng}).`,
+      '  • Reprends ce nom et ces coordonnées TELS QUELS. N\'invente aucun autre lieu.',
+      '  • Écris un récit, une mission complice et une énigme COHÉRENTS avec ce lieu précis (son ambiance, son histoire, ce qu\'on y voit).',
+    )
+  } else if (input.mode === 'prompt') {
+    lines.push(
+      '',
+      '⚠️ DEMANDE DU JOUEUR — À RESPECTER IMPÉRATIVEMENT :',
+      `  « ${input.userPrompt} »`,
+      '  • Retravaille cette étape (lieu, récit, mission et/ou énigme) pour répondre PRÉCISÉMENT à cette demande.',
+      '  • Si la demande nomme un lieu, ancre l\'étape sur ce lieu réel (coordonnées exactes).',
+    )
+  } else if (input.avoid) {
     lines.push(`Lieu à éviter (trop loin) : "${input.avoid}".`)
   }
+
   if (input.prev) {
     lines.push(
       `Étape PRÉCÉDENTE : "${input.prev.location_name}" (lat=${input.prev.lat}, lng=${input.prev.lng}).`,
@@ -122,13 +154,19 @@ function buildPrompt(input: {
       `Étape SUIVANTE : "${input.next.location_name}" (lat=${input.next.lat}, lng=${input.next.lng}).`,
     )
   }
+  // Proximity matters when the model picks the location itself ('closer' and
+  // 'prompt'). In 'place' mode the user fixed the point, so we don't constrain.
   const anchor = input.prev ?? input.next
-  if (anchor) {
-    lines.push(
-      `Le nouveau lieu doit être à quelques minutes de marche (idéalement < 1 km) de ${
-        input.prev && input.next ? 'CES DEUX lieux' : 'ce lieu'
-      }.`,
-    )
+  if (anchor && input.mode !== 'place') {
+    const proximity =
+      input.mode === 'closer'
+        ? `Le nouveau lieu doit être à quelques minutes de marche (idéalement < 1 km) de ${
+            input.prev && input.next ? 'CES DEUX lieux' : 'ce lieu'
+          }. C'est le but : rapprocher cette étape.`
+        : `Garde le lieu à distance de marche raisonnable (idéalement < 1 km) de ${
+            input.prev && input.next ? 'ces deux étapes voisines' : 'l\'étape voisine'
+          } pour rester marchable.`
+    lines.push(proximity)
   }
   if (!input.wantsMedical) {
     lines.push('Mets "medical_bonus" à null.')
@@ -194,6 +232,23 @@ export async function POST(request: Request) {
   )
     ? (b.enigme_type as EnigmeType)
     : 'wordplay'
+  const mode: RegenMode = REGEN_MODES.includes(b.mode as RegenMode)
+    ? (b.mode as RegenMode)
+    : 'closer'
+  const userPrompt = asString(b.user_prompt).trim()
+  const placed = parseNeighbour(b.placed)
+  if (mode === 'prompt' && !userPrompt) {
+    return NextResponse.json(
+      { error: 'Décris la modification souhaitée.' },
+      { status: 400 },
+    )
+  }
+  if (mode === 'place' && (!placed || !placed.location_name.trim())) {
+    return NextResponse.json(
+      { error: 'Place un lieu sur la carte avant de générer.' },
+      { status: 400 },
+    )
+  }
   const prev = parseNeighbour(b.prev)
   const next = parseNeighbour(b.next)
   const avoid = asString(b.avoid).trim()
@@ -243,6 +298,9 @@ export async function POST(request: Request) {
         difficulty,
         order,
         enigmeType,
+        mode,
+        userPrompt,
+        placed,
         prev,
         next,
         avoid,
@@ -269,16 +327,27 @@ export async function POST(request: Request) {
 
   const locationName = asString(parsed.location_name, `Étape ${order}`)
 
-  // Trust real geocoding over the model's coordinates: re-geocode the returned
-  // place name so we never persist a hallucinated lat/lng.
-  const geocoded = await geocodeAddress(
-    [locationName, city, country].filter(Boolean).join(', '),
-  )
-  const lat = geocoded?.lat ?? asNumber(parsed.lat)
-  const lng = geocoded?.lng ?? asNumber(parsed.lng)
-  const finalName = geocoded
-    ? shortenDisplayName(geocoded.displayName)
-    : locationName
+  // In 'place' mode the user pinned an exact point: trust it over anything the
+  // model returns. Otherwise re-geocode the returned place name so we never
+  // persist a hallucinated lat/lng.
+  let lat: number
+  let lng: number
+  let finalName: string
+  let geocoded = false
+  if (mode === 'place' && placed) {
+    lat = placed.lat
+    lng = placed.lng
+    finalName = placed.location_name
+    geocoded = true
+  } else {
+    const place = await geocodeAddress(
+      [locationName, city, country].filter(Boolean).join(', '),
+    )
+    lat = place?.lat ?? asNumber(parsed.lat)
+    lng = place?.lng ?? asNumber(parsed.lng)
+    finalName = place ? shortenDisplayName(place.displayName) : locationName
+    geocoded = Boolean(place)
+  }
 
   const rawEnigme = (parsed.enigme ?? {}) as Record<string, unknown>
   const candidate: GeneratedEnigme = {
@@ -349,6 +418,6 @@ export async function POST(request: Request) {
       enigme,
       medical_bonus: medical,
     },
-    geocoded: Boolean(geocoded),
+    geocoded,
   })
 }
