@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { Etape } from '@/types'
+import { useIsLight } from '@/hooks/useTheme'
 
 function numberIcon(color: string, label: number) {
   return L.divIcon({
@@ -41,6 +42,7 @@ export function RoutePreviewMap({
   etapes: Etape[]
   color: string
 }) {
+  const light = useIsLight()
   const pts = [...etapes]
     .sort((a, b) => a.order - b.order)
     .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lng))
@@ -60,10 +62,16 @@ export function RoutePreviewMap({
         center={positions[0]}
         zoom={13}
         scrollWheelZoom={false}
-        style={{ height: '100%', width: '100%', background: '#1a0f08' }}
+        style={{
+          height: '100%',
+          width: '100%',
+          background: light ? '#f4ead6' : '#1a0f08',
+        }}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={`https://{s}.basemaps.cartocdn.com/${
+            light ? 'light_all' : 'dark_all'
+          }/{z}/{x}/{y}{r}.png`}
           subdomains="abcd"
           attribution="© OpenStreetMap © CARTO"
         />

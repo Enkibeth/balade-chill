@@ -12,6 +12,7 @@ import {
 } from 'react-leaflet'
 import L from 'leaflet'
 import { Search, Loader2, RotateCcw } from 'lucide-react'
+import { useIsLight } from '@/hooks/useTheme'
 
 export interface PickPoint {
   lat: number
@@ -78,6 +79,7 @@ export function StartEndPicker({
   value: StartEndValue
   onChange: (v: StartEndValue) => void
 }) {
+  const light = useIsLight()
   const [active, setActive] = useState<'start' | 'end'>('start')
   const [query, setQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -267,10 +269,16 @@ export function StartEndPicker({
           center={mapCenter}
           zoom={value.start ? 14 : 6}
           scrollWheelZoom={false}
-          style={{ height: '100%', width: '100%', background: '#1a0f08' }}
+          style={{
+            height: '100%',
+            width: '100%',
+            background: light ? '#f4ead6' : '#1a0f08',
+          }}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={`https://{s}.basemaps.cartocdn.com/${
+              light ? 'light_all' : 'dark_all'
+            }/{z}/{x}/{y}{r}.png`}
             subdomains="abcd"
             attribution="© OpenStreetMap © CARTO"
           />
