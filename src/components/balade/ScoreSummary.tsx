@@ -23,7 +23,7 @@ export function ScoreSummary({
   const [shared, setShared] = useState(false)
 
   const nbEtapes = balade.etapes.length
-  const nbMedical = balade.etapes.filter((e) => e.medical_bonus).length
+  const nbBonus = balade.etapes.filter((e) => e.medical_bonus).length
   const enigmes = countTrue(session.enigme_scores)
   const medical = countTrue(session.medical_scores)
   const missions = countTrue(session.mission_scores)
@@ -70,7 +70,7 @@ export function ScoreSummary({
 
         <dl className="space-y-2 text-sm">
           <ScoreRow label="Énigmes résolues sans indice" value={`${enigmes}/${nbEtapes}`} />
-          <ScoreRow label="Questions médicales" value={`${medical}/${nbMedical}`} />
+          <ScoreRow label="Questions bonus" value={`${medical}/${nbBonus}`} />
           <ScoreRow label="Missions accomplies" value={`${missions}/${nbEtapes}`} />
         </dl>
 

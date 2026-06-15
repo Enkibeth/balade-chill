@@ -34,7 +34,9 @@ export interface GeneratedEtape {
   action_mission: string
   enigme: GeneratedEnigme
   medical_bonus: {
-    specialty: string
+    category?: string
+    label?: string
+    specialty?: string
     question: string
     hint?: string
     answer: string

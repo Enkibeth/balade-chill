@@ -2,13 +2,30 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Loader2, Check } from 'lucide-react'
+import { BONUS_CATEGORIES } from '@/lib/llm/bonus'
 import type {
+  BonusCategory,
   Difficulty,
   GenerationRequest,
   QuizAnswer,
   QuizQuestion,
 } from '@/types'
+import type { StartEndValue } from '@/components/map/StartEndPicker'
+
+const StartEndPicker = dynamic(
+  () =>
+    import('@/components/map/StartEndPicker').then((m) => m.StartEndPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-amber-200/15 bg-black/30 text-xs text-amber-100/40">
+        Chargement de la carte…
+      </div>
+    ),
+  },
+)
 
 const DIFFICULTIES: { value: Difficulty; label: string; desc: string }[] = [
   { value: 'facile', label: 'Facile', desc: 'Jeux de mots, sans chiffrement' },
@@ -42,7 +59,13 @@ export default function GeneratePage() {
   ])
   const [theme, setTheme] = useState('')
   const [specialInstructions, setSpecialInstructions] = useState('')
-  const [loopAddress, setLoopAddress] = useState('')
+  const [bonusThemes, setBonusThemes] = useState<BonusCategory[]>(['medical'])
+  const [bonusCustom, setBonusCustom] = useState('')
+  const [startEnd, setStartEnd] = useState<StartEndValue>({
+    start: null,
+    end: null,
+    loop: true,
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
@@ -119,6 +142,15 @@ export default function GeneratePage() {
     )
   }
 
+  function toggleBonusTheme(id: BonusCategory) {
+    setBonusThemes((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }
+
+  const medicalSelected = bonusThemes.includes('medical')
+  const customSelected = bonusThemes.includes('custom')
+
   async function handleGenerate() {
     setError(null)
     setLoading(true)
@@ -134,6 +166,7 @@ export default function GeneratePage() {
           })
           .filter((x): x is QuizAnswer => x !== null)
       : []
+    const endPoint = startEnd.loop ? startEnd.start : startEnd.end
     const payload: GenerationRequest = {
       city: city.trim(),
       country: country.trim(),
@@ -143,7 +176,11 @@ export default function GeneratePage() {
       nb_etapes: nbEtapes,
       theme_preference: theme.trim() || undefined,
       special_instructions: specialInstructions.trim() || undefined,
-      loop_address: loopAddress.trim() || undefined,
+      bonus_themes: bonusThemes.length ? bonusThemes : ['medical'],
+      bonus_custom_theme:
+        customSelected && bonusCustom.trim() ? bonusCustom.trim() : undefined,
+      start_point: startEnd.start ?? undefined,
+      end_point: endPoint ?? undefined,
       quiz_answers: quiz_answers.length ? quiz_answers : undefined,
     }
     try {
@@ -239,19 +276,15 @@ export default function GeneratePage() {
             </div>
             <div>
               <label className="mb-1 block text-xs text-amber-100/50">
-                Adresse de départ/arrivée{' '}
-                <span className="text-amber-100/25">(optionnel)</span>
+                Point de départ et d&apos;arrivée{' '}
+                <span className="text-amber-100/25">(recommandé)</span>
               </label>
-              <input
-                value={loopAddress}
-                onChange={(e) => setLoopAddress(e.target.value)}
-                placeholder="2bis rue Henri Dunant, Paris"
-                className={inputClass}
+              <StartEndPicker
+                city={city}
+                country={country}
+                value={startEnd}
+                onChange={setStartEnd}
               />
-              <p className="mt-1 text-[11px] text-amber-100/35">
-                Si renseignée, l&apos;étape 1 et la dernière étape seront
-                forcées à cette adresse (boucle).
-              </p>
             </div>
           </div>
         )}
@@ -284,24 +317,77 @@ export default function GeneratePage() {
             </div>
             <div>
               <label className="mb-2 block text-xs text-amber-100/50">
-                Spécialités médicales
+                Questions bonus{' '}
+                <span className="text-amber-100/25">(une par étape · choix multiple)</span>
               </label>
-              <div className="flex flex-wrap gap-2">
-                {SPECIALTIES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => toggleSpecialty(s)}
-                    className={`rounded-full border px-3 py-1.5 text-xs capitalize transition ${
-                      specialties.includes(s)
-                        ? 'border-teal-400/50 bg-teal-400/15 text-teal-200'
-                        : 'border-amber-200/15 text-amber-100/45'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+              <div className="space-y-2">
+                {BONUS_CATEGORIES.map((c) => {
+                  const active = bonusThemes.includes(c.id)
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleBonusTheme(c.id)}
+                      className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition ${
+                        active
+                          ? 'border-teal-400/50 bg-teal-400/10'
+                          : 'border-amber-200/15 hover:border-amber-200/30'
+                      }`}
+                    >
+                      <span aria-hidden className="text-base">
+                        {c.emoji}
+                      </span>
+                      <span className="text-sm text-amber-100">{c.label}</span>
+                      <span className="ml-auto hidden text-xs text-amber-100/40 sm:block">
+                        {c.desc}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
+              {bonusThemes.length === 0 && (
+                <p className="mt-1.5 text-[11px] text-amber-100/40">
+                  Aucun thème sélectionné — les questions médecine seront
+                  utilisées par défaut.
+                </p>
+              )}
             </div>
+
+            {medicalSelected && (
+              <div>
+                <label className="mb-2 block text-xs text-amber-100/50">
+                  Spécialités médicales
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {SPECIALTIES.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => toggleSpecialty(s)}
+                      className={`rounded-full border px-3 py-1.5 text-xs capitalize transition ${
+                        specialties.includes(s)
+                          ? 'border-teal-400/50 bg-teal-400/15 text-teal-200'
+                          : 'border-amber-200/15 text-amber-100/45'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {customSelected && (
+              <div>
+                <label className="mb-1 block text-xs text-amber-100/50">
+                  Thème personnalisé
+                </label>
+                <input
+                  value={bonusCustom}
+                  onChange={(e) => setBonusCustom(e.target.value)}
+                  placeholder="Cinéma, gastronomie, mythologie, sport…"
+                  className={inputClass}
+                />
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-xs text-amber-100/50">
                 Préférence de thème{' '}
@@ -405,14 +491,41 @@ export default function GeneratePage() {
                 }
               />
               <Row
-                label="Médecine"
-                value={specialties.join(', ') || 'cardiologie, neurologie'}
+                label="Bonus"
+                value={
+                  bonusThemes.length
+                    ? bonusThemes
+                        .map(
+                          (id) =>
+                            BONUS_CATEGORIES.find((c) => c.id === id)?.label ??
+                            id,
+                        )
+                        .join(', ')
+                    : 'Médecine (défaut)'
+                }
               />
+              {medicalSelected && (
+                <Row
+                  label="Spécialités"
+                  value={specialties.join(', ') || 'cardiologie, neurologie'}
+                />
+              )}
+              {customSelected && bonusCustom.trim() && (
+                <Row label="Thème libre" value={bonusCustom.trim()} />
+              )}
               {theme && <Row label="Thème" value={theme} />}
               {specialInstructions && (
                 <Row label="Instructions" value={specialInstructions} />
               )}
-              {loopAddress && <Row label="Boucle" value={loopAddress} />}
+              {startEnd.start && (
+                <Row
+                  label={startEnd.loop ? 'Départ/arrivée' : 'Départ'}
+                  value={pointLabel(startEnd.start)}
+                />
+              )}
+              {!startEnd.loop && startEnd.end && (
+                <Row label="Arrivée" value={pointLabel(startEnd.end)} />
+              )}
               {quiz && Object.values(quizAnswers).filter(Boolean).length > 0 && (
                 <Row
                   label="Affinage"
@@ -462,6 +575,10 @@ export default function GeneratePage() {
       </div>
     </div>
   )
+}
+
+function pointLabel(p: { lat: number; lng: number; label?: string }): string {
+  return p.label?.trim() || `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`
 }
 
 function Row({ label, value }: { label: string; value: string }) {

@@ -21,15 +21,22 @@ import {
 import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
 import { applyDistancesAndTime, haversineKm } from '@/lib/llm/routeMath'
 import { validateEtapeGeography } from '@/lib/llm/geoValidate'
-import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
+import {
+  geocodeAddress,
+  shortenDisplayName,
+  type GeocodedPlace,
+} from '@/lib/llm/geocode'
+import { bonusCategoryDef, isBonusCategory } from '@/lib/llm/bonus'
 import type {
   AIProvider,
   Balade,
+  BonusCategory,
   Difficulty,
   Enigme,
   EnigmeType,
   Etape,
   GenerationRequest,
+  GeoPoint,
   MedicalBonus,
   MedicalSpecialty,
   ThemeColor,
@@ -97,8 +104,38 @@ function parseRequest(body: unknown): GenerationRequest | null {
     nb_etapes: nbEtapes,
     theme_preference: asString(b.theme_preference) || undefined,
     special_instructions: asString(b.special_instructions) || undefined,
+    bonus_themes: parseBonusThemes(b.bonus_themes),
+    bonus_custom_theme: asString(b.bonus_custom_theme).trim() || undefined,
     loop_address: asString(b.loop_address).trim() || undefined,
+    start_point: parseGeoPoint(b.start_point),
+    end_point: parseGeoPoint(b.end_point),
     quiz_answers: parseQuizAnswers(b.quiz_answers),
+  }
+}
+
+function parseBonusThemes(raw: unknown): BonusCategory[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const themes = raw.filter(isBonusCategory)
+  return themes.length ? Array.from(new Set(themes)) : undefined
+}
+
+function parseGeoPoint(raw: unknown): GeoPoint | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as Record<string, unknown>
+  const lat = asNumber(r.lat, NaN)
+  const lng = asNumber(r.lng, NaN)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return undefined
+  const label = asString(r.label).trim()
+  return { lat, lng, label: label || undefined }
+}
+
+/** Turns a map-placed point into the GeocodedPlace shape the prompt expects. */
+function geoPointToPlace(p: GeoPoint): GeocodedPlace {
+  return {
+    lat: p.lat,
+    lng: p.lng,
+    displayName: p.label?.trim() || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`,
   }
 }
 
@@ -219,18 +256,34 @@ function assembleBalade(
 
     let medical: MedicalBonus | null = null
     if (e.medical_bonus) {
-      const spec = SPECIALTIES.includes(
-        e.medical_bonus.specialty as MedicalSpecialty,
-      )
-        ? (e.medical_bonus.specialty as MedicalSpecialty)
-        : 'cardiologie'
-      medical = {
-        id: crypto.randomUUID(),
-        specialty: spec,
-        question: asString(e.medical_bonus.question),
-        hint: asString(e.medical_bonus.hint),
-        answer: asString(e.medical_bonus.answer),
-        year_level: 5,
+      const mb = e.medical_bonus
+      const category: BonusCategory = isBonusCategory(mb.category)
+        ? mb.category
+        : 'medical'
+      const label = asString(mb.label).trim()
+      if (category === 'medical') {
+        const spec = SPECIALTIES.includes(mb.specialty as MedicalSpecialty)
+          ? (mb.specialty as MedicalSpecialty)
+          : 'cardiologie'
+        medical = {
+          id: crypto.randomUUID(),
+          category,
+          label: label || spec,
+          specialty: spec,
+          question: asString(mb.question),
+          hint: asString(mb.hint),
+          answer: asString(mb.answer),
+          year_level: 5,
+        }
+      } else {
+        medical = {
+          id: crypto.randomUUID(),
+          category,
+          label: label || bonusCategoryDef(category).defaultBadge,
+          question: asString(mb.question),
+          hint: asString(mb.hint),
+          answer: asString(mb.answer),
+        }
       }
     }
 
@@ -332,9 +385,21 @@ export async function POST(request: Request) {
       ? settings.ai_model
       : 'claude-sonnet-4-6'
 
-  // Optional: geocode the user-supplied loop start/end so we can anchor the
-  // prompt with exact coordinates (and force them in post-validation).
-  const pin = req.loop_address ? await geocodeAddress(req.loop_address) : null
+  // Resolve the start/end anchors. Map-placed points win; otherwise fall back to
+  // geocoding the free-text loop address (start = end = that address).
+  let startPin: GeocodedPlace | null = req.start_point
+    ? geoPointToPlace(req.start_point)
+    : null
+  let endPin: GeocodedPlace | null = req.end_point
+    ? geoPointToPlace(req.end_point)
+    : null
+  if (!startPin && !endPin && req.loop_address) {
+    const geo = await geocodeAddress(req.loop_address)
+    if (geo) {
+      startPin = geo
+      endPin = geo
+    }
+  }
 
   // 4. Draft the balade content with the (cheap) primary model.
   const generationId = crypto.randomUUID()
@@ -343,7 +408,7 @@ export async function POST(request: Request) {
     const output = await generateBaladeText(
       { provider, apiKey, model, difficulty: req.difficulty, generationId },
       GENERATION_SYSTEM_PROMPT,
-      buildGenerationPrompt(req, { pin }),
+      buildGenerationPrompt(req, { startPin, endPin }),
     )
     const parsed = parseAndValidateModelOutput(output.text)
     console.info('[LLM_GENERATION]', {
@@ -445,33 +510,36 @@ export async function POST(request: Request) {
     })
   }
 
-  // 4d. Force the start/end étape to sit on the user-pinned address when the
-  // model drifted by more than 200 m. Loop balades only.
-  if (pin) {
+  // 4d. Force the first/last étape onto the user-pinned start/end when the model
+  // drifted by more than 200 m (start = end ⇒ loop).
+  if (startPin || endPin) {
     const sorted = [...generated.etapes].sort((a, b) => a.order - b.order)
-    const targets = [sorted[0], sorted[sorted.length - 1]].filter(
-      (e, i, arr) => arr.indexOf(e) === i,
-    )
     let pinFixes = 0
-    const shortName = shortenDisplayName(pin.displayName)
-    for (const etape of targets) {
+    const forcePin = (
+      etape: GeneratedBalade['etapes'][number] | undefined,
+      place: GeocodedPlace | null,
+    ) => {
+      if (!etape || !place) return
       const drift =
         Number.isFinite(etape.lat) && Number.isFinite(etape.lng)
-          ? haversineKm(etape.lat, etape.lng, pin.lat, pin.lng)
+          ? haversineKm(etape.lat, etape.lng, place.lat, place.lng)
           : Infinity
       if (drift > 0.2) {
-        etape.lat = pin.lat
-        etape.lng = pin.lng
-        etape.location_name = shortName
+        etape.lat = place.lat
+        etape.lng = place.lng
+        etape.location_name = shortenDisplayName(place.displayName)
         pinFixes += 1
       }
     }
+    forcePin(sorted[0], startPin)
+    forcePin(sorted[sorted.length - 1], endPin)
     if (pinFixes > 0) {
       console.info('[LLM_GENERATION]', {
         generation_id: generationId,
         stage: 'pin_start_end',
         pin_fixes: pinFixes,
-        address: req.loop_address,
+        has_start: Boolean(startPin),
+        has_end: Boolean(endPin),
       })
     }
   }
@@ -482,7 +550,8 @@ export async function POST(request: Request) {
   // near the requested city. Anchor on the user pin if present, otherwise on the
   // geocoded city centre, and reject the draft when coordinates are incoherent
   // rather than persisting a broken itinerary.
-  const center = pin ?? (await geocodeAddress(`${req.city}, ${req.country}`))
+  const center =
+    startPin ?? endPin ?? (await geocodeAddress(`${req.city}, ${req.country}`))
   if (center) {
     const geo = validateEtapeGeography(generated.etapes, center, {
       durationTargetMin: req.duration_target_min,

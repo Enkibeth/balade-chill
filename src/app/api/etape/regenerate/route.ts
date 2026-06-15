@@ -4,9 +4,11 @@ import { getUserSettings } from '@/lib/supabase/queries'
 import { generateBaladeText } from '@/lib/ai/providers'
 import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
 import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
+import { bonusCategoryDef, isBonusCategory } from '@/lib/llm/bonus'
 import type { GeneratedEnigme } from '@/lib/llm/generated'
 import type {
   AIProvider,
+  BonusCategory,
   Difficulty,
   Enigme,
   EnigmeType,
@@ -72,7 +74,9 @@ Réponds UNIQUEMENT avec un objet JSON valide (premier caractère "{", dernier "
     "answer_explanation": string
   },
   "medical_bonus": {              // null si non demandé
-    "specialty": string,
+    "category": string,           // le thème imposé ci-dessous
+    "label": string,              // étiquette courte affichée
+    "specialty": string,          // uniquement si category = "medical"
     "question": string,
     "hint": string,
     "answer": string
@@ -97,6 +101,8 @@ function buildPrompt(input: {
   avoid: string
   wantsMedical: boolean
   specialties: string[]
+  bonusCategory: BonusCategory
+  bonusCustomTheme: string
 }): string {
   const lines = [
     `Ville : ${input.city} (${input.country}).`,
@@ -124,13 +130,23 @@ function buildPrompt(input: {
       }.`,
     )
   }
-  lines.push(
-    input.wantsMedical
-      ? `Inclure une question médicale D5 (spécialités à privilégier : ${
-          input.specialties.join(', ') || 'cardiologie, neurologie'
-        }).`
-      : 'Mets "medical_bonus" à null.',
-  )
+  if (!input.wantsMedical) {
+    lines.push('Mets "medical_bonus" à null.')
+  } else {
+    const def = bonusCategoryDef(input.bonusCategory)
+    let guidance = def.guidance
+    if (input.bonusCategory === 'medical') {
+      guidance += ` Spécialités à privilégier : ${
+        input.specialties.join(', ') || 'cardiologie, neurologie'
+      }.`
+    }
+    if (input.bonusCategory === 'custom' && input.bonusCustomTheme) {
+      guidance += ` Thème personnalisé : « ${input.bonusCustomTheme} ».`
+    }
+    lines.push(
+      `Question bonus — thème imposé "category": "${input.bonusCategory}". ${guidance}`,
+    )
+  }
   lines.push('Réponds uniquement avec le JSON de cette étape.')
   return lines.join('\n')
 }
@@ -185,6 +201,11 @@ export async function POST(request: Request) {
   const specialties = Array.isArray(b.specialties)
     ? (b.specialties.filter((s) => typeof s === 'string') as string[])
     : []
+  const bonusCategory: BonusCategory = isBonusCategory(b.bonus_category)
+    ? b.bonus_category
+    : 'medical'
+  const bonusCustomTheme = asString(b.bonus_custom_theme).trim()
+  const bonusLabel = asString(b.bonus_label).trim()
 
   // Reuse the user's draft model/key.
   const settings = await getUserSettings(supabase, user.id)
@@ -227,6 +248,8 @@ export async function POST(request: Request) {
         avoid,
         wantsMedical,
         specialties,
+        bonusCategory,
+        bonusCustomTheme,
       }),
     )
     parsed = extractJson(output.text)
@@ -287,16 +310,30 @@ export async function POST(request: Request) {
   const rawMed = parsed.medical_bonus
   if (wantsMedical && rawMed && typeof rawMed === 'object') {
     const m = rawMed as Record<string, unknown>
-    const spec = SPECIALTIES.includes(m.specialty as MedicalSpecialty)
-      ? (m.specialty as MedicalSpecialty)
-      : 'cardiologie'
-    medical = {
-      id: crypto.randomUUID(),
-      specialty: spec,
-      question: asString(m.question),
-      hint: asString(m.hint),
-      answer: asString(m.answer),
-      year_level: 5,
+    const label = bonusLabel || asString(m.label).trim()
+    if (bonusCategory === 'medical') {
+      const spec = SPECIALTIES.includes(m.specialty as MedicalSpecialty)
+        ? (m.specialty as MedicalSpecialty)
+        : 'cardiologie'
+      medical = {
+        id: crypto.randomUUID(),
+        category: 'medical',
+        label: label || spec,
+        specialty: spec,
+        question: asString(m.question),
+        hint: asString(m.hint),
+        answer: asString(m.answer),
+        year_level: 5,
+      }
+    } else {
+      medical = {
+        id: crypto.randomUUID(),
+        category: bonusCategory,
+        label: label || bonusCategoryDef(bonusCategory).defaultBadge,
+        question: asString(m.question),
+        hint: asString(m.hint),
+        answer: asString(m.answer),
+      }
     }
   }
 

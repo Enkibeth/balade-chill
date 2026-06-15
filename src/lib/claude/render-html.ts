@@ -1,4 +1,9 @@
 import type { Balade, Etape, Enigme, MedicalBonus } from '@/types'
+import {
+  bonusBadge,
+  bonusCategoryDef,
+  resolveBonusCategory,
+} from '@/lib/llm/bonus'
 
 /** Escapes a string for safe insertion into HTML text/attribute context. */
 function esc(value: string): string {
@@ -92,16 +97,20 @@ function renderEnigme(enigme: Enigme, order: number): string {
 }
 
 function renderMedical(bonus: MedicalBonus, order: number): string {
+  const cat = bonusCategoryDef(resolveBonusCategory(bonus))
+  const hint = bonus.hint?.trim()
+    ? `<em>Indice : ${esc(bonus.hint)}</em><br>`
+    : ''
   return `
       <div class="med-block">
-        <div class="med-title">🩺 Bonus Médecine</div>
-        <span class="med-spec">${esc(bonus.specialty)}</span>
+        <div class="med-title">${cat.emoji} ${esc(cat.blockTitle)}</div>
+        <span class="med-spec">${esc(bonusBadge(bonus))}</span>
         <p class="med-question">${esc(bonus.question)}</p>
       </div>
       <div class="toggle-row">
-        <button class="toggle-btn med-answer" onclick="go(this,'m${order}')">🩺 Voir la réponse</button>
+        <button class="toggle-btn med-answer" onclick="go(this,'m${order}')">Voir la réponse</button>
       </div>
-      <div class="reveal-content med-content" id="m${order}">${esc(bonus.answer)}</div>`
+      <div class="reveal-content med-content" id="m${order}">${hint}${esc(bonus.answer)}</div>`
 }
 
 function renderEtape(etape: Etape, total: number): string {
@@ -264,11 +273,11 @@ export function renderBaladeHtml(balade: Balade): string {
     <h1 class="cover-title">${esc(balade.title)}</h1>
     <div class="cover-subtitle">${esc(balade.city)} · ${esc(balade.country)}</div>
     <div class="cover-divider"></div>
-    <p class="cover-meta">Un parcours de <strong>~${Math.round(balade.estimated_duration_min / 60 * 10) / 10}h</strong> · <strong>${balade.distance_km} km</strong> · Chiffres, codes &amp; défis médicaux</p>
+    <p class="cover-meta">Un parcours de <strong>~${Math.round(balade.estimated_duration_min / 60 * 10) / 10}h</strong> · <strong>${balade.distance_km} km</strong> · Chiffres, codes &amp; questions bonus</p>
     <div class="cover-badge">
       <span class="badge ${difficultyClass}">${esc(DIFFICULTY_LABEL[balade.difficulty] ?? balade.difficulty)}</span>
       <span class="badge">${total} étapes</span>
-      <span class="badge med">🩺 ${medCount} questions médicales</span>
+      ${medCount > 0 ? `<span class="badge med">✦ ${medCount} question${medCount > 1 ? 's' : ''} bonus</span>` : ''}
     </div>
   </div>
   <div class="progress-bar">${dots}</div>
@@ -296,7 +305,7 @@ function go(btn, id) {
     ? ['💡 Indice', '💡 Masquer']
     : btn.classList.contains('answer')
       ? ['✓ Réponse', '✓ Masquer']
-      : ['🩺 Voir la réponse', '🩺 Masquer'];
+      : ['Voir la réponse', 'Masquer'];
   btn.textContent = open ? labels[0] : labels[1];
 }
 document.querySelectorAll('.step-dot').forEach(function (d) {
