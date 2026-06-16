@@ -45,6 +45,16 @@ import type {
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
+// Snap an étape onto its geocoded POI only when that POI sits within this many
+// km of the model's coordinate. Generous enough to fix area-vs-feature drift
+// (e.g. a park centroid vs the fountain inside it) without letting a same-named
+// place across town hijack the étape.
+const SNAP_MAX_KM = 2
+// Nominatim's usage policy caps us at ~1 request/second; throttle the per-étape
+// snapping pass so a generation never bursts past it.
+const NOMINATIM_THROTTLE_MS = 1100
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 const DIFFICULTIES: Difficulty[] = ['facile', 'moyen', 'difficile', 'boss']
 const ENIGME_TYPES: EnigmeType[] = [
   'cipher_reverse',
@@ -508,6 +518,60 @@ export async function POST(request: Request) {
       city: req.city,
       route: req.country,
     })
+  }
+
+  // 4c-bis. Snap each étape onto the real coordinates of its named place. The
+  // model reliably *names* a real POI but routinely returns an imprecise
+  // coordinate — e.g. the centre of the Jardin du Luxembourg instead of the
+  // Fontaine Médicis inside it. The name is the source of truth the récit,
+  // énigme and mission are written around, so we re-geocode it and move the pin
+  // (and the Maps link) onto the exact place. We only snap when the geocoded
+  // POI is close to the model's coordinate, so an ambiguous same-named place
+  // across town can't hijack the étape; the user-pinned start/end (handled just
+  // below) are skipped here since they are forced to the pin anyway.
+  {
+    const sortedForSnap = [...generated.etapes].sort((a, b) => a.order - b.order)
+    const skip = new Set<GeneratedBalade['etapes'][number]>()
+    if (startPin && sortedForSnap[0]) skip.add(sortedForSnap[0])
+    if (endPin && sortedForSnap[sortedForSnap.length - 1]) {
+      skip.add(sortedForSnap[sortedForSnap.length - 1])
+    }
+    let snapFixes = 0
+    for (const etape of generated.etapes) {
+      if (skip.has(etape)) continue
+      const name = asString(etape.location_name).trim()
+      if (!name) continue
+      const hasCoords =
+        Number.isFinite(etape.lat) && Number.isFinite(etape.lng)
+      const place = await geocodeAddress(
+        [name, req.city, req.country].filter(Boolean).join(', '),
+        hasCoords
+          ? { near: { lat: etape.lat, lng: etape.lng }, limit: 5 }
+          : { limit: 1 },
+      )
+      if (place) {
+        const drift = hasCoords
+          ? haversineKm(etape.lat, etape.lng, place.lat, place.lng)
+          : 0
+        if (drift <= SNAP_MAX_KM) {
+          etape.lat = place.lat
+          etape.lng = place.lng
+          etape.location_name = shortenDisplayName(place.displayName)
+          snapFixes += 1
+        }
+      }
+      await sleep(NOMINATIM_THROTTLE_MS)
+    }
+    if (snapFixes > 0) {
+      console.info('[LLM_GENERATION]', {
+        generation_id: generationId,
+        stage: 'snap_etape_poi',
+        snap_fixes: snapFixes,
+        total_etapes: generated.etapes.length,
+        city: req.city,
+        route: req.country,
+      })
+    }
   }
 
   // 4d. Force the first/last étape onto the user-pinned start/end when the model

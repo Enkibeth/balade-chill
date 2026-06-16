@@ -340,8 +340,18 @@ export async function POST(request: Request) {
     finalName = placed.location_name
     geocoded = true
   } else {
+    // Disambiguate the place name with the model's own coordinate (and the
+    // neighbours as a fallback anchor) so a generic name snaps to the intended
+    // spot rather than a same-named place elsewhere.
+    const modelLat = asNumber(parsed.lat, NaN)
+    const modelLng = asNumber(parsed.lng, NaN)
+    const anchor =
+      Number.isFinite(modelLat) && Number.isFinite(modelLng)
+        ? { lat: modelLat, lng: modelLng }
+        : prev ?? next
     const place = await geocodeAddress(
       [locationName, city, country].filter(Boolean).join(', '),
+      anchor ? { near: { lat: anchor.lat, lng: anchor.lng }, limit: 5 } : {},
     )
     lat = place?.lat ?? asNumber(parsed.lat)
     lng = place?.lng ?? asNumber(parsed.lng)

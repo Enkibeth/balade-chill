@@ -1,9 +1,23 @@
 import 'server-only'
 
+import { haversineKm } from '@/lib/llm/routeMath'
+
 export interface GeocodedPlace {
   lat: number
   lng: number
   displayName: string
+}
+
+export interface GeocodeOptions {
+  /**
+   * Bias candidate selection toward this point: among the results returned for
+   * an (often ambiguous) name, the closest one is chosen. Use the model's own
+   * coordinate so "Mairie" or "Place de l'Église" resolves to the intended one,
+   * not a same-named place across town.
+   */
+  near?: { lat: number; lng: number }
+  /** How many candidates to fetch (default 1; raise to a few when using `near`). */
+  limit?: number
 }
 
 /**
@@ -13,12 +27,14 @@ export interface GeocodedPlace {
  */
 export async function geocodeAddress(
   address: string,
+  opts: GeocodeOptions = {},
 ): Promise<GeocodedPlace | null> {
   const q = address.trim()
   if (!q) return null
+  const limit = Math.min(Math.max(opts.limit ?? 1, 1), 10)
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
     q,
-  )}&format=json&limit=1&addressdetails=0`
+  )}&format=json&limit=${limit}&addressdetails=0`
   try {
     const res = await fetch(url, {
       headers: {
@@ -34,12 +50,25 @@ export async function geocodeAddress(
       lon: string
       display_name: string
     }>
-    const first = data[0]
-    if (!first) return null
-    const lat = Number(first.lat)
-    const lng = Number(first.lon)
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-    return { lat, lng, displayName: first.display_name }
+    const places: GeocodedPlace[] = data
+      .map((d) => ({
+        lat: Number(d.lat),
+        lng: Number(d.lon),
+        displayName: d.display_name,
+      }))
+      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+    if (places.length === 0) return null
+    // With an anchor, prefer the nearest candidate; otherwise Nominatim already
+    // sorts by relevance, so the first result wins.
+    if (opts.near) {
+      const { lat, lng } = opts.near
+      places.sort(
+        (a, b) =>
+          haversineKm(lat, lng, a.lat, a.lng) -
+          haversineKm(lat, lng, b.lat, b.lng),
+      )
+    }
+    return places[0]
   } catch {
     return null
   }
