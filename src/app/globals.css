@@ -5,6 +5,22 @@
 :root {
   --background: #1a0f08;
   --foreground: #f3e7d3;
+
+  /* Énigme cipher block + runner progress dots. Themed via CSS vars (not the
+     useIsLight hook) so the pre-paint theme script in layout.tsx flips them
+     before first paint — no light/dark flash. These are the dark "sépia night"
+     values; the `.light` day overrides live in the LIGHT THEME block below. */
+  --cipher-bg: #1e1410;
+  --cipher-border: rgb(52 211 153 / 0.25); /* emerald-400/25 */
+  --cipher-code: #34d399; /* emerald-400 */
+  --cipher-label: rgb(52 211 153 / 0.4); /* emerald-400/40 */
+  --cipher-grid: rgb(167 243 208 / 0.7); /* emerald-200/70 */
+  --cipher-head: #6ee7b7; /* emerald-300 */
+  --cipher-head-bg: rgb(52 211 153 / 0.1); /* emerald-400/10 */
+  --cipher-cell: rgb(52 211 153 / 0.2); /* emerald-400/20 */
+  --cipher-cell-soft: rgb(52 211 153 / 0.1); /* emerald-400/10 */
+  --dot-idle-border: rgba(243, 231, 211, 0.2); /* cream */
+  --dot-idle-text: rgba(243, 231, 211, 0.5);
 }
 
 body {
@@ -57,6 +73,19 @@ body {
   --la: 180 83 9; /* accent (amber-300) */
   --lb: 120 84 40; /* borders / amber-200 */
   --ls: 255 253 247; /* lifted card surface */
+
+  /* Énigme cipher + progress dots: ink-on-parchment by day */
+  --cipher-bg: #ede0c4;
+  --cipher-border: rgb(6 95 70 / 0.3); /* emerald-800/30 */
+  --cipher-code: #065f46; /* emerald-800 */
+  --cipher-label: rgb(6 95 70 / 0.6); /* emerald-800/60 */
+  --cipher-grid: rgb(6 78 59 / 0.75); /* emerald-900/75 */
+  --cipher-head: #065f46; /* emerald-800 */
+  --cipher-head-bg: rgb(4 120 87 / 0.1); /* emerald-700/10 */
+  --cipher-cell: rgb(6 95 70 / 0.2); /* emerald-800/20 */
+  --cipher-cell-soft: rgb(6 95 70 / 0.1); /* emerald-800/10 */
+  --dot-idle-border: rgba(58, 42, 24, 0.28); /* warm ink */
+  --dot-idle-text: rgba(58, 42, 24, 0.6);
 }
 :root.light body {
   background: radial-gradient(

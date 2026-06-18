@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Flag, Cloud, CloudOff, Pencil } from 'lucide-react'
 import { useBaladeSession } from '@/hooks/useBaladeSession'
-import { useIsLight } from '@/hooks/useTheme'
 import { OfflineDownloadButton } from '@/components/offline/OfflineDownloadButton'
 import { EtapeCard } from './EtapeCard'
 import { ScoreSummary } from './ScoreSummary'
@@ -39,11 +38,6 @@ export function BaladeRunner({
   const [finished, setFinished] = useState(!!initialSession?.completed_at)
   const [activeOrder, setActiveOrder] = useState(etapes[0]?.order ?? 1)
   const theme = balade.theme_color
-  const light = useIsLight()
-  // Idle progress-dot colours: cream by night, warm ink by day (the cream is
-  // invisible on the light parchment bar).
-  const idleBorder = light ? 'rgba(58,42,24,0.28)' : 'rgba(243,231,211,0.2)'
-  const idleText = light ? 'rgba(58,42,24,0.6)' : 'rgba(243,231,211,0.5)'
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -144,8 +138,11 @@ export function BaladeRunner({
                 backgroundColor:
                   e.order === activeOrder ? theme.primary : 'transparent',
                 borderColor:
-                  e.order <= activeOrder ? theme.primary : idleBorder,
-                color: e.order === activeOrder ? '#fff' : idleText,
+                  e.order <= activeOrder
+                    ? theme.primary
+                    : 'var(--dot-idle-border)',
+                color:
+                  e.order === activeOrder ? '#fff' : 'var(--dot-idle-text)',
               }}
             >
               {e.order}
