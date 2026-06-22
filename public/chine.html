@@ -616,7 +616,7 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
 <div class="gallery-head">
   <span class="kicker">Un avant-goût</span>
   <h2 class="big">La Chine en images<span class="zh cn">风光</span></h2>
-  <p class="lede">La bande défile toute seule — survole pour la mettre en pause, clique une photo pour ouvrir l'étape. Photos d'illustration (Flickr CC).</p>
+  <p class="lede">La bande défile toute seule — survole pour la mettre en pause, clique une photo pour ouvrir l'étape. Vraies photos des lieux (Wikimedia Commons).</p>
 </div>
 <section class="gallery" id="galerie" aria-label="Galerie photo des étapes">
   <div class="gtrack" id="gtrack"></div>
@@ -1091,7 +1091,7 @@ const DEST = [
 const BY_ID = Object.fromEntries(DEST.map(d=>[d.id,d]));
 const st = (id,days)=>({id,days}); // raccourci
 
-/* ---- Photos d'illustration (Flickr CC via loremflickr, repli picsum) ---- */
+/* ---- Photos : vraies images des lieux (Wikimedia Commons), repli loremflickr puis picsum ---- */
 const IMG = {
   hongkong:'hongkong,skyline,harbour', macao:'macau,ruins,saint,paul', beijing:'beijing,forbidden,city', xian:'xian,terracotta,army',
   hongcun:'hongcun,village,anhui',
@@ -1102,9 +1102,33 @@ const IMG = {
   zhujiajiao:'water,town,china', suzhou:'suzhou,garden,canal', hangzhou:'hangzhou,west,lake',
   huangshan:'huangshan,mountains,clouds',
 };
+const REAL = {
+  hongkong:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Hong_Kong_Skyline_viewed_from_Victoria_Peak.jpg/1280px-Hong_Kong_Skyline_viewed_from_Victoria_Peak.jpg',
+  macao:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/%E5%A4%A7%E4%B8%89%E5%B7%B4%E7%89%8C%E5%9D%8A.jpg/1280px-%E5%A4%A7%E4%B8%89%E5%B7%B4%E7%89%8C%E5%9D%8A.jpg',
+  beijing:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/The_Forbidden_City_-_View_from_Coal_Hill.jpg/1280px-The_Forbidden_City_-_View_from_Coal_Hill.jpg',
+  xian:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/51714-Terracota-Army.jpg/1280px-51714-Terracota-Army.jpg',
+  hongcun:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Yixian_Hongcun_2016.09.09_17-27-03.jpg/1280px-Yixian_Hongcun_2016.09.09_17-27-03.jpg',
+  huashan:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Hua_Shan.jpg/1280px-Hua_Shan.jpg',
+  chengdu:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Grosser_Panda.JPG/1280px-Grosser_Panda.JPG',
+  leshan:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/36275-Leshan_%2849067653383%29.jpg/1280px-36275-Leshan_%2849067653383%29.jpg',
+  guilin:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/87318-Li-River.jpg/1280px-87318-Li-River.jpg',
+  longji:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/LongshengRiceTerrace.jpg/1280px-LongshengRiceTerrace.jpg',
+  zhangjiajie:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/1_tianzishan_wulingyuan_zhangjiajie_2012.jpg/1280px-1_tianzishan_wulingyuan_zhangjiajie_2012.jpg',
+  dali:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Erhai_lake%2C_Yunnan%2C_China.jpg/1280px-Erhai_lake%2C_Yunnan%2C_China.jpg',
+  lijiang:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Lijiang_-_panoramio_%286%29.jpg/1280px-Lijiang_-_panoramio_%286%29.jpg',
+  tigerleaping:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/%E8%99%8E%E8%B7%B3%E5%B3%A1.JPG/1280px-%E8%99%8E%E8%B7%B3%E5%B3%A1.JPG',
+  shangrila:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/%E6%9D%BE%E8%B5%9E%E6%9E%97%E5%AF%BA_-_%E5%85%A8%E6%99%AF_-_2025-05-07_09_%28cropped%29.jpg/1280px-%E6%9D%BE%E8%B5%9E%E6%9E%97%E5%AF%BA_-_%E5%85%A8%E6%99%AF_-_2025-05-07_09_%28cropped%29.jpg',
+  pingyao:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Pingyao-oldtown.jpg/1280px-Pingyao-oldtown.jpg',
+  shanghai:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Huangpu_Park_20124-Shanghai_%2832208802494%29.jpg/1280px-Huangpu_Park_20124-Shanghai_%2832208802494%29.jpg',
+  zhujiajiao:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/1_zhujiajiao_2023_aerial.jpg/1280px-1_zhujiajiao_2023_aerial.jpg',
+  suzhou:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Suzhou_Zhuozheng_Yuan_2015.04.23_08-13-49.jpg/1280px-Suzhou_Zhuozheng_Yuan_2015.04.23_08-13-49.jpg',
+  hangzhou:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/West_Lake%2C_Hangzhou_2025.jpg/1280px-West_Lake%2C_Hangzhou_2025.jpg',
+  huangshan:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Huangshan_pic_4.jpg/1280px-Huangshan_pic_4.jpg',
+};
 function hashLock(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h%100000; }
-function photoURL(id,w,h){ const k=IMG[id]||'china,landscape'; return `https://loremflickr.com/${w}/${h}/${k}?lock=${hashLock(id)}`; }
-const imgFB = (id,w,h)=>`this.onerror=null;this.src='https://picsum.photos/seed/${id}/${w}/${h}'`;
+function loremURL(id,w,h){ const k=IMG[id]||'china,landscape'; return `https://loremflickr.com/${w}/${h}/${k}?lock=${hashLock(id)}`; }
+function photoURL(id,w,h){ return REAL[id] || loremURL(id,w,h); }
+const imgFB = (id,w,h)=>`this.onerror=function(){this.onerror=null;this.src='https://picsum.photos/seed/${id}/${w}/${h}'};this.src='${loremURL(id,w,h)}'`;
 
 /* ---- Parcours pré-construits. stops = [{id,days}] ---- */
 const ROUTES = [
