@@ -3,7 +3,7 @@ import {
   bonusBadge,
   bonusCategoryDef,
   resolveBonusCategory,
-} from '@/lib/llm/bonus'
+} from '@/lib/ai/bonus'
 
 /** Escapes a string for safe insertion into HTML text/attribute context. */
 function esc(value: string): string {

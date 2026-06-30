@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Loader2, Check } from 'lucide-react'
-import { BONUS_CATEGORIES } from '@/lib/llm/bonus'
+import { BONUS_CATEGORIES } from '@/lib/ai/bonus'
 import type {
   BonusCategory,
   Difficulty,

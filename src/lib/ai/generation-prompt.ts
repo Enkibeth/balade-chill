@@ -4,9 +4,9 @@ import type {
   EnigmeType,
   GenerationRequest,
 } from '@/types'
-import { shortenDisplayName, type GeocodedPlace } from '@/lib/llm/geocode'
-import { computeWalkBudget } from '@/lib/llm/routeMath'
-import { BONUS_CATEGORIES, bonusCategoryDef } from '@/lib/llm/bonus'
+import { shortenDisplayName, type GeocodedPlace } from '@/lib/ai/geocode'
+import { computeWalkBudget } from '@/lib/ai/routeMath'
+import { BONUS_CATEGORIES, bonusCategoryDef } from '@/lib/ai/bonus'
 
 const ENIGME_TYPES_BY_DIFFICULTY: Record<Difficulty, EnigmeType[]> = {
   // "facile" = jeux de langage, aucun chiffrement à décoder.

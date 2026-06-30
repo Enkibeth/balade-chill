@@ -3,8 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import { PROVIDERS } from './catalog'
 import type { AIProvider } from '@/types'
-import { estimateLLMCost } from '@/lib/llm/modelPricing'
-import { getModelOutputBudget } from '@/lib/llm/modelLimits'
+import { estimateLLMCost } from '@/lib/ai/modelPricing'
+import { getModelOutputBudget } from '@/lib/ai/modelLimits'
 
 export interface GenerationContext {
   provider: AIProvider

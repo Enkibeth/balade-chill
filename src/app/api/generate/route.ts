@@ -7,26 +7,26 @@ import {
 import {
   GENERATION_SYSTEM_PROMPT,
   buildGenerationPrompt,
-} from '@/lib/claude/generation-prompt'
-import { renderBaladeHtml } from '@/lib/claude/render-html'
+} from '@/lib/ai/generation-prompt'
+import { renderBaladeHtml } from '@/lib/ai/render-html'
 import { generateBaladeText } from '@/lib/ai/providers'
-import type { GeneratedBalade } from '@/lib/llm/generated'
+import type { GeneratedBalade } from '@/lib/ai/generated'
 import {
   REFINE_SYSTEM_PROMPT,
   applyRefinePatch,
   buildRefinePrompt,
   refineMaxTokens,
   shouldRefine,
-} from '@/lib/llm/refine'
-import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
-import { applyDistancesAndTime, haversineKm } from '@/lib/llm/routeMath'
-import { validateEtapeGeography } from '@/lib/llm/geoValidate'
+} from '@/lib/ai/refine'
+import { validateAndFixEnigme } from '@/lib/ai/cipherCheck'
+import { applyDistancesAndTime, haversineKm } from '@/lib/ai/routeMath'
+import { validateEtapeGeography } from '@/lib/ai/geoValidate'
 import {
   geocodeAddress,
   shortenDisplayName,
   type GeocodedPlace,
-} from '@/lib/llm/geocode'
-import { bonusCategoryDef, isBonusCategory } from '@/lib/llm/bonus'
+} from '@/lib/ai/geocode'
+import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
 import type {
   AIProvider,
   Balade,

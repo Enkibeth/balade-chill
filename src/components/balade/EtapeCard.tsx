@@ -8,7 +8,7 @@ import {
   bonusBadge,
   bonusCategoryDef,
   resolveBonusCategory,
-} from '@/lib/llm/bonus'
+} from '@/lib/ai/bonus'
 import { CipherBlock } from './CipherBlock'
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']

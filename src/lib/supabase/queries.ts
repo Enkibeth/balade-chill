@@ -97,19 +97,6 @@ export async function upsertSession(
   return data as BaladeSession
 }
 
-/** All sessions recorded against a balade (caller + partner). */
-export async function getSessionsByBalade(
-  supabase: SupabaseClient,
-  baladeId: string,
-): Promise<BaladeSession[]> {
-  const { data, error } = await supabase
-    .from('balade_sessions')
-    .select('*')
-    .eq('balade_id', baladeId)
-  if (error) throw error
-  return (data ?? []) as BaladeSession[]
-}
-
 /** The caller's own session for a balade, if one exists. */
 export async function getSessionForUser(
   supabase: SupabaseClient,
