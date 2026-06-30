@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code — runtime gate marker + réglages locaux (jamais commités)
+.claude/loop-active
+.claude/settings.local.json

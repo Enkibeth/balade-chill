@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { haversineKm } from '@/lib/llm/routeMath'
+import { haversineKm } from '@/lib/ai/routeMath'
 
 export interface GeocodedPlace {
   lat: number

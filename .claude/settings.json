@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/loop_gate.py" }
+        ]
+      }
+    ]
+  }
+}

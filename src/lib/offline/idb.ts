@@ -32,27 +32,9 @@ export async function cacheBalade(balade: Balade): Promise<void> {
   await (await getDb()).put('balades', balade)
 }
 
-export async function getCachedBalade(
-  id: string,
-): Promise<Balade | undefined> {
-  return (await getDb()).get('balades', id) as Promise<Balade | undefined>
-}
-
-export async function getCachedBalades(): Promise<Balade[]> {
-  return (await getDb()).getAll('balades') as Promise<Balade[]>
-}
-
 /** Mirrors the latest session for a balade locally. */
 export async function cacheSession(session: BaladeSession): Promise<void> {
   await (await getDb()).put('sessions', session)
-}
-
-export async function getCachedSession(
-  baladeId: string,
-): Promise<BaladeSession | undefined> {
-  return (await getDb()).get('sessions', baladeId) as Promise<
-    BaladeSession | undefined
-  >
 }
 
 /** Queues a score update to be synced to Supabase on reconnect. */

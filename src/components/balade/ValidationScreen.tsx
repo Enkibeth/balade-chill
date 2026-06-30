@@ -17,8 +17,8 @@ import {
   Wand2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { renderBaladeHtml } from '@/lib/claude/render-html'
-import { applyDistancesAndTime } from '@/lib/llm/routeMath'
+import { renderBaladeHtml } from '@/lib/ai/render-html'
+import { applyDistancesAndTime } from '@/lib/ai/routeMath'
 import { CipherBlock } from './CipherBlock'
 import { EtapeEditor } from './EtapeEditor'
 import type { Balade, Etape, ThemeColor } from '@/types'

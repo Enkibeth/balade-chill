@@ -4,7 +4,7 @@ import {
   geocodeAddress,
   reverseGeocode,
   shortenDisplayName,
-} from '@/lib/llm/geocode'
+} from '@/lib/ai/geocode'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30

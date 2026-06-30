@@ -7,7 +7,7 @@ import {
   buildQuizPrompt,
   parseQuiz,
   type QuizPromptInput,
-} from '@/lib/llm/quiz'
+} from '@/lib/ai/quiz'
 import type { AIProvider, Difficulty } from '@/types'
 
 export const dynamic = 'force-dynamic'

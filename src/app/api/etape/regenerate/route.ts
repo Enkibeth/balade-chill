@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserSettings } from '@/lib/supabase/queries'
 import { generateBaladeText } from '@/lib/ai/providers'
-import { validateAndFixEnigme } from '@/lib/llm/cipherCheck'
-import { geocodeAddress, shortenDisplayName } from '@/lib/llm/geocode'
-import { bonusCategoryDef, isBonusCategory } from '@/lib/llm/bonus'
-import type { GeneratedEnigme } from '@/lib/llm/generated'
+import { validateAndFixEnigme } from '@/lib/ai/cipherCheck'
+import { geocodeAddress, shortenDisplayName } from '@/lib/ai/geocode'
+import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
+import type { GeneratedEnigme } from '@/lib/ai/generated'
 import type {
   AIProvider,
   BonusCategory,
