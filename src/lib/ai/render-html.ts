@@ -4,6 +4,8 @@ import {
   bonusCategoryDef,
   resolveBonusCategory,
 } from '@/lib/ai/bonus'
+import { buildBaladeItinerary } from '@/lib/ai/itinerary/fromBalade'
+import type { ItineraryPlan } from '@/lib/ai/itinerary/types'
 
 /** Escapes a string for safe insertion into HTML text/attribute context. */
 function esc(value: string): string {
@@ -144,6 +146,31 @@ function renderEtape(etape: Etape, total: number): string {
 }
 
 /**
+ * Renders the "complete itinerary" call-to-action: one (or more) Google Maps
+ * links that open the whole walk in order, with the real place names. Returns an
+ * empty string when there aren't enough geolocated étapes to build a route.
+ */
+function renderItinerary(plan: ItineraryPlan | null): string {
+  if (!plan) return ''
+  const urls = plan.segments.flatMap((s) => s.googleMapsUrls)
+  if (urls.length === 0) return ''
+  const multi = urls.length > 1
+  const links = urls
+    .map(
+      (url, i) =>
+        `<a class="maps-btn itinerary-btn" href="${esc(url)}" target="_blank" rel="noopener">🗺 Suivre l'itinéraire${multi ? ` (partie ${i + 1})` : ''} dans Google Maps</a>`,
+    )
+    .join('')
+  const meta = `Le parcours complet, dans l'ordre des étapes — <strong>~${plan.totalDistanceKm} km</strong>${plan.isLoop ? ' · boucle' : ''}`
+  return `
+  <div class="itinerary">
+    <div class="itinerary-header">🧭 Itinéraire</div>
+    <p class="itinerary-meta">${meta}</p>
+    <div class="itinerary-btns">${links}</div>
+  </div>`
+}
+
+/**
  * Renders a complete, self-contained, offline-ready HTML document for a balade,
  * styled in the "Le Secret d'Amalia" parchment aesthetic and themed with the
  * balade's own colour palette.
@@ -153,6 +180,7 @@ export function renderBaladeHtml(balade: Balade): string {
   const etapes = [...balade.etapes].sort((a, b) => a.order - b.order)
   const total = etapes.length
   const medCount = etapes.filter((e) => e.medical_bonus).length
+  const itineraryBlock = renderItinerary(buildBaladeItinerary(balade))
   const difficultyClass =
     balade.difficulty === 'difficile' || balade.difficulty === 'boss'
       ? 'hard'
@@ -207,6 +235,12 @@ export function renderBaladeHtml(balade: Balade): string {
   .prologue-header { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--burgundy); margin-bottom: 14px; }
   .prologue p { font-size: 14px; line-height: 1.85; font-style: italic; }
   .prologue p + p { margin-top: 12px; }
+  .itinerary { background: var(--cream); border-left: 3px solid var(--gold); padding: 20px 28px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .itinerary-header { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+  .itinerary-meta { font-size: 13px; color: var(--faded); line-height: 1.7; margin-bottom: 12px; }
+  .itinerary-meta strong { color: var(--burgundy); font-style: italic; }
+  .itinerary-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .itinerary-btn { margin-top: 0; }
   .progress-bar { background: var(--parchment); border: 1px solid rgba(0,0,0,0.2); padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
   .step-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.25); background: var(--parchment); display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: 'Playfair Display', serif; color: var(--faded); transition: all 0.3s; flex-shrink: 0; text-decoration: none; }
   .step-dot.active { background: var(--burgundy); border-color: var(--burgundy); color: var(--cream); }
@@ -285,6 +319,7 @@ export function renderBaladeHtml(balade: Balade): string {
     <div class="prologue-header">✦ Prologue</div>
     ${paragraphs(balade.prologue)}
   </div>
+  ${itineraryBlock}
   ${etapes.map((e) => renderEtape(e, total)).join('')}
   <div class="epilogue">
     <div class="epilogue-ornament">✦</div>
