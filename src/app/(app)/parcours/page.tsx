@@ -64,8 +64,28 @@ export default function ParcoursPage() {
   const [saved, setSaved] = useState(false)
   const [savedList, setSavedList] = useState<SavedParcours[]>([])
 
+  // Load from the server (multi-device sync); mirror into IndexedDB for
+  // offline. If the network/table is unavailable, fall back to the local copy.
   useEffect(() => {
-    listParcours().then(setSavedList).catch(() => {})
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/parcours')
+        if (!res.ok) throw new Error('offline')
+        const data = await res.json()
+        const records = (data.records ?? []) as SavedParcours[]
+        if (cancelled) return
+        setSavedList(records)
+        // Refresh the offline mirror to match the server.
+        await Promise.all(records.map((r) => saveParcours(r).catch(() => {})))
+      } catch {
+        const local = await listParcours().catch(() => [])
+        if (!cancelled) setSavedList(local)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function currentPlaces(): string[] {
@@ -175,24 +195,25 @@ export default function ParcoursPage() {
         setError(data?.error ?? 'La génération a échoué.')
         return
       }
-      const p = data.parcours as GeneratedParcours
-      const h = data.html as string
-      setParcours(p)
-      setHtml(h)
-      // Save locally (offline-first, no server table).
-      const record: SavedParcours = {
-        ...p,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
-        html: h,
-      }
+      // Server persisted → { record }. Fallback (table missing) → { parcours, html }.
+      const record: SavedParcours = data.record
+        ? (data.record as SavedParcours)
+        : {
+            ...(data.parcours as GeneratedParcours),
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            html: data.html as string,
+          }
+      setParcours(record)
+      setHtml(record.html)
+      // Mirror into IndexedDB (offline) and show it at the top of the list.
       try {
         await saveParcours(record)
-        setSaved(true)
-        setSavedList(await listParcours())
       } catch {
-        /* saving is best-effort; the preview still works */
+        /* offline mirror is best-effort */
       }
+      setSaved(true)
+      setSavedList((prev) => [record, ...prev.filter((r) => r.id !== record.id)])
     } catch {
       setError('Erreur réseau. Réessaie.')
     } finally {
@@ -218,8 +239,14 @@ export default function ParcoursPage() {
   }
 
   async function removeSaved(id: string) {
-    await deleteParcours(id)
-    setSavedList(await listParcours())
+    // Delete on the server (source of truth) then the offline mirror.
+    try {
+      await fetch(`/api/parcours?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    } catch {
+      /* if offline, still drop it locally */
+    }
+    await deleteParcours(id).catch(() => {})
+    setSavedList((prev) => prev.filter((r) => r.id !== id))
   }
 
   return (

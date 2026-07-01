@@ -1,6 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { Balade, BaladeSession } from '@/types'
-import type { GeneratedParcours } from '@/lib/ai/parcours/types'
+import type { ParcoursRecord } from '@/lib/ai/parcours/types'
 
 const DB_NAME = 'balades-offline'
 // v2 adds the "parcours" store (visite mode). The upgrade only creates stores
@@ -8,15 +8,11 @@ const DB_NAME = 'balades-offline'
 const DB_VERSION = 2
 
 /**
- * A generated parcours saved locally (offline-first, no server table). Carries
- * the rendered HTML so it can be reopened without regenerating, plus an id and
- * timestamp for the "Mes parcours" list.
+ * A parcours mirrored locally for offline access. Same shape as the server
+ * record (ParcoursRecord): the rendered HTML lets it reopen without a network
+ * call; the id/timestamp drive the "Mes parcours" list.
  */
-export interface SavedParcours extends GeneratedParcours {
-  id: string
-  created_at: string
-  html: string
-}
+export type SavedParcours = ParcoursRecord
 
 /** Object stores: full balades, latest session per balade, a queue of score
  *  updates awaiting sync, and locally-saved parcours. */

@@ -64,6 +64,16 @@ export interface GeneratedParcours {
   unresolved: string[]
 }
 
+/**
+ * Un parcours persisté (serveur ou IndexedDB) : le résultat généré + un id,
+ * un horodatage et le HTML rendu (rouvrable hors-ligne sans régénérer).
+ */
+export interface ParcoursRecord extends GeneratedParcours {
+  id: string
+  created_at: string
+  html: string
+}
+
 /** Ce que le modèle doit renvoyer : titre, intro, et le texte par arrêt. */
 export interface ParcoursLLMOutput {
   title: string
