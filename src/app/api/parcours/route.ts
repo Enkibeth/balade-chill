@@ -15,6 +15,7 @@ import {
 import { renderParcoursHtml } from '@/lib/ai/parcours/render-html'
 import type {
   GeneratedParcours,
+  ParcoursPoint,
   ParcoursRequest,
   ParcoursStop,
 } from '@/lib/ai/parcours/types'
@@ -58,11 +59,25 @@ function parseRequest(body: unknown): ParcoursRequest | null {
     country,
     duration_target_min: duration,
     places,
+    start_point: parsePoint(b.start_point),
+    end_point: parsePoint(b.end_point),
     start_address: asString(b.start_address).trim() || undefined,
     end_address: asString(b.end_address).trim() || undefined,
     loop: b.loop !== false,
     keep_order: b.keep_order === true,
   }
+}
+
+/** Parses a map-placed point {lat,lng,label}; null when invalid. */
+function parsePoint(raw: unknown): ParcoursPoint | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as Record<string, unknown>
+  const lat = Number(r.lat)
+  const lng = Number(r.lng)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return undefined
+  const label = asString(r.label).trim()
+  return { lat, lng, label: label || undefined }
 }
 
 /** A geocoded stop the user wants to see (kept name = what they typed). */
@@ -89,6 +104,19 @@ async function resolvePlace(
     displayName: input,
     lat: place.lat,
     lng: place.lng,
+  }
+}
+
+/** Turns a map-placed point into an anchor directly (no geocoding). */
+function pointToAnchor(
+  point: ParcoursPoint | undefined,
+  fallbackName: string,
+): Anchor | null {
+  if (!point) return null
+  return {
+    name: point.label?.trim() || fallbackName,
+    lat: point.lat,
+    lng: point.lng,
   }
 }
 
@@ -172,14 +200,23 @@ export async function POST(request: Request) {
     )
   }
 
-  // 5. Resolve start/end anchors. A missing start falls back to the first
-  //    place; a loop returns to the start; otherwise the last place is the end.
-  const startAddrAnchor = await resolveAnchor(req.start_address, req.city, req.country)
-  if (req.start_address) await sleep(NOMINATIM_THROTTLE_MS)
-  const endAddrAnchor = req.loop
-    ? null
-    : await resolveAnchor(req.end_address, req.city, req.country)
-  if (!req.loop && req.end_address) await sleep(NOMINATIM_THROTTLE_MS)
+  // 5. Resolve start/end anchors. Priority: a map-placed point (no geocoding
+  //    needed) > a free-text address > fallback to a place. A missing start
+  //    falls back to the first place; a loop returns to the start; otherwise
+  //    the last place is the end.
+  let startAddrAnchor: Anchor | null = pointToAnchor(req.start_point, 'Départ')
+  if (!startAddrAnchor && req.start_address) {
+    startAddrAnchor = await resolveAnchor(req.start_address, req.city, req.country)
+    await sleep(NOMINATIM_THROTTLE_MS)
+  }
+  let endAddrAnchor: Anchor | null = null
+  if (!req.loop) {
+    endAddrAnchor = pointToAnchor(req.end_point, 'Arrivée')
+    if (!endAddrAnchor && req.end_address) {
+      endAddrAnchor = await resolveAnchor(req.end_address, req.city, req.country)
+      await sleep(NOMINATIM_THROTTLE_MS)
+    }
+  }
 
   const startIsPlace = !startAddrAnchor
   const endIsPlace = !req.loop && !endAddrAnchor

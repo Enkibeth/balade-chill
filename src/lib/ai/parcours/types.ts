@@ -5,6 +5,13 @@
 // chiffrement). L'ordre et les liens Google Maps viennent du moteur
 // d'itinéraires (src/lib/ai/itinerary).
 
+/** Un point placé sur la carte (ou géocodé) : coordonnées + libellé. */
+export interface ParcoursPoint {
+  lat: number
+  lng: number
+  label?: string
+}
+
 /** Requête envoyée par le formulaire de création de parcours. */
 export interface ParcoursRequest {
   city: string
@@ -13,6 +20,10 @@ export interface ParcoursRequest {
   duration_target_min: number
   /** liste libre des lieux à voir, un par ligne côté UI */
   places: string[]
+  /** point de départ placé sur la carte (prioritaire sur start_address). */
+  start_point?: ParcoursPoint
+  /** point d'arrivée placé sur la carte (prioritaire sur end_address). */
+  end_point?: ParcoursPoint
   /** adresse de départ (texte géocodé). Vide ⇒ premier lieu de la liste. */
   start_address?: string
   /** adresse d'arrivée. Vide ⇒ retour au départ si boucle, sinon dernier lieu. */
