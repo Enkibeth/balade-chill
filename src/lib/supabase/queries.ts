@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Balade, BaladeSession, UserSettings } from '@/types'
+import type {
+  GeneratedParcours,
+  ParcoursRecord,
+} from '@/lib/ai/parcours/types'
 
 /** A session payload for upsert — id/timestamps are filled by the DB. */
 export type SessionUpsert = Partial<BaladeSession> & {
@@ -150,4 +154,83 @@ export async function upsertUserSettings(
     .single()
   if (error) throw error
   return data as UserSettings
+}
+
+// ---------- Parcours (visite mode) ----------
+
+const PARCOURS_COLUMNS =
+  'id,created_at,title,city,country,intro,stops,google_maps_urls,unresolved,' +
+  'distance_km,estimated_duration_min,is_loop,html'
+
+/** Maps a DB row into the ParcoursRecord shape the client uses. */
+function rowToParcoursRecord(row: Record<string, unknown>): ParcoursRecord {
+  return {
+    id: String(row.id),
+    created_at: String(row.created_at),
+    title: String(row.title ?? ''),
+    intro: String(row.intro ?? ''),
+    city: String(row.city ?? ''),
+    country: String(row.country ?? ''),
+    stops: (row.stops as ParcoursRecord['stops']) ?? [],
+    google_maps_urls: (row.google_maps_urls as string[]) ?? [],
+    unresolved: (row.unresolved as string[]) ?? [],
+    distance_km: Number(row.distance_km ?? 0),
+    estimated_duration_min: Number(row.estimated_duration_min ?? 0),
+    is_loop: Boolean(row.is_loop),
+    html: String(row.html ?? ''),
+  }
+}
+
+/** Inserts a generated parcours for a user; returns the stored record. */
+export async function saveParcours(
+  supabase: SupabaseClient,
+  parcours: GeneratedParcours,
+  html: string,
+  userId: string,
+): Promise<ParcoursRecord> {
+  const { data, error } = await supabase
+    .from('parcours')
+    .insert({
+      created_by: userId,
+      title: parcours.title,
+      city: parcours.city,
+      country: parcours.country,
+      intro: parcours.intro,
+      stops: parcours.stops,
+      google_maps_urls: parcours.google_maps_urls,
+      unresolved: parcours.unresolved,
+      distance_km: parcours.distance_km,
+      estimated_duration_min: parcours.estimated_duration_min,
+      is_loop: parcours.is_loop,
+      html,
+    })
+    .select(PARCOURS_COLUMNS)
+    .single()
+  if (error) throw error
+  return rowToParcoursRecord(data as unknown as Record<string, unknown>)
+}
+
+/** All parcours visible to a user (own + partner's), newest first. */
+export async function getParcoursByUser(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<ParcoursRecord[]> {
+  const { data, error } = await supabase
+    .from('parcours')
+    .select(PARCOURS_COLUMNS)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  void userId // visibility is enforced by RLS (own + partner)
+  return (data ?? []).map((r) =>
+    rowToParcoursRecord(r as unknown as Record<string, unknown>),
+  )
+}
+
+/** Deletes one of the caller's parcours (RLS restricts to own rows). */
+export async function deleteParcours(
+  supabase: SupabaseClient,
+  id: string,
+): Promise<void> {
+  const { error } = await supabase.from('parcours').delete().eq('id', id)
+  if (error) throw error
 }

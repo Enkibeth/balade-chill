@@ -8,6 +8,7 @@ import { ThemeToggle } from './ThemeToggle'
 const LINKS: { href: string; label: string; external?: boolean }[] = [
   { href: '/dashboard', label: 'Carte' },
   { href: '/generate', label: 'Générer' },
+  { href: '/parcours', label: 'Parcours' },
   { href: '/history', label: 'Historique' },
   { href: '/settings', label: 'Réglages' },
   { href: '/autre', label: 'Léman' },
