@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserSettings } from '@/lib/supabase/queries'
 import { generateBaladeText } from '@/lib/ai/providers'
+import { describeProviderError } from '@/lib/ai/errors'
+import { QUIZ_SCHEMA } from '@/lib/ai/schemas'
 import {
   QUIZ_SYSTEM_PROMPT,
   buildQuizPrompt,
@@ -106,6 +108,7 @@ export async function POST(request: Request) {
         difficulty: input.difficulty,
         generationId: crypto.randomUUID(),
         maxTokensOverride: 1200,
+        jsonSchema: QUIZ_SCHEMA,
       },
       QUIZ_SYSTEM_PROMPT,
       buildQuizPrompt(input),
@@ -132,7 +135,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('Quiz generation failed:', err)
     return NextResponse.json(
-      { error: 'Impossible de générer le quiz.' },
+      { error: describeProviderError(provider, err).message },
       { status: 502 },
     )
   }

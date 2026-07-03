@@ -58,8 +58,8 @@ App **Next.js 14 (App Router) + TypeScript + Tailwind + Supabase**. Génération
 
 ## Vérification (porte de sortie)
 - `npm run lint` — ESLint (next/core-web-vitals + typescript). Doit être vert.
+- `npm run test` — Vitest sur les fonctions pures de `lib/ai` (ciphers, distances, parsing). Doit être vert.
 - `npm run build` — typecheck + build Next complet. Doit passer.
-- (Pas de suite de tests unitaires dans ce repo pour l'instant.)
 
 ## Arborescence
 ```

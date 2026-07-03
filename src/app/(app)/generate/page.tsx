@@ -68,6 +68,8 @@ export default function GeneratePage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Real pipeline stages streamed by /api/generate (NDJSON), in arrival order.
+  const [genStages, setGenStages] = useState<GenStage[]>([])
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
   const [quizLoading, setQuizLoading] = useState(false)
   const [quizError, setQuizError] = useState<string | null>(null)
@@ -183,19 +185,84 @@ export default function GeneratePage() {
       end_point: endPoint ?? undefined,
       quiz_answers: quiz_answers.length ? quiz_answers : undefined,
     }
+    setGenStages([])
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'La génération a échoué.')
+        const data = await res.json().catch(() => null)
+        setError(data?.error ?? 'La génération a échoué.')
         setLoading(false)
         return
       }
-      router.push(`/balade/${data.balade_id}?mode=preview`)
+      const ctype = res.headers.get('content-type') ?? ''
+      if (!ctype.includes('ndjson') || !res.body) {
+        // Non-streaming response — single JSON payload.
+        const data = await res.json().catch(() => null)
+        if (data?.balade_id) {
+          router.push(`/balade/${data.balade_id}?mode=preview`)
+        } else {
+          setError(data?.error ?? 'La génération a échoué.')
+          setLoading(false)
+        }
+        return
+      }
+
+      // Stream the real pipeline progress line by line (NDJSON).
+      let terminal = false
+      const handleLine = (line: string) => {
+        const trimmed = line.trim()
+        if (!trimmed) return
+        let event: GenEvent
+        try {
+          event = JSON.parse(trimmed) as GenEvent
+        } catch {
+          return
+        }
+        if (event.type === 'progress' && event.stage && event.label) {
+          const entry: GenStage = {
+            stage: event.stage,
+            label: event.label,
+            current: event.current,
+            total: event.total,
+          }
+          setGenStages((prev) => {
+            const idx = prev.findIndex((s) => s.stage === entry.stage)
+            if (idx === -1) return [...prev, entry]
+            const clone = [...prev]
+            clone[idx] = entry
+            return clone
+          })
+        } else if (event.type === 'done' && event.balade_id) {
+          terminal = true
+          router.push(`/balade/${event.balade_id}?mode=preview`)
+        } else if (event.type === 'error') {
+          terminal = true
+          setError(event.error ?? 'La génération a échoué.')
+          setLoading(false)
+        }
+      }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      for (;;) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) handleLine(line)
+      }
+      if (buffer) handleLine(buffer)
+      if (!terminal) {
+        setError(
+          'Connexion interrompue pendant la génération. Vérifie dans le tableau de bord si la balade a été créée avant de relancer.',
+        )
+        setLoading(false)
+      }
     } catch {
       setError('Erreur réseau. Vérifie ta connexion.')
       setLoading(false)
@@ -475,7 +542,7 @@ export default function GeneratePage() {
           </div>
         )}
 
-        {step === 4 && loading && <GenerationProgress />}
+        {step === 4 && loading && <GenerationProgress stages={genStages} />}
 
         {step === 4 && !loading && (
           <div className="space-y-3">
@@ -536,7 +603,8 @@ export default function GeneratePage() {
               )}
             </dl>
             <p className="pt-2 text-xs text-amber-100/40">
-              La génération prend environ 30 secondes.
+              La génération prend en général 1 à 3 minutes selon le modèle — tu
+              suivras chaque étape en direct.
             </p>
           </div>
         )}
@@ -590,23 +658,32 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-const GEN_STAGES = [
-  { at: 0, label: 'Analyse de la ville et repérage des lieux' },
-  { at: 8, label: 'Conception de l’itinéraire et des étapes' },
-  { at: 20, label: 'Écriture du récit et des énigmes' },
-  { at: 38, label: 'Vérification et finalisation' },
-]
+interface GenStage {
+  stage: string
+  label: string
+  current?: number
+  total?: number
+}
 
-function GenerationProgress() {
+type GenEvent = {
+  type?: string
+  stage?: string
+  label?: string
+  current?: number
+  total?: number
+  balade_id?: string
+  error?: string
+}
+
+function GenerationProgress({ stages }: { stages: GenStage[] }) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     const t = setInterval(() => setElapsed((s) => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
-  const activeIndex = GEN_STAGES.reduce(
-    (acc, s, i) => (elapsed >= s.at ? i : acc),
-    0,
-  )
+  const shown: GenStage[] = stages.length
+    ? stages
+    : [{ stage: 'connect', label: 'Connexion au modèle…' }]
 
   return (
     <div className="space-y-4">
@@ -615,37 +692,30 @@ function GenerationProgress() {
         <span className="font-mono text-sm text-amber-100/40">{elapsed}s</span>
       </div>
       <ul className="space-y-2.5">
-        {GEN_STAGES.map((s, i) => {
-          const done = i < activeIndex
-          const active = i === activeIndex
+        {shown.map((s, i) => {
+          const active = i === shown.length - 1
+          const counter =
+            s.total && s.total > 0 ? ` (${s.current ?? 0}/${s.total})` : ''
           return (
-            <li key={s.label} className="flex items-center gap-3 text-sm">
+            <li key={s.stage} className="flex items-center gap-3 text-sm">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-                {done ? (
-                  <Check size={16} className="text-emerald-400" />
-                ) : active ? (
+                {active ? (
                   <Loader2 size={16} className="animate-spin text-amber-300" />
                 ) : (
-                  <span className="h-2 w-2 rounded-full bg-amber-200/20" />
+                  <Check size={16} className="text-emerald-400" />
                 )}
               </span>
-              <span
-                className={
-                  done
-                    ? 'text-amber-100/45'
-                    : active
-                      ? 'text-amber-100'
-                      : 'text-amber-100/30'
-                }
-              >
+              <span className={active ? 'text-amber-100' : 'text-amber-100/45'}>
                 {s.label}
+                {counter}
               </span>
             </li>
           )
         })}
       </ul>
       <p className="text-xs text-amber-100/35">
-        Durée estimée 30-90 s selon le modèle. Ne ferme pas cette page.
+        Progression réelle du pipeline — chaque étape s’affiche au moment où
+        elle se produit. Ne ferme pas cette page.
       </p>
     </div>
   )

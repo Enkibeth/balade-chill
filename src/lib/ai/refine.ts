@@ -1,5 +1,6 @@
 import type { Difficulty, RefineConfig, RefineTarget } from '@/types'
 import type { GeneratedBalade } from './generated'
+import { extractJsonObject } from './json'
 
 export function shouldRefine(
   refine: RefineConfig | undefined,
@@ -137,19 +138,8 @@ interface RefinePatch {
 }
 
 function extractPatch(text: string): RefinePatch | null {
-  let raw = text.trim()
-  if (!raw) return null
-  if (raw.startsWith('```')) {
-    raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  }
-  const first = raw.indexOf('{')
-  const last = raw.lastIndexOf('}')
-  if (first === -1 || last === -1) return null
-  try {
-    return JSON.parse(raw.slice(first, last + 1)) as RefinePatch
-  } catch {
-    return null
-  }
+  const parsed = extractJsonObject(text)
+  return parsed && typeof parsed === 'object' ? (parsed as RefinePatch) : null
 }
 
 const str = (v: unknown): string | null =>
