@@ -5,6 +5,7 @@ import { generateBaladeText } from '@/lib/ai/providers'
 import { validateAndFixEnigme } from '@/lib/ai/cipherCheck'
 import { describeProviderError } from '@/lib/ai/errors'
 import { extractJsonObject } from '@/lib/ai/json'
+import { REGEN_ETAPE_SCHEMA } from '@/lib/ai/schemas'
 import { geocodeAddress, shortenDisplayName } from '@/lib/ai/geocode'
 import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
 import type { GeneratedEnigme } from '@/lib/ai/generated'
@@ -284,6 +285,7 @@ export async function POST(request: Request) {
         difficulty,
         generationId: crypto.randomUUID(),
         maxTokensOverride: 1300,
+        jsonSchema: REGEN_ETAPE_SCHEMA,
       },
       SYSTEM_PROMPT,
       buildPrompt({

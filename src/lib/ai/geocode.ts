@@ -74,7 +74,70 @@ export async function geocodeAddress(
   }
 }
 
-/** Picks a short, human-friendly label out of a Nominatim display_name. */
+/**
+ * Geocodes via the Mapbox Geocoding API (v6 forward). Unlike Nominatim, Mapbox
+ * has no 1 req/s policy, so callers may fan out requests in parallel. Requires
+ * a public token (see lib/mapboxToken); returns null on any failure so callers
+ * can fall back to Nominatim.
+ */
+export async function geocodeAddressMapbox(
+  address: string,
+  opts: GeocodeOptions,
+  token: string,
+): Promise<GeocodedPlace | null> {
+  const q = address.trim()
+  if (!q || !token) return null
+  const limit = Math.min(Math.max(opts.limit ?? 1, 1), 10)
+  const params = new URLSearchParams({
+    q,
+    access_token: token,
+    limit: String(limit),
+    language: 'fr',
+  })
+  if (opts.near) params.set('proximity', `${opts.near.lng},${opts.near.lat}`)
+  const url = `https://api.mapbox.com/search/geocode/v6/forward?${params}`
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      features?: Array<{
+        geometry?: { coordinates?: [number, number] }
+        properties?: {
+          full_address?: string
+          name?: string
+          place_formatted?: string
+        }
+      }>
+    }
+    const places: GeocodedPlace[] = (data.features ?? [])
+      .map((f) => {
+        const [lng, lat] = f.geometry?.coordinates ?? []
+        const p = f.properties ?? {}
+        const displayName =
+          p.full_address ||
+          [p.name, p.place_formatted].filter(Boolean).join(', ')
+        return { lat: Number(lat), lng: Number(lng), displayName }
+      })
+      .filter(
+        (p) =>
+          Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.displayName,
+      )
+    if (places.length === 0) return null
+    if (opts.near) {
+      const { lat, lng } = opts.near
+      places.sort(
+        (a, b) =>
+          haversineKm(lat, lng, a.lat, a.lng) -
+          haversineKm(lat, lng, b.lat, b.lng),
+      )
+    }
+    return places[0]
+  } catch {
+    return null
+  }
+}
+
+/** Picks a short, human-friendly label out of a geocoder display name. */
 export function shortenDisplayName(displayName: string): string {
   return displayName.split(',').slice(0, 2).join(',').trim()
 }

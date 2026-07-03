@@ -14,6 +14,8 @@ import type { LLMGenerationResult } from '@/lib/ai/providers'
 import { getModelOutputBudget } from '@/lib/ai/modelLimits'
 import { describeProviderError } from '@/lib/ai/errors'
 import { extractJsonObject } from '@/lib/ai/json'
+import { BALADE_SCHEMA } from '@/lib/ai/schemas'
+import { getSharedMapboxToken } from '@/lib/mapboxToken'
 import type { GeneratedBalade } from '@/lib/ai/generated'
 import {
   REFINE_SYSTEM_PROMPT,
@@ -27,6 +29,7 @@ import { applyDistancesAndTime, haversineKm } from '@/lib/ai/routeMath'
 import { validateEtapeGeography } from '@/lib/ai/geoValidate'
 import {
   geocodeAddress,
+  geocodeAddressMapbox,
   shortenDisplayName,
   type GeocodeOptions,
   type GeocodedPlace,
@@ -490,20 +493,40 @@ async function runGenerationPipeline(input: {
   const { req, userId, supabase, settings, provider, apiKey, model, send } =
     input
 
-  // Nominatim-politeness: wait out only the *remaining* gap since the last
-  // call instead of sleeping a fixed delay after every étape.
+  // Nominatim-politeness: serialize the calls (they may be issued from
+  // parallel contexts) and wait out only the *remaining* gap since the last
+  // one instead of sleeping a fixed delay after every étape.
   let lastGeocodeAt = 0
-  const politeGeocode = async (
+  let nominatimChain: Promise<unknown> = Promise.resolve()
+  const politeGeocode = (
     address: string,
     opts?: GeocodeOptions,
   ): Promise<GeocodedPlace | null> => {
-    const wait = lastGeocodeAt + NOMINATIM_THROTTLE_MS - Date.now()
-    if (wait > 0) await sleep(wait)
-    try {
-      return await geocodeAddress(address, opts)
-    } finally {
-      lastGeocodeAt = Date.now()
+    const run = nominatimChain.then(async () => {
+      const wait = lastGeocodeAt + NOMINATIM_THROTTLE_MS - Date.now()
+      if (wait > 0) await sleep(wait)
+      try {
+        return await geocodeAddress(address, opts)
+      } finally {
+        lastGeocodeAt = Date.now()
+      }
+    })
+    nominatimChain = run.catch(() => undefined)
+    return run
+  }
+
+  // Mapbox (when the shared token is configured) has no 1 req/s policy, so
+  // geocoding can fan out in parallel; Nominatim stays as the fallback.
+  const mapboxToken = await getSharedMapboxToken()
+  const smartGeocode = async (
+    address: string,
+    opts: GeocodeOptions = {},
+  ): Promise<GeocodedPlace | null> => {
+    if (mapboxToken) {
+      const place = await geocodeAddressMapbox(address, opts, mapboxToken)
+      if (place) return place
     }
+    return politeGeocode(address, opts)
   }
 
   // Resolve the start/end anchors. Map-placed points win; otherwise fall back
@@ -520,7 +543,7 @@ async function runGenerationPipeline(input: {
       stage: 'anchors',
       label: 'Repérage du point de départ…',
     })
-    const geo = await politeGeocode(req.loop_address)
+    const geo = await smartGeocode(req.loop_address)
     if (geo) {
       startPin = geo
       endPin = geo
@@ -556,6 +579,7 @@ async function runGenerationPipeline(input: {
           difficulty: req.difficulty,
           generationId,
           maxTokensOverride: maxTokens,
+          jsonSchema: BALADE_SCHEMA,
         },
         GENERATION_SYSTEM_PROMPT,
         userPrompt,
@@ -729,29 +753,29 @@ async function runGenerationPipeline(input: {
     if (endPin && sortedForSnap[sortedForSnap.length - 1]) {
       skip.add(sortedForSnap[sortedForSnap.length - 1])
     }
+    const candidates = generated.etapes.filter(
+      (etape) => !skip.has(etape) && asString(etape.location_name).trim(),
+    )
     let snapFixes = 0
-    const total = generated.etapes.length
-    let current = 0
-    for (const etape of generated.etapes) {
-      current += 1
-      if (skip.has(etape)) continue
+    let done = 0
+    const snapOne = async (etape: GeneratedBalade['etapes'][number]) => {
       const name = asString(etape.location_name).trim()
-      if (!name) continue
-      send({
-        type: 'progress',
-        stage: 'snap',
-        label: 'Calage des lieux sur la carte…',
-        current,
-        total,
-      })
       const hasCoords =
         Number.isFinite(etape.lat) && Number.isFinite(etape.lng)
-      const place = await politeGeocode(
+      const place = await smartGeocode(
         [name, req.city, req.country].filter(Boolean).join(', '),
         hasCoords
           ? { near: { lat: etape.lat, lng: etape.lng }, limit: 5 }
           : { limit: 1 },
       )
+      done += 1
+      send({
+        type: 'progress',
+        stage: 'snap',
+        label: 'Calage des lieux sur la carte…',
+        current: done,
+        total: candidates.length,
+      })
       if (place) {
         const drift = hasCoords
           ? haversineKm(etape.lat, etape.lng, place.lat, place.lng)
@@ -764,12 +788,29 @@ async function runGenerationPipeline(input: {
         }
       }
     }
+    if (candidates.length > 0) {
+      send({
+        type: 'progress',
+        stage: 'snap',
+        label: 'Calage des lieux sur la carte…',
+        current: 0,
+        total: candidates.length,
+      })
+      if (mapboxToken) {
+        // Mapbox tolerates bursts — snap every étape at once (seconds instead
+        // of ~1.1s per étape on Nominatim).
+        await Promise.all(candidates.map(snapOne))
+      } else {
+        for (const etape of candidates) await snapOne(etape)
+      }
+    }
     if (snapFixes > 0) {
       console.info('[LLM_GENERATION]', {
         generation_id: generationId,
         stage: 'snap_etape_poi',
         snap_fixes: snapFixes,
         total_etapes: generated.etapes.length,
+        geocoder: mapboxToken ? 'mapbox' : 'nominatim',
         city: req.city,
         route: req.country,
       })
@@ -823,7 +864,7 @@ async function runGenerationPipeline(input: {
   // geocoded city centre. The draft is kept either way — the validation screen
   // flags the offending étape(s) for a one-tap fix.
   const center =
-    startPin ?? endPin ?? (await politeGeocode(`${req.city}, ${req.country}`))
+    startPin ?? endPin ?? (await smartGeocode(`${req.city}, ${req.country}`))
   if (center) {
     const geo = validateEtapeGeography(generated.etapes, center, {
       durationTargetMin: req.duration_target_min,
