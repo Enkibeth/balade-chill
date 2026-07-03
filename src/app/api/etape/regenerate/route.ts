@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserSettings } from '@/lib/supabase/queries'
 import { generateBaladeText } from '@/lib/ai/providers'
 import { validateAndFixEnigme } from '@/lib/ai/cipherCheck'
+import { describeProviderError } from '@/lib/ai/errors'
+import { extractJsonObject } from '@/lib/ai/json'
 import { geocodeAddress, shortenDisplayName } from '@/lib/ai/geocode'
 import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
 import type { GeneratedEnigme } from '@/lib/ai/generated'
@@ -190,18 +192,10 @@ function buildPrompt(input: {
 }
 
 function extractJson(text: string): Record<string, unknown> | null {
-  let raw = text.trim()
-  if (raw.startsWith('```')) {
-    raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  }
-  const first = raw.indexOf('{')
-  const last = raw.lastIndexOf('}')
-  if (first === -1 || last === -1) return null
-  try {
-    return JSON.parse(raw.slice(first, last + 1)) as Record<string, unknown>
-  } catch {
-    return null
-  }
+  const parsed = extractJsonObject(text)
+  return parsed && typeof parsed === 'object'
+    ? (parsed as Record<string, unknown>)
+    : null
 }
 
 export async function POST(request: Request) {
@@ -314,7 +308,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('Étape regeneration failed:', err)
     return NextResponse.json(
-      { error: 'Impossible de régénérer cette étape.' },
+      { error: describeProviderError(provider, err).message },
       { status: 502 },
     )
   }

@@ -10,6 +10,10 @@ import {
 } from '@/lib/ai/generation-prompt'
 import { renderBaladeHtml } from '@/lib/ai/render-html'
 import { generateBaladeText } from '@/lib/ai/providers'
+import type { LLMGenerationResult } from '@/lib/ai/providers'
+import { getModelOutputBudget } from '@/lib/ai/modelLimits'
+import { describeProviderError } from '@/lib/ai/errors'
+import { extractJsonObject } from '@/lib/ai/json'
 import type { GeneratedBalade } from '@/lib/ai/generated'
 import {
   REFINE_SYSTEM_PROMPT,
@@ -24,6 +28,7 @@ import { validateEtapeGeography } from '@/lib/ai/geoValidate'
 import {
   geocodeAddress,
   shortenDisplayName,
+  type GeocodeOptions,
   type GeocodedPlace,
 } from '@/lib/ai/geocode'
 import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
@@ -50,10 +55,15 @@ export const maxDuration = 300
 // (e.g. a park centroid vs the fountain inside it) without letting a same-named
 // place across town hijack the étape.
 const SNAP_MAX_KM = 2
-// Nominatim's usage policy caps us at ~1 request/second; throttle the per-étape
-// snapping pass so a generation never bursts past it.
+// Nominatim's usage policy caps us at ~1 request/second; space the geocoding
+// calls so a generation never bursts past it.
 const NOMINATIM_THROTTLE_MS = 1100
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+// One automatic re-attempt when the draft comes back unusable or the provider
+// hiccups — most parse failures are one-off model slips.
+const MAX_DRAFT_ATTEMPTS = 2
+// Keep the requested duration in a sane band (the UI slider stops at 240).
+const MAX_DURATION_TARGET_MIN = 600
 
 const DIFFICULTIES: Difficulty[] = ['facile', 'moyen', 'difficile', 'boss']
 const ENIGME_TYPES: EnigmeType[] = [
@@ -98,7 +108,10 @@ function parseRequest(body: unknown): GenerationRequest | null {
   if (!DIFFICULTIES.includes(difficulty)) return null
 
   const nbEtapes = Math.min(6, Math.max(3, Math.round(asNumber(b.nb_etapes, 5))))
-  const duration = Math.max(30, Math.round(asNumber(b.duration_target_min, 120)))
+  const duration = Math.min(
+    MAX_DURATION_TARGET_MIN,
+    Math.max(30, Math.round(asNumber(b.duration_target_min, 120))),
+  )
   const specialties = Array.isArray(b.medical_specialties)
     ? b.medical_specialties.filter(
         (s): s is string => typeof s === 'string',
@@ -165,22 +178,6 @@ function parseQuizAnswers(raw: unknown) {
   return answers.length ? answers : undefined
 }
 
-/** Pulls a JSON object out of the model's text response. */
-function extractJson(text: string): GeneratedBalade {
-  let raw = text.trim()
-  if (raw.startsWith('```')) {
-    raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  }
-  const first = raw.indexOf('{')
-  const last = raw.lastIndexOf('}')
-  if (first === -1 || last === -1) throw new Error('no JSON object found')
-  const parsed = JSON.parse(raw.slice(first, last + 1)) as GeneratedBalade
-  if (!Array.isArray(parsed.etapes) || parsed.etapes.length === 0) {
-    throw new Error('generated balade has no etapes')
-  }
-  return parsed
-}
-
 type ParseErrorType =
   | 'EMPTY_OUTPUT'
   | 'NO_JSON_FOUND'
@@ -209,20 +206,41 @@ function isValidGeneratedBalade(x: unknown): x is GeneratedBalade {
   const b = x as GeneratedBalade
   return typeof b.title === 'string' && Array.isArray(b.etapes) && b.etapes.length > 0
 }
-function parseAndValidateModelOutput(raw: string): { ok: true; data: GeneratedBalade } | { ok: false; errorType: ParseErrorType; details?: unknown } {
+/**
+ * Parses the model output into a balade. The parse is attempted FIRST — the
+ * brace-balance heuristic can misread braces inside JSON strings, so it only
+ * runs to classify an already-failed parse. `truncated` is the provider's own
+ * stop-reason signal and wins over the heuristic.
+ */
+function parseAndValidateModelOutput(
+  raw: string,
+  truncated: boolean,
+): { ok: true; data: GeneratedBalade } | { ok: false; errorType: ParseErrorType } {
   if (!raw?.trim()) return { ok: false, errorType: 'EMPTY_OUTPUT' }
-  if (isLikelyTruncatedOutput(raw)) {
+  const extracted = extractJsonObject(raw)
+  if (extracted !== null) {
+    if (isValidGeneratedBalade(extracted)) {
+      return { ok: true, data: extracted }
+    }
+    return {
+      ok: false,
+      errorType: truncated ? 'TRUNCATED_OUTPUT' : 'SCHEMA_VALIDATION_FAILED',
+    }
+  }
+  if (truncated || isLikelyTruncatedOutput(raw)) {
     return { ok: false, errorType: 'TRUNCATED_OUTPUT' }
   }
-  try {
-    const extracted = extractJson(raw)
-    if (!isValidGeneratedBalade(extracted)) {
-      return { ok: false, errorType: 'SCHEMA_VALIDATION_FAILED' }
-    }
-    return { ok: true, data: extracted }
-  } catch (error) {
-    return { ok: false, errorType: raw.includes('{') ? 'INVALID_JSON' : 'NO_JSON_FOUND', details: String(error) }
+  return {
+    ok: false,
+    errorType: raw.includes('{') ? 'INVALID_JSON' : 'NO_JSON_FOUND',
   }
+}
+
+function parseFailureMessage(errorType: ParseErrorType): string {
+  if (errorType === 'TRUNCATED_OUTPUT') {
+    return 'La réponse du modèle a été tronquée deux fois de suite. Réduis le nombre d’étapes ou choisis un modèle avec plus de capacité de sortie dans les Réglages.'
+  }
+  return 'Le modèle n’a pas renvoyé une balade exploitable malgré deux tentatives. Réessaie, ou choisis un modèle plus fiable dans les Réglages.'
 }
 
 function normalizeTheme(theme: Partial<ThemeColor> | undefined): ThemeColor {
@@ -349,6 +367,21 @@ function assembleBalade(
   return balade
 }
 
+/** Progress/terminal events streamed to the client as NDJSON lines. */
+type GenerationEvent =
+  | {
+      type: 'progress'
+      stage: string
+      label: string
+      current?: number
+      total?: number
+    }
+  | { type: 'done'; balade_id: string; status: 'draft' }
+  | { type: 'error'; error: string }
+
+/** Raised for failures that already carry a user-facing French message. */
+class GenerationError extends Error {}
+
 export async function POST(request: Request) {
   // 1. Authenticate.
   const supabase = createClient()
@@ -395,8 +428,86 @@ export async function POST(request: Request) {
       ? settings.ai_model
       : 'claude-sonnet-4-6'
 
-  // Resolve the start/end anchors. Map-placed points win; otherwise fall back to
-  // geocoding the free-text loop address (start = end = that address).
+  // 4. Inputs are valid: stream the real pipeline progress as NDJSON so the
+  // user watches actual stages instead of a fake timer. Errors past this point
+  // arrive in-stream (the HTTP status is already committed).
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: GenerationEvent) => {
+        try {
+          controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+        } catch {
+          // Client went away — keep working; the balade still gets saved.
+        }
+      }
+      try {
+        await runGenerationPipeline({
+          req,
+          userId: user.id,
+          supabase,
+          settings,
+          provider,
+          apiKey,
+          model,
+          send,
+        })
+      } catch (err) {
+        if (err instanceof GenerationError) {
+          send({ type: 'error', error: err.message })
+        } else {
+          console.error('Balade generation failed:', err)
+          send({
+            type: 'error',
+            error: 'La génération a échoué. Réessaie dans un instant.',
+          })
+        }
+      } finally {
+        controller.close()
+      }
+    },
+  })
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+      // Disable proxy buffering so progress lines reach the client live.
+      'X-Accel-Buffering': 'no',
+    },
+  })
+}
+
+async function runGenerationPipeline(input: {
+  req: GenerationRequest
+  userId: string
+  supabase: ReturnType<typeof createClient>
+  settings: Awaited<ReturnType<typeof getUserSettings>>
+  provider: AIProvider
+  apiKey: string
+  model: string
+  send: (event: GenerationEvent) => void
+}) {
+  const { req, userId, supabase, settings, provider, apiKey, model, send } =
+    input
+
+  // Nominatim-politeness: wait out only the *remaining* gap since the last
+  // call instead of sleeping a fixed delay after every étape.
+  let lastGeocodeAt = 0
+  const politeGeocode = async (
+    address: string,
+    opts?: GeocodeOptions,
+  ): Promise<GeocodedPlace | null> => {
+    const wait = lastGeocodeAt + NOMINATIM_THROTTLE_MS - Date.now()
+    if (wait > 0) await sleep(wait)
+    try {
+      return await geocodeAddress(address, opts)
+    } finally {
+      lastGeocodeAt = Date.now()
+    }
+  }
+
+  // Resolve the start/end anchors. Map-placed points win; otherwise fall back
+  // to geocoding the free-text loop address (start = end = that address).
   let startPin: GeocodedPlace | null = req.start_point
     ? geoPointToPlace(req.start_point)
     : null
@@ -404,23 +515,79 @@ export async function POST(request: Request) {
     ? geoPointToPlace(req.end_point)
     : null
   if (!startPin && !endPin && req.loop_address) {
-    const geo = await geocodeAddress(req.loop_address)
+    send({
+      type: 'progress',
+      stage: 'anchors',
+      label: 'Repérage du point de départ…',
+    })
+    const geo = await politeGeocode(req.loop_address)
     if (geo) {
       startPin = geo
       endPin = geo
     }
   }
 
-  // 4. Draft the balade content with the (cheap) primary model.
+  // 4a. Draft the balade content with the (cheap) primary model, retrying once
+  // on a classified failure: truncation gets a bigger output budget (where the
+  // provider allows it), everything else gets a fresh sample.
+  send({
+    type: 'progress',
+    stage: 'draft',
+    label: 'Écriture du récit, des étapes et des énigmes…',
+  })
   const generationId = crypto.randomUUID()
-  let generated: GeneratedBalade
-  try {
-    const output = await generateBaladeText(
-      { provider, apiKey, model, difficulty: req.difficulty, generationId },
-      GENERATION_SYSTEM_PROMPT,
-      buildGenerationPrompt(req, { startPin, endPin }),
-    )
-    const parsed = parseAndValidateModelOutput(output.text)
+  const userPrompt = buildGenerationPrompt(req, { startPin, endPin })
+  let maxTokens = getModelOutputBudget({
+    model,
+    difficulty: req.difficulty,
+    generationMode: req.difficulty === 'boss' ? 'segmented' : 'full',
+  })
+  let generated: GeneratedBalade | null = null
+  let lastParseError: ParseErrorType = 'EMPTY_OUTPUT'
+
+  for (let attempt = 0; attempt < MAX_DRAFT_ATTEMPTS && !generated; attempt++) {
+    let output: LLMGenerationResult
+    try {
+      output = await generateBaladeText(
+        {
+          provider,
+          apiKey,
+          model,
+          difficulty: req.difficulty,
+          generationId,
+          maxTokensOverride: maxTokens,
+        },
+        GENERATION_SYSTEM_PROMPT,
+        userPrompt,
+      )
+    } catch (err) {
+      const info = describeProviderError(provider, err)
+      console.error('Balade draft call failed:', err)
+      console.info('[LLM_GENERATION]', {
+        generation_id: generationId,
+        stage: 'draft',
+        provider,
+        model,
+        difficulty: req.difficulty,
+        success: false,
+        error_type: 'PROVIDER_ERROR',
+        retry_count: attempt,
+        city: req.city,
+        route: req.country,
+      })
+      if (info.retryable && attempt + 1 < MAX_DRAFT_ATTEMPTS) {
+        send({
+          type: 'progress',
+          stage: 'draft_retry',
+          label: 'Le fournisseur a hoqueté — nouvelle tentative…',
+        })
+        await sleep(2000)
+        continue
+      }
+      throw new GenerationError(info.message)
+    }
+
+    const parsed = parseAndValidateModelOutput(output.text, output.truncated)
     console.info('[LLM_GENERATION]', {
       generation_id: generationId,
       stage: 'draft',
@@ -434,26 +601,47 @@ export async function POST(request: Request) {
       latency_ms: output.latencyMs,
       success: parsed.ok,
       error_type: parsed.ok ? null : parsed.errorType,
+      truncated: output.truncated,
+      max_tokens: maxTokens,
       city: req.city,
       route: req.country,
-      retry_count: 0,
+      retry_count: attempt,
     })
-    if (!parsed.ok) {
-      throw new Error(parsed.errorType)
+    if (parsed.ok) {
+      generated = parsed.data
+      break
     }
-    generated = parsed.data
-  } catch (err) {
-    console.error('Balade generation failed:', err)
-    return NextResponse.json(
-      { error: 'La génération a échoué. Vérifie ta clé API et réessaie.' },
-      { status: 502 },
-    )
+    lastParseError = parsed.errorType
+    if (attempt + 1 < MAX_DRAFT_ATTEMPTS) {
+      if (parsed.errorType === 'TRUNCATED_OUTPUT' && provider === 'anthropic') {
+        // Anthropic models comfortably allow a bigger output window; other
+        // providers sit near their ceiling already, so retry with a fresh
+        // sample instead (verbose runs usually don't repeat).
+        maxTokens = Math.min(Math.round(maxTokens * 1.5), 32000)
+      }
+      send({
+        type: 'progress',
+        stage: 'draft_retry',
+        label:
+          parsed.errorType === 'TRUNCATED_OUTPUT'
+            ? 'Réponse tronquée — nouvelle tentative avec plus de marge…'
+            : 'Réponse imparfaite — nouvelle tentative…',
+      })
+    }
+  }
+  if (!generated) {
+    throw new GenerationError(parseFailureMessage(lastParseError))
   }
 
   // 4b. Optional refine pass: a stronger model re-checks key parts and returns
   // only corrections. Failures here never block the (already valid) draft.
   const refine = settings?.generation_pipeline?.refine
   if (shouldRefine(refine, req.difficulty)) {
+    send({
+      type: 'progress',
+      stage: 'refine',
+      label: 'Relecture par le modèle de contrôle…',
+    })
     try {
       const output = await generateBaladeText(
         {
@@ -503,6 +691,11 @@ export async function POST(request: Request) {
 
   // 4c. Free deterministic safety net: make sure mechanical ciphers really
   // decode to their answer, auto-fixing the ones we can without any LLM call.
+  send({
+    type: 'progress',
+    stage: 'cipher_check',
+    label: 'Vérification des énigmes…',
+  })
   let cipherFixes = 0
   generated.etapes = generated.etapes.map((etape) => {
     const { enigme, fixed } = validateAndFixEnigme(etape.enigme)
@@ -537,13 +730,23 @@ export async function POST(request: Request) {
       skip.add(sortedForSnap[sortedForSnap.length - 1])
     }
     let snapFixes = 0
+    const total = generated.etapes.length
+    let current = 0
     for (const etape of generated.etapes) {
+      current += 1
       if (skip.has(etape)) continue
       const name = asString(etape.location_name).trim()
       if (!name) continue
+      send({
+        type: 'progress',
+        stage: 'snap',
+        label: 'Calage des lieux sur la carte…',
+        current,
+        total,
+      })
       const hasCoords =
         Number.isFinite(etape.lat) && Number.isFinite(etape.lng)
-      const place = await geocodeAddress(
+      const place = await politeGeocode(
         [name, req.city, req.country].filter(Boolean).join(', '),
         hasCoords
           ? { near: { lat: etape.lat, lng: etape.lng }, limit: 5 }
@@ -560,7 +763,6 @@ export async function POST(request: Request) {
           snapFixes += 1
         }
       }
-      await sleep(NOMINATIM_THROTTLE_MS)
     }
     if (snapFixes > 0) {
       console.info('[LLM_GENERATION]', {
@@ -573,6 +775,12 @@ export async function POST(request: Request) {
       })
     }
   }
+
+  send({
+    type: 'progress',
+    stage: 'finalize',
+    label: 'Distances, durées et mise en page…',
+  })
 
   // 4d. Force the first/last étape onto the user-pinned start/end when the model
   // drifted by more than 200 m (start = end ⇒ loop).
@@ -612,18 +820,15 @@ export async function POST(request: Request) {
   // the étape coordinates, so a single hallucinated lat/lng (common with weak
   // free models) silently yields an absurd 300-600 km "walk" or étapes nowhere
   // near the requested city. Anchor on the user pin if present, otherwise on the
-  // geocoded city centre, and reject the draft when coordinates are incoherent
-  // rather than persisting a broken itinerary.
+  // geocoded city centre. The draft is kept either way — the validation screen
+  // flags the offending étape(s) for a one-tap fix.
   const center =
-    startPin ?? endPin ?? (await geocodeAddress(`${req.city}, ${req.country}`))
+    startPin ?? endPin ?? (await politeGeocode(`${req.city}, ${req.country}`))
   if (center) {
     const geo = validateEtapeGeography(generated.etapes, center, {
       durationTargetMin: req.duration_target_min,
     })
     if (!geo.ok) {
-      // We no longer reject the whole balade when the itinerary is too spread
-      // out. The draft is kept and the user fixes the offending étape(s)
-      // afterwards (regenerate or edit the location) from the validation screen.
       console.warn('[LLM_GENERATION]', {
         generation_id: generationId,
         stage: 'geo_validation',
@@ -653,14 +858,13 @@ export async function POST(request: Request) {
 
   // 5. Assemble, render, and persist.
   try {
-    const balade = assembleBalade(generated, req, user.id)
+    const balade = assembleBalade(generated, req, userId)
     const baladeId = await saveGeneratedBalade(supabase, balade)
-    return NextResponse.json({ balade_id: baladeId, status: 'draft' })
+    send({ type: 'done', balade_id: baladeId, status: 'draft' })
   } catch (err) {
     console.error('Saving generated balade failed:', err)
-    return NextResponse.json(
-      { error: "Impossible d'enregistrer la balade." },
-      { status: 500 },
+    throw new GenerationError(
+      'La balade a bien été générée mais son enregistrement a échoué. Réessaie dans un instant.',
     )
   }
 }

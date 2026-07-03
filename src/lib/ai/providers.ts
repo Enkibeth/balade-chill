@@ -20,6 +20,8 @@ export interface LLMGenerationResult {
   usage: { inputTokens: number; outputTokens: number; totalTokens: number }
   estimatedCostUsd: number
   latencyMs: number
+  /** True when the provider cut the output at the max-token budget. */
+  truncated: boolean
 }
 
 /**
@@ -70,7 +72,13 @@ export async function generateBaladeText(
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
     })
-    return { text, usage, estimatedCostUsd, latencyMs: Date.now() - startedAt }
+    return {
+      text,
+      usage,
+      estimatedCostUsd,
+      latencyMs: Date.now() - startedAt,
+      truncated: message.stop_reason === 'max_tokens',
+    }
   }
 
   const baseURL = PROVIDERS[ctx.provider].baseURL
@@ -102,5 +110,6 @@ export async function generateBaladeText(
     usage,
     estimatedCostUsd,
     latencyMs: Date.now() - startedAt,
+    truncated: response.choices[0]?.finish_reason === 'length',
   }
 }

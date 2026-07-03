@@ -1,4 +1,5 @@
 import type { Difficulty, QuizQuestion } from '@/types'
+import { extractJsonObject } from './json'
 
 export const QUIZ_SYSTEM_PROMPT = `Tu es un assistant qui prépare la génération d'une balade urbaine à énigmes pour un couple. Tu génères de 4 à 6 questions à choix multiple, en français, **adaptées à la ville, au pays et à la durée demandée**, dont les réponses vont orienter la création de la balade.
 
@@ -67,25 +68,10 @@ interface ParsedQuiz {
   questions: QuizQuestion[]
 }
 
-function extractJson(text: string): unknown {
-  let raw = text.trim()
-  if (raw.startsWith('```')) {
-    raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  }
-  const first = raw.indexOf('{')
-  const last = raw.lastIndexOf('}')
-  if (first === -1 || last === -1) return null
-  try {
-    return JSON.parse(raw.slice(first, last + 1))
-  } catch {
-    return null
-  }
-}
-
 const asString = (v: unknown): string => (typeof v === 'string' ? v : '')
 
 export function parseQuiz(text: string): ParsedQuiz | null {
-  const parsed = extractJson(text) as { questions?: unknown } | null
+  const parsed = extractJsonObject(text) as { questions?: unknown } | null
   if (!parsed || !Array.isArray(parsed.questions)) return null
   const questions: QuizQuestion[] = []
   for (const q of parsed.questions) {
