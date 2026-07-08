@@ -13,6 +13,17 @@ import type {
   QuizQuestion,
 } from '@/types'
 import type { StartEndValue } from '@/components/map/StartEndPicker'
+import {
+  GENERATION_DRAFT_KEY,
+  parseGenerationDraft,
+  type GenerationDraft,
+} from '@/lib/generationDraft'
+import { createClient } from '@/lib/supabase/client'
+import {
+  deleteGenerationDraft,
+  getGenerationDraft,
+  saveGenerationDraft,
+} from '@/lib/supabase/queries'
 
 const StartEndPicker = dynamic(
   () =>
@@ -78,6 +89,185 @@ export default function GeneratePage() {
   // the Retour button) keeps it instead of re-fetching. A ref — not state —
   // because it must not be a dependency of the fetch effect.
   const quizLoadedRef = useRef(false)
+  // Draft persistence: saves only start once the initial localStorage read is
+  // done, otherwise the pristine first render would overwrite an existing
+  // draft before it gets restored.
+  const draftReadyRef = useRef(false)
+  // Set on successful generation: the draft was just purged and must not be
+  // recreated by a late autosave while navigating away.
+  const draftDoneRef = useRef(false)
+  // Filled once on mount from the local session; remote draft sync is simply
+  // skipped when it stays null (session expirée, hors-ligne…).
+  const userIdRef = useRef<string | null>(null)
+  const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null)
+
+  // Restore a pending draft on mount, from the freshest of the two copies:
+  // localStorage (survives offline) and Supabase (survives across devices).
+  // localStorage does not exist during SSR, so this runs in an effect.
+  useEffect(() => {
+    let cancelled = false
+    async function restoreDraft() {
+      let local: GenerationDraft | null = null
+      try {
+        local = parseGenerationDraft(
+          localStorage.getItem(GENERATION_DRAFT_KEY),
+        )
+      } catch {
+        // localStorage indisponible (navigation privée…) — pas de copie locale.
+      }
+      let remote: GenerationDraft | null = null
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.auth.getSession()
+        const userId = data.session?.user.id ?? null
+        userIdRef.current = userId
+        if (userId) {
+          // Ne bloque pas le formulaire plus de 2,5 s sur un réseau lent : au
+          // pire la copie locale (ou rien) est restaurée.
+          remote = await withTimeout(
+            getGenerationDraft(supabase, userId),
+            2500,
+            null,
+          )
+        }
+      } catch {
+        // hors-ligne — la copie locale suffira
+      }
+      if (cancelled) return
+      const draft =
+        remote && (!local || remote.savedAt > local.savedAt) ? remote : local
+      if (draft) {
+        setStep(draft.step)
+        setCity(draft.city)
+        setCountry(draft.country)
+        setDuration(draft.duration)
+        setNbEtapes(draft.nbEtapes)
+        setDifficulty(draft.difficulty)
+        setSpecialties(draft.specialties)
+        setTheme(draft.theme)
+        setSpecialInstructions(draft.specialInstructions)
+        setBonusThemes(draft.bonusThemes)
+        setBonusCustom(draft.bonusCustom)
+        setStartEnd(draft.startEnd)
+        if (draft.quiz) {
+          quizLoadedRef.current = true
+          setQuiz(draft.quiz)
+          setQuizAnswers(draft.quizAnswers)
+        }
+        setDraftRestoredAt(draft.savedAt)
+      }
+      draftReadyRef.current = true
+    }
+    restoreDraft()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Autosave the draft (debounced) on every form change, so a crash or a
+  // failed generation never loses the user's instructions: localStorage
+  // right away (works offline), Supabase a bit later (syncs across devices).
+  // A form back at its pristine state deletes the draft instead.
+  useEffect(() => {
+    if (!draftReadyRef.current || draftDoneRef.current) return
+    const hasContent =
+      step > 1 ||
+      city.trim() !== '' ||
+      theme.trim() !== '' ||
+      specialInstructions.trim() !== '' ||
+      startEnd.start !== null
+    const draft: GenerationDraft = {
+      savedAt: Date.now(),
+      step,
+      city,
+      country,
+      duration,
+      nbEtapes,
+      difficulty,
+      specialties,
+      theme,
+      specialInstructions,
+      bonusThemes,
+      bonusCustom,
+      startEnd,
+      quiz,
+      quizAnswers,
+    }
+    const localTimer = setTimeout(() => {
+      try {
+        if (!hasContent) localStorage.removeItem(GENERATION_DRAFT_KEY)
+        else localStorage.setItem(GENERATION_DRAFT_KEY, JSON.stringify(draft))
+      } catch {
+        // Quota plein ou stockage indisponible — l'app marche sans brouillon.
+      }
+    }, 400)
+    const remoteTimer = setTimeout(() => {
+      const userId = userIdRef.current
+      if (!userId) return
+      const supabase = createClient()
+      if (!hasContent) void deleteGenerationDraft(supabase, userId)
+      else void saveGenerationDraft(supabase, userId, draft)
+    }, 1500)
+    return () => {
+      clearTimeout(localTimer)
+      clearTimeout(remoteTimer)
+    }
+  }, [
+    step,
+    city,
+    country,
+    duration,
+    nbEtapes,
+    difficulty,
+    specialties,
+    theme,
+    specialInstructions,
+    bonusThemes,
+    bonusCustom,
+    startEnd,
+    quiz,
+    quizAnswers,
+  ])
+
+  function clearDraftOnSuccess() {
+    draftDoneRef.current = true
+    try {
+      localStorage.removeItem(GENERATION_DRAFT_KEY)
+    } catch {
+      // stockage indisponible — rien à purger
+    }
+    if (userIdRef.current) {
+      void deleteGenerationDraft(createClient(), userIdRef.current)
+    }
+  }
+
+  function discardDraft() {
+    try {
+      localStorage.removeItem(GENERATION_DRAFT_KEY)
+    } catch {
+      // stockage indisponible — rien à purger
+    }
+    if (userIdRef.current) {
+      void deleteGenerationDraft(createClient(), userIdRef.current)
+    }
+    quizLoadedRef.current = false
+    setStep(1)
+    setCity('')
+    setCountry('France')
+    setDuration(120)
+    setNbEtapes(5)
+    setDifficulty('difficile')
+    setSpecialties(['cardiologie', 'neurologie'])
+    setTheme('')
+    setSpecialInstructions('')
+    setBonusThemes(['medical'])
+    setBonusCustom('')
+    setStartEnd({ start: null, end: null, loop: true })
+    setQuiz(null)
+    setQuizAnswers({})
+    setError(null)
+    setDraftRestoredAt(null)
+  }
 
   // Fetch the orientation quiz when the user reaches step 3. The effect must
   // depend ONLY on `step` and the balade inputs — never on the state it sets
@@ -203,6 +393,7 @@ export default function GeneratePage() {
         // Non-streaming response — single JSON payload.
         const data = await res.json().catch(() => null)
         if (data?.balade_id) {
+          clearDraftOnSuccess()
           router.push(`/balade/${data.balade_id}?mode=preview`)
         } else {
           setError(data?.error ?? 'La génération a échoué.')
@@ -238,6 +429,7 @@ export default function GeneratePage() {
           })
         } else if (event.type === 'done' && event.balade_id) {
           terminal = true
+          clearDraftOnSuccess()
           router.push(`/balade/${event.balade_id}?mode=preview`)
         } else if (event.type === 'error') {
           terminal = true
@@ -286,6 +478,21 @@ export default function GeneratePage() {
           />
         ))}
       </div>
+
+      {draftRestoredAt !== null && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-teal-400/30 bg-teal-400/10 px-3 py-2">
+          <p className="text-xs text-teal-100/90">
+            Brouillon restauré ({formatDraftDate(draftRestoredAt)}) — tes
+            réglages et instructions ont été repris.
+          </p>
+          <button
+            onClick={discardDraft}
+            className="shrink-0 rounded-md border border-teal-400/30 px-2.5 py-1 text-[11px] text-teal-100/80 transition hover:border-teal-300/60 hover:text-teal-50"
+          >
+            Repartir de zéro
+          </button>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-amber-200/15 bg-black/30 p-6">
         {step === 1 && (
@@ -609,7 +816,16 @@ export default function GeneratePage() {
           </div>
         )}
 
-        {error && <p className="mt-4 text-sm text-rose-300/90">{error}</p>}
+        {error && (
+          <div className="mt-4 space-y-1">
+            <p className="text-sm text-rose-300/90">{error}</p>
+            <p className="text-xs text-amber-100/45">
+              Tes réglages et instructions sont conservés en brouillon — tu
+              peux relancer maintenant ou revenir plus tard, tout sera
+              restauré.
+            </p>
+          </div>
+        )}
 
         <div className="mt-6 flex gap-3">
           {step > 1 && (
@@ -647,6 +863,23 @@ export default function GeneratePage() {
 
 function pointLabel(p: { lat: number; lng: number; label?: string }): string {
   return p.label?.trim() || `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`
+}
+
+function formatDraftDate(ts: number): string {
+  return new Date(ts).toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/** Resolves with `fallback` if the promise takes longer than `ms`. */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ])
 }
 
 function Row({ label, value }: { label: string; value: string }) {

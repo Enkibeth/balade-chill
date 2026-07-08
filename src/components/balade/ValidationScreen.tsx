@@ -19,6 +19,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/ai/render-html'
 import { applyDistancesAndTime } from '@/lib/ai/routeMath'
+import { placeSearchUrl, upgradeMapsUrl } from '@/lib/ai/mapsUrl'
 import { CipherBlock } from './CipherBlock'
 import { EtapeEditor } from './EtapeEditor'
 import type { Balade, Etape, ThemeColor } from '@/types'
@@ -179,11 +180,12 @@ export function ValidationScreen({
         setError(data?.error ?? 'Lieu introuvable.')
         return
       }
+      const newName = data.displayName ?? e.location_name
       patchEtape(index, {
         lat: data.lat,
         lng: data.lng,
-        location_name: data.displayName ?? e.location_name,
-        maps_url: `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`,
+        location_name: newName,
+        maps_url: placeSearchUrl(newName, balade.city, data.lat, data.lng),
       })
     } catch {
       setError('Erreur réseau pendant le géocodage.')
@@ -372,7 +374,13 @@ export function ValidationScreen({
                 </div>
                 {e.maps_url && (
                   <a
-                    href={e.maps_url}
+                    href={upgradeMapsUrl(
+                      e.maps_url,
+                      e.location_name,
+                      balade.city,
+                      e.lat,
+                      e.lng,
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"

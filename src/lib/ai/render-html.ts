@@ -6,6 +6,7 @@ import {
 } from '@/lib/ai/bonus'
 import { buildBaladeItinerary } from '@/lib/ai/itinerary/fromBalade'
 import type { ItineraryPlan } from '@/lib/ai/itinerary/types'
+import { upgradeMapsUrl } from '@/lib/ai/mapsUrl'
 
 /** Escapes a string for safe insertion into HTML text/attribute context. */
 function esc(value: string): string {
@@ -115,10 +116,15 @@ function renderMedical(bonus: MedicalBonus, order: number): string {
       <div class="reveal-content med-content" id="m${order}">${hint}${esc(bonus.answer)}</div>`
 }
 
-function renderEtape(etape: Etape, total: number): string {
+function renderEtape(etape: Etape, total: number, city: string): string {
   const isLast = etape.order === total
-  const mapsBtn = etape.maps_url
-    ? `<a class="maps-btn" href="${esc(etape.maps_url)}" target="_blank" rel="noopener">🗺 Ouvrir dans Google Maps</a>`
+  // Met à niveau les maps_url hérités (coordonnées seules) pour que le HTML
+  // re-rendu d'une ancienne balade ouvre aussi la fiche du lieu nommé.
+  const mapsUrl = etape.maps_url
+    ? upgradeMapsUrl(etape.maps_url, etape.location_name, city, etape.lat, etape.lng)
+    : ''
+  const mapsBtn = mapsUrl
+    ? `<a class="maps-btn" href="${esc(mapsUrl)}" target="_blank" rel="noopener">🗺 Ouvrir dans Google Maps</a>`
     : ''
   return `
   <div class="etape" id="e${etape.order}">
@@ -320,7 +326,7 @@ export function renderBaladeHtml(balade: Balade): string {
     ${paragraphs(balade.prologue)}
   </div>
   ${itineraryBlock}
-  ${etapes.map((e) => renderEtape(e, total)).join('')}
+  ${etapes.map((e) => renderEtape(e, total, balade.city)).join('')}
   <div class="epilogue">
     <div class="epilogue-ornament">✦</div>
     <h2>Fin de l'aventure</h2>
