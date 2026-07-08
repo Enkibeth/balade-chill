@@ -4,6 +4,10 @@ import type {
   GeneratedParcours,
   ParcoursRecord,
 } from '@/lib/ai/parcours/types'
+import {
+  sanitizeGenerationDraft,
+  type GenerationDraft,
+} from '@/lib/generationDraft'
 
 /** A session payload for upsert — id/timestamps are filled by the DB. */
 export type SessionUpsert = Partial<BaladeSession> & {
@@ -233,4 +237,59 @@ export async function deleteParcours(
 ): Promise<void> {
   const { error } = await supabase.from('parcours').delete().eq('id', id)
   if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
+// Brouillon du formulaire de génération (une ligne par utilisateur).
+// Le payload est assaini côté lecture par sanitizeGenerationDraft — ces
+// fonctions ne lèvent jamais : un brouillon perdu ne doit pas casser l'app.
+
+/** The user's pending generation draft, or null (none, or unreadable). */
+export async function getGenerationDraft(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<GenerationDraft | null> {
+  try {
+    const { data, error } = await supabase
+      .from('generation_drafts')
+      .select('payload')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error || !data?.payload) return null
+    return sanitizeGenerationDraft(data.payload)
+  } catch {
+    return null
+  }
+}
+
+/** Upserts the user's generation draft (one row per user, overwritten). */
+export async function saveGenerationDraft(
+  supabase: SupabaseClient,
+  userId: string,
+  draft: GenerationDraft,
+): Promise<void> {
+  try {
+    await supabase.from('generation_drafts').upsert(
+      {
+        user_id: userId,
+        payload: draft,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    )
+  } catch {
+    // hors-ligne / RLS — le brouillon localStorage reste la copie de secours
+  }
+}
+
+/** Deletes the user's generation draft (after success or explicit discard). */
+export async function deleteGenerationDraft(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<void> {
+  try {
+    await supabase.from('generation_drafts').delete().eq('user_id', userId)
+  } catch {
+    // hors-ligne — au pire un vieux brouillon sera re-proposé puis écrasé
+  }
 }

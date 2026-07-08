@@ -18,6 +18,12 @@ import {
   parseGenerationDraft,
   type GenerationDraft,
 } from '@/lib/generationDraft'
+import { createClient } from '@/lib/supabase/client'
+import {
+  deleteGenerationDraft,
+  getGenerationDraft,
+  saveGenerationDraft,
+} from '@/lib/supabase/queries'
 
 const StartEndPicker = dynamic(
   () =>
@@ -90,15 +96,46 @@ export default function GeneratePage() {
   // Set on successful generation: the draft was just purged and must not be
   // recreated by a late autosave while navigating away.
   const draftDoneRef = useRef(false)
+  // Filled once on mount from the local session; remote draft sync is simply
+  // skipped when it stays null (session expirée, hors-ligne…).
+  const userIdRef = useRef<string | null>(null)
   const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null)
 
-  // Restore a pending draft on mount — localStorage does not exist during
-  // SSR, so the read has to happen in an effect.
+  // Restore a pending draft on mount, from the freshest of the two copies:
+  // localStorage (survives offline) and Supabase (survives across devices).
+  // localStorage does not exist during SSR, so this runs in an effect.
   useEffect(() => {
-    try {
-      const draft = parseGenerationDraft(
-        localStorage.getItem(GENERATION_DRAFT_KEY),
-      )
+    let cancelled = false
+    async function restoreDraft() {
+      let local: GenerationDraft | null = null
+      try {
+        local = parseGenerationDraft(
+          localStorage.getItem(GENERATION_DRAFT_KEY),
+        )
+      } catch {
+        // localStorage indisponible (navigation privée…) — pas de copie locale.
+      }
+      let remote: GenerationDraft | null = null
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.auth.getSession()
+        const userId = data.session?.user.id ?? null
+        userIdRef.current = userId
+        if (userId) {
+          // Ne bloque pas le formulaire plus de 2,5 s sur un réseau lent : au
+          // pire la copie locale (ou rien) est restaurée.
+          remote = await withTimeout(
+            getGenerationDraft(supabase, userId),
+            2500,
+            null,
+          )
+        }
+      } catch {
+        // hors-ligne — la copie locale suffira
+      }
+      if (cancelled) return
+      const draft =
+        remote && (!local || remote.savedAt > local.savedAt) ? remote : local
       if (draft) {
         setStep(draft.step)
         setCity(draft.city)
@@ -119,52 +156,62 @@ export default function GeneratePage() {
         }
         setDraftRestoredAt(draft.savedAt)
       }
-    } catch {
-      // localStorage indisponible (navigation privée…) — pas de brouillon.
+      draftReadyRef.current = true
     }
-    draftReadyRef.current = true
+    restoreDraft()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Autosave the draft (debounced) on every form change, so a crash or a
-  // failed generation never loses the user's instructions. A form back at
-  // its pristine state deletes the draft instead.
+  // failed generation never loses the user's instructions: localStorage
+  // right away (works offline), Supabase a bit later (syncs across devices).
+  // A form back at its pristine state deletes the draft instead.
   useEffect(() => {
     if (!draftReadyRef.current || draftDoneRef.current) return
-    const timer = setTimeout(() => {
-      const hasContent =
-        step > 1 ||
-        city.trim() !== '' ||
-        theme.trim() !== '' ||
-        specialInstructions.trim() !== '' ||
-        startEnd.start !== null
+    const hasContent =
+      step > 1 ||
+      city.trim() !== '' ||
+      theme.trim() !== '' ||
+      specialInstructions.trim() !== '' ||
+      startEnd.start !== null
+    const draft: GenerationDraft = {
+      savedAt: Date.now(),
+      step,
+      city,
+      country,
+      duration,
+      nbEtapes,
+      difficulty,
+      specialties,
+      theme,
+      specialInstructions,
+      bonusThemes,
+      bonusCustom,
+      startEnd,
+      quiz,
+      quizAnswers,
+    }
+    const localTimer = setTimeout(() => {
       try {
-        if (!hasContent) {
-          localStorage.removeItem(GENERATION_DRAFT_KEY)
-          return
-        }
-        const draft: GenerationDraft = {
-          savedAt: Date.now(),
-          step,
-          city,
-          country,
-          duration,
-          nbEtapes,
-          difficulty,
-          specialties,
-          theme,
-          specialInstructions,
-          bonusThemes,
-          bonusCustom,
-          startEnd,
-          quiz,
-          quizAnswers,
-        }
-        localStorage.setItem(GENERATION_DRAFT_KEY, JSON.stringify(draft))
+        if (!hasContent) localStorage.removeItem(GENERATION_DRAFT_KEY)
+        else localStorage.setItem(GENERATION_DRAFT_KEY, JSON.stringify(draft))
       } catch {
         // Quota plein ou stockage indisponible — l'app marche sans brouillon.
       }
     }, 400)
-    return () => clearTimeout(timer)
+    const remoteTimer = setTimeout(() => {
+      const userId = userIdRef.current
+      if (!userId) return
+      const supabase = createClient()
+      if (!hasContent) void deleteGenerationDraft(supabase, userId)
+      else void saveGenerationDraft(supabase, userId, draft)
+    }, 1500)
+    return () => {
+      clearTimeout(localTimer)
+      clearTimeout(remoteTimer)
+    }
   }, [
     step,
     city,
@@ -189,6 +236,9 @@ export default function GeneratePage() {
     } catch {
       // stockage indisponible — rien à purger
     }
+    if (userIdRef.current) {
+      void deleteGenerationDraft(createClient(), userIdRef.current)
+    }
   }
 
   function discardDraft() {
@@ -196,6 +246,9 @@ export default function GeneratePage() {
       localStorage.removeItem(GENERATION_DRAFT_KEY)
     } catch {
       // stockage indisponible — rien à purger
+    }
+    if (userIdRef.current) {
+      void deleteGenerationDraft(createClient(), userIdRef.current)
     }
     quizLoadedRef.current = false
     setStep(1)
@@ -819,6 +872,14 @@ function formatDraftDate(ts: number): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+/** Resolves with `fallback` if the promise takes longer than `ms`. */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ])
 }
 
 function Row({ label, value }: { label: string; value: string }) {

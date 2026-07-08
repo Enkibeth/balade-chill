@@ -110,18 +110,11 @@ function parseQuizAnswers(v: unknown): Record<string, string> {
 }
 
 /**
- * Désérialise et assainit un brouillon lu depuis localStorage. Chaque champ
- * invalide retombe sur la valeur par défaut du formulaire ; retourne null si
- * le contenu n'est pas exploitable du tout (JSON cassé, mauvaise forme).
+ * Assainit un brouillon déjà désérialisé (payload jsonb Supabase, objet
+ * quelconque). Chaque champ invalide retombe sur la valeur par défaut du
+ * formulaire ; retourne null si le contenu n'est pas exploitable du tout.
  */
-export function parseGenerationDraft(raw: string | null): GenerationDraft | null {
-  if (!raw) return null
-  let data: unknown
-  try {
-    data = JSON.parse(raw)
-  } catch {
-    return null
-  }
+export function sanitizeGenerationDraft(data: unknown): GenerationDraft | null {
   if (!isRecord(data) || typeof data.city !== 'string') return null
 
   const difficulty = data.difficulty as Difficulty
@@ -152,5 +145,18 @@ export function parseGenerationDraft(raw: string | null): GenerationDraft | null
     startEnd: parseStartEnd(data.startEnd),
     quiz: parseQuiz(data.quiz),
     quizAnswers: parseQuizAnswers(data.quizAnswers),
+  }
+}
+
+/**
+ * Désérialise et assainit un brouillon lu depuis localStorage (JSON brut).
+ * Retourne null si le JSON est cassé ou la forme inexploitable.
+ */
+export function parseGenerationDraft(raw: string | null): GenerationDraft | null {
+  if (!raw) return null
+  try {
+    return sanitizeGenerationDraft(JSON.parse(raw))
+  } catch {
+    return null
   }
 }
