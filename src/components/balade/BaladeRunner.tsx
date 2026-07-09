@@ -168,7 +168,6 @@ export function BaladeRunner({
         <EtapeCard
           key={etape.id}
           etape={etape}
-          city={balade.city}
           theme={theme}
           enigmeSolved={!!session.enigme_scores[etape.enigme.id]}
           medicalCorrect={

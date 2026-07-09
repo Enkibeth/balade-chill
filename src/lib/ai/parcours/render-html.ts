@@ -5,6 +5,7 @@
 // Le bloc « itinéraire complet » réutilise les liens nommés du moteur.
 
 import type { GeneratedParcours } from './types'
+import { hasValidCoords, pointMapsUrl as coordMapsUrl } from '../mapsUrl'
 
 function esc(value: string): string {
   return String(value ?? '')
@@ -25,6 +26,9 @@ function paragraphs(value: string): string {
 }
 
 function pointMapsUrl(name: string, lat: number, lng: number): string {
+  // Coordonnées d'abord : la recherche par nom retombe sur la ville entière
+  // quand Google ne reconnaît pas le libellé de l'arrêt.
+  if (hasValidCoords(lat, lng)) return coordMapsUrl(lat, lng)
   const q = name?.trim() ? encodeURIComponent(name.trim()) : `${lat},${lng}`
   return `https://www.google.com/maps/search/?api=1&query=${q}`
 }

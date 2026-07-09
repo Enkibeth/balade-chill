@@ -35,7 +35,7 @@ import {
   type GeocodedPlace,
 } from '@/lib/ai/geocode'
 import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
-import { placeSearchUrl } from '@/lib/ai/mapsUrl'
+import { pointMapsUrl } from '@/lib/ai/mapsUrl'
 import type {
   AIProvider,
   Balade,
@@ -326,7 +326,7 @@ function assembleBalade(
       location_name: asString(e.location_name, `Étape ${order}`),
       lat,
       lng,
-      maps_url: placeSearchUrl(asString(e.location_name), req.city, lat, lng),
+      maps_url: pointMapsUrl(lat, lng),
       story_text: asString(e.story_text),
       direction_text: asString(e.direction_text),
       walk_minutes: asNumber(e.walk_minutes),

@@ -19,7 +19,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { renderBaladeHtml } from '@/lib/ai/render-html'
 import { applyDistancesAndTime } from '@/lib/ai/routeMath'
-import { placeSearchUrl, upgradeMapsUrl } from '@/lib/ai/mapsUrl'
+import { etapeMapsUrl, pointMapsUrl } from '@/lib/ai/mapsUrl'
 import { CipherBlock } from './CipherBlock'
 import { EtapeEditor } from './EtapeEditor'
 import type { Balade, Etape, ThemeColor } from '@/types'
@@ -185,7 +185,7 @@ export function ValidationScreen({
         lat: data.lat,
         lng: data.lng,
         location_name: newName,
-        maps_url: placeSearchUrl(newName, balade.city, data.lat, data.lng),
+        maps_url: pointMapsUrl(data.lat, data.lng),
       })
     } catch {
       setError('Erreur réseau pendant le géocodage.')
@@ -374,13 +374,7 @@ export function ValidationScreen({
                 </div>
                 {e.maps_url && (
                   <a
-                    href={upgradeMapsUrl(
-                      e.maps_url,
-                      e.location_name,
-                      balade.city,
-                      e.lat,
-                      e.lng,
-                    )}
+                    href={etapeMapsUrl(e.maps_url, e.lat, e.lng)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 rounded bg-[#1a73e8] px-2.5 py-1.5 text-[11px] text-white"

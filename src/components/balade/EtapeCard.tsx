@@ -9,7 +9,7 @@ import {
   bonusCategoryDef,
   resolveBonusCategory,
 } from '@/lib/ai/bonus'
-import { upgradeMapsUrl } from '@/lib/ai/mapsUrl'
+import { etapeMapsUrl } from '@/lib/ai/mapsUrl'
 import { CipherBlock } from './CipherBlock'
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']
@@ -40,8 +40,6 @@ function Reveal({
 
 export interface EtapeCardProps {
   etape: Etape
-  /** Ville de la balade — désambiguïse la recherche Google Maps par nom. */
-  city?: string
   theme: ThemeColor
   enigmeSolved: boolean
   medicalCorrect: boolean
@@ -53,7 +51,6 @@ export interface EtapeCardProps {
 
 export function EtapeCard({
   etape,
-  city,
   theme,
   enigmeSolved,
   medicalCorrect,
@@ -65,11 +62,10 @@ export function EtapeCard({
   const [showHint, setShowHint] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const [showMedical, setShowMedical] = useState(false)
-  // Les balades déjà en base ont des maps_url « coordonnées seules » : on les
-  // met à niveau à l'affichage pour ouvrir la fiche du lieu nommé.
-  const mapsHref = etape.maps_url
-    ? upgradeMapsUrl(etape.maps_url, etape.location_name, city, etape.lat, etape.lng)
-    : etape.maps_url
+  // Lien recalculé depuis les coordonnées de l'étape : les maps_url stockés
+  // (recherche « nom, ville ») pouvaient ouvrir la ville entière quand Google
+  // ne reconnaissait pas le nom du lieu.
+  const mapsHref = etapeMapsUrl(etape.maps_url, etape.lat, etape.lng)
 
   return (
     <article
@@ -105,7 +101,7 @@ export function EtapeCard({
               <MapPin size={16} className="mt-0.5 shrink-0 text-amber-300" />
               <span>{etape.direction_text}</span>
             </p>
-            {etape.maps_url && (
+            {mapsHref && (
               <a
                 href={mapsHref}
                 target="_blank"

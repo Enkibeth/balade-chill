@@ -1,59 +1,38 @@
 /**
- * Lien Google Maps « recherche » (api=1) qui ouvre la fiche du lieu nommé
- * plutôt qu'un simple point de coordonnées : Google résout « nom, ville »
- * vers la vraie fiche du lieu (photos, avis, itinéraire en un tap).
+ * Liens Google Maps des étapes — ancrés sur les coordonnées exactes.
  *
- * - Repli sur les coordonnées brutes quand aucun nom n'est disponible.
- * - La ville n'est ajoutée que si le nom ne la contient pas déjà (les
- *   displayName issus du géocodage l'incluent souvent).
+ * Historique : les liens étaient des recherches par nom (`query=Nom, Ville`)
+ * pour ouvrir la « fiche » du lieu. En pratique, sans Place ID Google, une
+ * recherche texte est ambiguë : quand Google ne reconnaît pas le libellé
+ * (nom d'étape libre, lieu-dit, graphie approximative), il retombe sur la
+ * ville entière — le bouton ouvrait « Genève » au lieu du point exact.
+ * Seules les coordonnées garantissent le pin au bon endroit ; le nom du
+ * lieu reste affiché dans l'app elle-même.
  */
-export function placeSearchUrl(
-  name: string | null | undefined,
-  city: string | null | undefined,
-  lat: number,
-  lng: number,
-): string {
-  const n = name?.trim() ?? ''
-  const c = city?.trim() ?? ''
-  let query: string
-  if (!n) {
-    query = `${lat},${lng}`
-  } else if (c && !n.toLowerCase().includes(c.toLowerCase())) {
-    query = `${n}, ${c}`
-  } else {
-    query = n
-  }
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+
+/** Coordonnées exploitables : finies et non (0,0) — 0,0 = géocodage absent. */
+export function hasValidCoords(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0)
+  )
 }
 
-/** True when the URL is a coordinates-only search link (ancien format). */
-export function isCoordOnlyMapsUrl(url: string): boolean {
-  const m = url.match(/[?&]query=([^&]*)$/)
-  if (!m) return false
-  let q: string
-  try {
-    q = decodeURIComponent(m[1])
-  } catch {
-    return false
-  }
-  return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(q)
+/** Lien Google Maps qui ouvre un pin exactement aux coordonnées données. */
+export function pointMapsUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${lat}%2C${lng}`
 }
 
 /**
- * Met à niveau un maps_url hérité (coordonnées seules) vers une recherche par
- * nom de lieu — pour que les balades déjà en base ouvrent aussi le lieu-dit.
- * Les liens déjà nommés (ou sans nom disponible) sont rendus tels quels.
+ * Lien à afficher pour une étape : recalculé depuis ses coordonnées dès
+ * qu'elles sont exploitables — ce qui corrige aussi, à l'affichage, les
+ * maps_url « nom, ville » des balades déjà en base. Repli sur l'URL
+ * stockée quand les coordonnées manquent.
  */
-export function upgradeMapsUrl(
-  url: string,
-  name: string | null | undefined,
-  city: string | null | undefined,
+export function etapeMapsUrl(
+  storedUrl: string | null | undefined,
   lat: number,
   lng: number,
 ): string {
-  if (!isCoordOnlyMapsUrl(url) || !name?.trim()) return url
-  // « Étape N » est le nom de repli stocké quand le modèle n'a pas nommé le
-  // lieu — chercher ça dans Maps serait pire que les coordonnées.
-  if (/^étape\s+\d+$/i.test(name.trim())) return url
-  return placeSearchUrl(name, city, lat, lng)
+  if (hasValidCoords(lat, lng)) return pointMapsUrl(lat, lng)
+  return storedUrl ?? ''
 }
