@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>中国 · Chine 2026 — Notre carnet de voyage</title>
+<meta name="description" content="Carnet de voyage interactif — 38 jours en Chine à deux (28 sept → 4 nov 2026) : carte, calendrier, itinéraires comparés et conseils pratiques.">
 <meta name="theme-color" content="#0c0a10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +33,7 @@
   --jade:#4FD0B4; --violet:#B98BE6; --coral:#F2884E; --green:#5BD27A; --rose:#EE6E93;
   /* — text — */
   --paper:#F4ECE0; --paper-dim:#D8CBBA; --mute:#9C8F81; --faint:#6E6458;
-  --line:rgba(244,206,106,.14); --line-soft:var(--line-soft);
+  --line:rgba(244,206,106,.14); --line-soft:rgba(244,236,224,.10);
   /* — type — */
   --serif:'Fraunces',Georgia,serif; --cn:'Noto Serif SC',serif;
   --body:'Outfit',system-ui,sans-serif; --mono:'Spline Sans Mono',ui-monospace,monospace;
@@ -49,13 +50,13 @@
   --glass:rgba(11,9,16,.9); --glass2:rgba(11,9,16,.5);
   --glass-strong:rgba(11,9,16,.96); --glass-strong2:rgba(11,9,16,.78);
   --glass-card:rgba(14,11,20,.97);
-  --fill-1:var(--fill-1); --fill-2:var(--fill-2);
+  --fill-1:rgba(244,236,224,.05); --fill-2:rgba(244,236,224,.09);
   --grain-blend:overlay; --grain-op:.42;
   --map-sea1:#101a2b; --map-sea2:#08060e; --map-land1:#2f6576; --map-land2:#153741;
   --map-coast:#F7DD93; --map-grid:rgba(244,206,106,.06);
   --stage-vignette:rgba(0,0,0,.55);
   --glass-map:rgba(13,10,18,.62);
-  --h1-edge:#fff;
+  --h1-edge:#fff; --h1-mid1:#F7DD93; --h1-mid2:#FF7A5A;
 }
 html[data-theme="light"]{
   --ink:#fbf7ef; --ink2:#f3ecdf; --ink3:#ffffff; --lacquer:#fff3e8;
@@ -79,7 +80,7 @@ html[data-theme="light"]{
   --map-coast:#c79a34; --map-grid:rgba(150,110,25,.12);
   --stage-vignette:rgba(120,90,30,.10);
   --glass-map:rgba(255,253,247,.82);
-  --h1-edge:#7a5a12;
+  --h1-edge:#7a5a12; --h1-mid1:#9A6A0E; --h1-mid2:#C9362A;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -89,6 +90,9 @@ body{font-family:var(--body);background:var(--ink);color:var(--paper);line-heigh
 a{color:inherit;text-decoration:none}
 img{display:block}
 ::selection{background:rgba(244,206,106,.28);color:#fff}
+html[data-theme="light"] ::selection{color:#2c2218}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px}
+body.drawer-open{overflow:hidden}
 ::-webkit-scrollbar{width:11px;height:11px}
 ::-webkit-scrollbar-thumb{background:rgba(244,206,106,.18);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
 ::-webkit-scrollbar-thumb:hover{background:rgba(244,206,106,.34);background-clip:padding-box}
@@ -136,6 +140,10 @@ img{display:block}
   transition:transform .2s var(--spring),border-color .18s,background .18s}
 .tb-toggle:hover{border-color:rgba(244,206,106,.5);transform:translateY(-1px) rotate(-12deg)}
 .tb-toggle:active{transform:scale(.92)}
+.tb-nav{display:flex;gap:2px;font-family:var(--mono);font-size:11.5px}
+.tb-nav a{padding:7px 10px;border-radius:999px;color:var(--mute);transition:color .15s,background .15s}
+.tb-nav a:hover{color:var(--gold);background:var(--fill-1)}
+@media(max-width:1020px){.tb-nav{display:none}}
 @media(max-width:720px){.tb-dates{display:none}}
 
 /* ---------- HERO + STAGE ---------- */
@@ -144,7 +152,7 @@ img{display:block}
 .hero .eyebrow{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;
   color:var(--gold);opacity:0;animation:rise .9s var(--ease-out) .05s forwards}
 .hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(42px,8.4vw,94px);line-height:.96;letter-spacing:-.018em;
-  margin:10px 0 6px;background:linear-gradient(108deg,var(--h1-edge),#F7DD93 42%,#FF7A5A 72%,var(--h1-edge));
+  margin:10px 0 6px;background:linear-gradient(108deg,var(--h1-edge),var(--h1-mid1) 42%,var(--h1-mid2) 72%,var(--h1-edge));
   -webkit-background-clip:text;background-clip:text;color:transparent;
   background-size:220% 100%;animation:rise .95s var(--ease-out) .12s forwards,shine 9s ease-in-out 1.2s infinite;opacity:0}
 .hero h1 .zh{display:block;font-family:var(--cn);font-weight:700;font-size:.36em;letter-spacing:.62em;
@@ -155,7 +163,7 @@ img{display:block}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 @keyframes shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 
-.stage{position:relative;height:min(66vh,600px);min-height:420px;margin-top:10px;border-radius:var(--r-lg);overflow:hidden;
+.stage{position:relative;height:min(66vh,600px);min-height:420px;margin-top:10px;border-radius:var(--r-lg);overflow:hidden;scroll-margin-top:76px;
   border:1px solid var(--line);background:
    radial-gradient(120% 90% at 50% -4%, rgba(46,26,34,.62), transparent 56%),
    radial-gradient(100% 120% at 82% 104%, rgba(224,64,46,.12), transparent 60%),
@@ -213,7 +221,7 @@ img{display:block}
 .pv-body h4{font-size:15.5px;margin:0 0 3px}
 .pv-body h4 .cn{font-family:var(--cn);font-size:12px;color:var(--mute);margin-left:4px}
 .pv-region{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--mute);margin:0 0 9px}
-.pv-days{font-size:12.5px;color:#F4ECE0;margin:0 0 12px;line-height:1.4}
+.pv-days{font-size:12.5px;color:var(--paper);margin:0 0 12px;line-height:1.4}
 .pv-days b{color:var(--gold)}
 .pv-more{width:100%;border:1px solid rgba(244,206,106,.42);background:rgba(244,206,106,.12);color:var(--gold);
   border-radius:10px;padding:9px;cursor:pointer;font-size:12.5px;font-weight:600;transition:background .18s,transform .18s}
@@ -352,7 +360,7 @@ html[data-theme="light"] .rlist .when.soft{color:var(--gold)}
 .scrim.open{opacity:1;pointer-events:auto}
 
 /* ---------- SECTIONS ---------- */
-section.block{max-width:var(--maxw);margin:0 auto;padding:72px 20px 8px}
+section.block{max-width:var(--maxw);margin:0 auto;padding:72px 20px 8px;scroll-margin-top:24px}
 .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--red);display:inline-flex;align-items:center;gap:9px;margin-bottom:12px}
 .kicker::before{content:"";width:26px;height:1px;background:var(--red);opacity:.6}
 h2.big{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.6vw,44px);line-height:1.04;letter-spacing:-.015em;margin-bottom:12px}
@@ -490,7 +498,7 @@ footer{max-width:var(--maxw);margin:44px auto 0;padding:30px 20px 60px;border-to
 footer b{color:var(--gold)}
 footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inline-block;margin-bottom:8px}
 
-.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,32px);z-index:120;opacity:0;pointer-events:none;
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,32px);z-index:120;opacity:0;pointer-events:none;
   font-family:var(--mono);font-size:12.5px;background:var(--ink3);border:1px solid rgba(244,206,106,.4);color:var(--gold);
   border-radius:999px;padding:12px 22px;box-shadow:0 24px 60px -24px rgba(0,0,0,.85);transition:transform .45s var(--spring),opacity .35s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -585,6 +593,9 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
       <span class="t">Chine <span class="yr">2026</span></span>
     </div>
     <div class="tb-spacer"></div>
+    <nav class="tb-nav" aria-label="Sections de la page">
+      <a href="#stage">Carte</a><a href="#timeline">Jours</a><a href="#approches">Approches</a><a href="#editor">Itinéraire</a><a href="#pratique">Pratique</a><a href="#ressources">Ressources</a>
+    </nav>
     <div class="tb-dates">
       <b>28 sept → 4 nov 2026</b><br>
       <span id="tb-progress">38 jours</span>
@@ -669,7 +680,7 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
       <div id="add-pool" style="display:flex;flex-wrap:wrap;gap:7px"></div>
     </div>
     <div class="itin-toolbar">
-      <button class="tool" id="btn-load-reco">★ Recharger l'approche Sud (conseillée)</button>
+      <button class="tool" id="btn-load-reco">★ Recharger l'approche Sud</button>
       <button class="tool warn" id="btn-clear">Vider l'itinéraire</button>
     </div>
   </div>
@@ -818,7 +829,7 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
 </footer>
 
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Détail de l’étape" aria-hidden="true"></aside>
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -1114,10 +1125,13 @@ const ROUTES = [
   { id:'classique', name:'Recherche approfondie', zh:'深度研究', color:'#F4CE6A', src:'Sans visa L · HK + Macao',
     blurb:'La stratégie la plus intelligente, sans visa L : on absorbe la Golden Week à Hong Kong puis Macao (territoires à entrée distincte du continent), puis on entre sur le continent après le pic — Guangxi karstique, Xi’an, Pékin, Huangshan + villages Hui, et un final lent dans le Jiangnan (Hangzhou, Suzhou, Shanghai).',
     stops:[st('hongkong',5),st('macao',3),st('guilin',4),st('longji',2),st('xian',4),st('beijing',5),st('huangshan',3),st('hongcun',1),st('hangzhou',3),st('suzhou',2),st('shanghai',5)] },
-  { id:'leger', name:'Version allégée', zh:'轻松', color:'#F2884E', src:'dérivé · approche Sud',
+  { id:'sud2', name:'Sud, sans visa', zh:'南线·免签', color:'#5BD27A', src:'Sud corrigé · GW hors continent',
+    blurb:'L’approche Sud, corrigée : la Golden Week s’absorbe à Hong Kong puis Macao, on entre sur le continent le 6 octobre (séjour continu < 30 jours → aucun visa L) et on garde Zhangjiajie, le Sichuan et le Yunnan — en lâchant Shangri-La, Pingyao et Suzhou.',
+    stops:[st('hongkong',5),st('macao',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',3),st('dali',3),st('lijiang',3),st('tigerleaping',2),st('xian',3),st('beijing',4),st('hangzhou',2),st('shanghai',3)] },
+  { id:'leger', name:'Version allégée', zh:'轻松', color:'#F2884E', src:'dérivé · approche Sud · visa L requis',
     blurb:'On retire Shangri-La (altitude/froid) pour respirer et étaler un peu plus les belles étapes.',
     stops:[st('hongkong',3),st('guilin',3),st('zhangjiajie',3),st('chengdu',4),st('dali',4),st('lijiang',3),st('tigerleaping',2),st('xian',3),st('pingyao',2),st('beijing',4),st('shanghai',3),st('suzhou',1),st('hangzhou',2)] },
-  { id:'douceur', name:'Romance au ralenti', zh:'慢旅', color:'#EE6E93', src:'le meilleur des deux',
+  { id:'douceur', name:'Romance au ralenti', zh:'慢旅', color:'#EE6E93', src:'le meilleur des deux · visa L requis',
     blurb:'Moins d’étapes, plus de nuits : on troque quelques icônes contre des séjours longs et lents à Dali, Yangshuo et Hangzhou — la philosophie commune aux deux recherches.',
     stops:[st('hongkong',3),st('chengdu',4),st('guilin',6),st('dali',6),st('lijiang',5),st('hangzhou',4),st('shanghai',6),st('suzhou',3)] },
 ];
@@ -1177,16 +1191,17 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 function buildFilters(){
   const box=document.getElementById('filters');
   box.innerHTML=Object.entries(CATS).map(([k,c])=>
-    `<button class="chip ${state.filters[k]?'':'off'}" data-cat="${k}"><i class="dotc" style="background:${c.color}"></i>${c.icon} ${c.label.split(' ')[0]}</button>`).join('');
+    `<button class="chip ${state.filters[k]?'':'off'}" data-cat="${k}" aria-pressed="${state.filters[k]}"><i class="dotc" style="background:${c.color}"></i>${c.icon} ${c.label.split(' ')[0]}</button>`).join('');
   box.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
     const k=ch.dataset.cat; state.filters[k]=!state.filters[k];
-    ch.classList.toggle('off',!state.filters[k]); saveState(); mapView && mapView.applyFilter();
+    ch.classList.toggle('off',!state.filters[k]); ch.setAttribute('aria-pressed',state.filters[k]);
+    saveState(); mapView && mapView.applyFilter();
   }));
 }
 
 /* =================== DRAWER =================== */
 const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
-let openId=null;
+let openId=null, lastFocus=null;
 function openDest(id){
   const d=BY_ID[id]; if(!d) return; openId=id;
   const c=CATS[d.cat], v=state.votes[id];
@@ -1220,7 +1235,10 @@ function openDest(id){
       </div>
       <button class="add-btn ${inPlan(id)?'in-plan':''}" id="dr-add">${inPlan(id)?'✓ Dans l’itinéraire — retirer':'+ Ajouter à l’itinéraire'}</button>
     </div>`;
+  const wasOpen=drawer.classList.contains('open');
   drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+  document.body.classList.add('drawer-open');
+  if(!wasOpen){ lastFocus=document.activeElement; const cb=document.getElementById('dr-close'); if(cb) cb.focus(); }
   document.getElementById('dr-close').onclick=closeDrawer;
   drawer.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
     const nv=b.dataset.v; if(state.votes[id]===nv) delete state.votes[id]; else state.votes[id]=nv;
@@ -1233,7 +1251,10 @@ function openDest(id){
   };
   mapView && mapView.focus(id);
 }
-function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); openId=null; mapView && mapView.refresh && mapView.refresh(); }
+function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true');
+  document.body.classList.remove('drawer-open'); openId=null;
+  if(lastFocus&&document.contains(lastFocus)){ try{ lastFocus.focus(); }catch(e){} } lastFocus=null;
+  mapView && mapView.refresh && mapView.refresh(); }
 scrim.addEventListener('click',closeDrawer);
 window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
 
@@ -1254,7 +1275,7 @@ function renderCalendar(){
   stops.innerHTML=s;
   stops.querySelectorAll('.cal-stop:not(.depart)').forEach(b=>b.addEventListener('click',()=>openDest(b.dataset.id)));
   const tot=planTotalDays();
-  document.getElementById('cal-count').innerHTML=`${state.plan.length} étapes · <b style="color:${tot>TRIP_DAYS?'#FF6A53':(tot>=TRIP_DAYS-1?'#5BD27A':'#F4CE6A')}">${tot} jours planifiés</b> / ${TRIP_DAYS}`;
+  document.getElementById('cal-count').innerHTML=`${state.plan.length} étapes · <b style="color:${tot>TRIP_DAYS?'var(--red)':(tot>=TRIP_DAYS-1?'var(--green)':'var(--gold)')}">${tot} jours planifiés</b> / ${TRIP_DAYS}`;
 }
 
 /* =================== ÉDITEUR =================== */
@@ -1265,7 +1286,7 @@ function renderEditor(){
     <div class="stat"><div class="v">${state.plan.length}</div><div class="l">Étapes</div></div>
     <div class="stat"><div class="v ${totCls}">${tot} / ${TRIP_DAYS}</div><div class="l">Jours ${diff>0?'(+'+diff+' à retirer)':diff<0?'('+(-diff)+' libres)':'(parfait ✓)'}</div></div>
     <div class="stat"><div class="v">${dist.toLocaleString('fr-FR')} km</div><div class="l">Distance cumulée</div></div>
-    <div class="stat"><div class="v" style="color:#5BD27A">${Object.values(state.votes).filter(v=>v==='yes').length}</div><div class="l">Coups de cœur ❤</div></div>`;
+    <div class="stat"><div class="v" style="color:var(--green)">${Object.values(state.votes).filter(v=>v==='yes').length}</div><div class="l">Coups de cœur ❤</div></div>`;
   const chips=document.getElementById('plan-chips');
   chips.innerHTML=state.plan.map((it,i)=>{ const d=BY_ID[it.id], c=CATS[d.cat];
     return `<div class="pchip" data-id="${it.id}">
@@ -1317,7 +1338,8 @@ function renderApproaches(){
       <p class="phil">${A.blurb}</p>
       <dl>
         <div class="row"><dt>Arrivée</dt><dd>Hong Kong</dd></div>
-        <div class="row"><dt>Golden Week</dt><dd>On la <b>fuit</b> dans les grands espaces (Yangshuo, Zhangjiajie, Chengdu)</dd></div>
+        <div class="row"><dt>Golden Week</dt><dd>On la <b>fuit</b> dans les grands espaces — ⚠ mais tel quel, Guilin (1–3 oct) et Zhangjiajie (4–6 oct) tombent <b>en plein pic</b> : tout réserver à l’ouverture des ventes</dd></div>
+        <div class="row"><dt>Visa</dt><dd>⚠ <b>Visa L requis</b> : 35 jours d’affilée sur le continent (&gt; 30 j d’exemption). Sinon, voir la variante « Sud, sans visa » plus bas</dd></div>
         <div class="row"><dt>Signature</dt><dd>Zhangjiajie · Tiger Leaping Gorge · Shangri-La · Pingyao</dd></div>
         <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:var(--paper-dim)">${list(A)}</dd></div>
         <div class="row"><dt>Format</dt><dd>${A.stops.length} étapes · ${days(A)} j</dd></div>
@@ -1331,6 +1353,7 @@ function renderApproaches(){
       <dl>
         <div class="row"><dt>Arrivée</dt><dd>Hong Kong, puis Macao</dd></div>
         <div class="row"><dt>Golden Week</dt><dd>On l’<b>absorbe à Hong Kong & Macao</b> (entrée distincte du continent) — <b>pas de visa L</b> nécessaire</dd></div>
+        <div class="row"><dt>Visa</dt><dd><b>Aucun</b> : entrée sur le continent le 6 oct, séjour continu &lt; 30 jours (exemption française)</dd></div>
         <div class="row"><dt>Signature</dt><dd>Macao · Longji · Pékin impérial · Huangshan · villages Hongcun · Jiangnan</dd></div>
         <div class="row"><dt>Parcours</dt><dd style="font-family:var(--mono);font-size:11.5px;color:var(--paper-dim)">${list(B)}</dd></div>
         <div class="row"><dt>Format</dt><dd>${B.stops.length} étapes · ${days(B)} j (≈ 37 nuits + marge)</dd></div>
@@ -1501,9 +1524,14 @@ function initLeaflet(){
   const stage=document.getElementById('stage'), host=document.getElementById('map2d');
   const isLight=()=>document.documentElement.getAttribute('data-theme')==='light';
 
-  const map=L.map(host,{ zoomControl:false, attributionControl:true, scrollWheelZoom:true })
+  const map=L.map(host,{ zoomControl:false, attributionControl:true, scrollWheelZoom:false })
     .setView([33,110],4);
   L.control.zoom({position:'topright'}).addTo(map); // top-left est occupé par les filtres
+  // La molette ne zoome qu'après un clic sur la carte : la page reste scrollable.
+  map.on('click',()=>map.scrollWheelZoom.enable());
+  stage.addEventListener('mouseleave',()=>map.scrollWheelZoom.disable());
+  const hintEl=document.getElementById('stage-hint');
+  if(hintEl) map.once('popupopen',()=>{ hintEl.style.opacity='0'; });
 
   let tiles=L.tileLayer(tileURL(isLight()),{ subdomains:'abcd', maxZoom:19, detectRetina:true,
     attribution:'© OpenStreetMap, © CARTO' }).addTo(map);
@@ -1599,6 +1627,7 @@ function noteMap(state, why){
   document.documentElement.setAttribute('data-map', state);
   if(why) document.documentElement.setAttribute('data-map-why', why);
   (why?console.warn:console.info)('[Chine] carte :', state, why||'');
+  if(state.indexOf('repli')!==0) return; // badge visible uniquement si la carte est en repli
   let b=document.getElementById('map-debug');
   if(!b){ b=document.createElement('button'); b.id='map-debug'; b.type='button';
     b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:3000;max-width:88%;'
@@ -1655,7 +1684,9 @@ function setupTopbar(){
 function setupTheme(){
   const btn=document.getElementById('btn-theme'); const root=document.documentElement;
   const sync=()=>{ const light=root.getAttribute('data-theme')==='light';
-    if(btn){ btn.textContent=light?'☀️':'🌙'; btn.title=light?'Passer en mode sombre':'Passer en mode clair'; } };
+    if(btn){ btn.textContent=light?'☀️':'🌙'; btn.title=light?'Passer en mode sombre':'Passer en mode clair'; }
+    const mc=document.querySelector('meta[name="theme-color"]');
+    if(mc) mc.setAttribute('content', light?'#fcf8f0':'#0c0a10'); };
   sync();
   if(btn) btn.addEventListener('click',()=>{
     const next=root.getAttribute('data-theme')==='light'?'dark':'light';
