@@ -10,9 +10,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Noto+Serif+SC:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Leaflet : carte en tuiles <img> (PAS de WebGL) — fiable sur Safari iOS,
-     comme la carte du tableau de bord. Fond Carto/OpenStreetMap (sans jeton). -->
-<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+     comme la carte du tableau de bord. Fond Carto/OpenStreetMap (sans jeton).
+     Servi en LOCAL (public/vendor/leaflet) : pas de CDN → fonctionne aussi
+     depuis la Chine, où unpkg est souvent inaccessible. -->
+<link href="/vendor/leaflet/leaflet.css" rel="stylesheet">
+<script src="/vendor/leaflet/leaflet.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -627,7 +629,7 @@ footer .seal{font-family:var(--cn);color:var(--red);font-size:17px;display:inlin
 <div class="gallery-head">
   <span class="kicker">Un avant-goût</span>
   <h2 class="big">La Chine en images<span class="zh cn">风光</span></h2>
-  <p class="lede">La bande défile toute seule — survole pour la mettre en pause, clique une photo pour ouvrir l'étape. Photos d'illustration (Flickr CC).</p>
+  <p class="lede">La bande défile toute seule — survole pour la mettre en pause, clique une photo pour ouvrir l'étape. Photos : Wikimedia Commons, licences libres.</p>
 </div>
 <section class="gallery" id="galerie" aria-label="Galerie photo des étapes">
   <div class="gtrack" id="gtrack"></div>
@@ -1102,19 +1104,10 @@ const DEST = [
 const BY_ID = Object.fromEntries(DEST.map(d=>[d.id,d]));
 const st = (id,days)=>({id,days}); // raccourci
 
-/* ---- Photos d'illustration (Flickr CC via loremflickr, repli picsum) ---- */
-const IMG = {
-  hongkong:'hongkong,skyline,harbour', macao:'macau,ruins,saint,paul', beijing:'beijing,forbidden,city', xian:'xian,terracotta,army',
-  hongcun:'hongcun,village,anhui',
-  huashan:'huashan,mountain,china', chengdu:'chengdu,panda', leshan:'leshan,giant,buddha',
-  guilin:'guilin,li,river,karst', longji:'longji,rice,terraces', zhangjiajie:'zhangjiajie,mountains',
-  dali:'dali,erhai,yunnan', lijiang:'lijiang,old,town', tigerleaping:'tiger,leaping,gorge',
-  shangrila:'shangri-la,tibet,monastery', pingyao:'pingyao,ancient,town', shanghai:'shanghai,bund,skyline',
-  zhujiajiao:'water,town,china', suzhou:'suzhou,garden,canal', hangzhou:'hangzhou,west,lake',
-  huangshan:'huangshan,mountains,clouds',
-};
-function hashLock(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h%100000; }
-function photoURL(id,w,h){ const k=IMG[id]||'china,landscape'; return `https://loremflickr.com/${w}/${h}/${k}?lock=${hashLock(id)}`; }
+/* ---- Photos LOCALES (public/chine-photos/, Wikimedia Commons, licences CC —
+   crédits dans public/chine-photos/CREDITS.md). Servies en local : rapides,
+   stables, et disponibles même depuis la Chine. Repli picsum si absente. ---- */
+function photoURL(id,w,h){ return `/chine-photos/${id}.jpg`; }
 const imgFB = (id,w,h)=>`this.onerror=null;this.src='https://picsum.photos/seed/${id}/${w}/${h}'`;
 
 /* ---- Parcours pré-construits. stops = [{id,days}] ---- */
