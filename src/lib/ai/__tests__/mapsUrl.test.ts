@@ -1,72 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import {
-  isCoordOnlyMapsUrl,
-  placeSearchUrl,
-  upgradeMapsUrl,
-} from '@/lib/ai/mapsUrl'
+import { etapeMapsUrl, hasValidCoords, pointMapsUrl } from '@/lib/ai/mapsUrl'
 
 const BASE = 'https://www.google.com/maps/search/?api=1&query='
 
-describe('placeSearchUrl', () => {
-  it('construit une recherche « nom, ville » pour ouvrir la fiche du lieu', () => {
-    expect(placeSearchUrl('Fontaine Saint-Michel', 'Paris', 48.85, 2.34)).toBe(
-      `${BASE}${encodeURIComponent('Fontaine Saint-Michel, Paris')}`,
-    )
+describe('pointMapsUrl', () => {
+  it('ancre le lien sur les coordonnées exactes', () => {
+    expect(pointMapsUrl(46.2044, 6.1432)).toBe(`${BASE}46.2044%2C6.1432`)
   })
 
-  it('n’ajoute pas la ville quand le nom la contient déjà', () => {
-    expect(
-      placeSearchUrl('Place Bellecour, Lyon, France', 'lyon', 45.75, 4.83),
-    ).toBe(`${BASE}${encodeURIComponent('Place Bellecour, Lyon, France')}`)
-  })
-
-  it('retombe sur les coordonnées sans nom exploitable', () => {
-    expect(placeSearchUrl('', 'Paris', 48.85, 2.34)).toBe(`${BASE}48.85%2C2.34`)
-    expect(placeSearchUrl('   ', undefined, 48.85, 2.34)).toBe(
-      `${BASE}48.85%2C2.34`,
-    )
-  })
-
-  it('fonctionne sans ville', () => {
-    expect(placeSearchUrl('Tour Eiffel', null, 48.86, 2.29)).toBe(
-      `${BASE}${encodeURIComponent('Tour Eiffel')}`,
-    )
+  it('gère les coordonnées négatives', () => {
+    expect(pointMapsUrl(-33.9249, 18.4241)).toBe(`${BASE}-33.9249%2C18.4241`)
   })
 })
 
-describe('isCoordOnlyMapsUrl', () => {
-  it('reconnaît l’ancien format coordonnées seules (brut et encodé)', () => {
-    expect(isCoordOnlyMapsUrl(`${BASE}48.85,2.34`)).toBe(true)
-    expect(isCoordOnlyMapsUrl(`${BASE}48.85%2C2.34`)).toBe(true)
-    expect(isCoordOnlyMapsUrl(`${BASE}-33.9,151.2`)).toBe(true)
+describe('hasValidCoords', () => {
+  it('accepte des coordonnées finies non nulles', () => {
+    expect(hasValidCoords(46.2044, 6.1432)).toBe(true)
+    expect(hasValidCoords(-33.9, 151.2)).toBe(true)
+    expect(hasValidCoords(0, 6.14)).toBe(true)
   })
 
-  it('ne matche pas les liens nommés ou d’itinéraire', () => {
-    expect(isCoordOnlyMapsUrl(`${BASE}Tour%20Eiffel`)).toBe(false)
-    expect(
-      isCoordOnlyMapsUrl(
-        'https://www.google.com/maps/dir/?api=1&origin=A&destination=B',
-      ),
-    ).toBe(false)
+  it('rejette NaN, Infinity et (0,0) — géocodage absent', () => {
+    expect(hasValidCoords(NaN, 6.14)).toBe(false)
+    expect(hasValidCoords(46.2, Infinity)).toBe(false)
+    expect(hasValidCoords(0, 0)).toBe(false)
   })
 })
 
-describe('upgradeMapsUrl', () => {
-  const legacy = `${BASE}48.85,2.34`
-
-  it('met à niveau un lien hérité vers la recherche nommée', () => {
-    expect(upgradeMapsUrl(legacy, 'Panthéon', 'Paris', 48.85, 2.34)).toBe(
-      `${BASE}${encodeURIComponent('Panthéon, Paris')}`,
-    )
+describe('etapeMapsUrl', () => {
+  it('remplace un lien « nom, ville » stocké par les coordonnées exactes', () => {
+    const legacy = `${BASE}${encodeURIComponent('Cathédrale Saint-Pierre, Genève')}`
+    expect(etapeMapsUrl(legacy, 46.201, 6.1487)).toBe(`${BASE}46.201%2C6.1487`)
   })
 
-  it('laisse intacts les liens déjà nommés', () => {
-    const named = `${BASE}${encodeURIComponent('Panthéon, Paris')}`
-    expect(upgradeMapsUrl(named, 'Autre nom', 'Paris', 48.85, 2.34)).toBe(named)
+  it('remplace aussi les anciens liens coordonnées (déjà corrects)', () => {
+    const legacy = `${BASE}46.201,6.1487`
+    expect(etapeMapsUrl(legacy, 46.201, 6.1487)).toBe(`${BASE}46.201%2C6.1487`)
   })
 
-  it('ne remplace pas les coordonnées par un nom de repli « Étape N »', () => {
-    expect(upgradeMapsUrl(legacy, 'Étape 3', 'Paris', 48.85, 2.34)).toBe(legacy)
-    expect(upgradeMapsUrl(legacy, '', 'Paris', 48.85, 2.34)).toBe(legacy)
+  it('retombe sur l’URL stockée quand les coordonnées sont inexploitables', () => {
+    const stored = `${BASE}Tour%20Eiffel`
+    expect(etapeMapsUrl(stored, 0, 0)).toBe(stored)
+    expect(etapeMapsUrl(stored, NaN, 2.29)).toBe(stored)
+  })
+
+  it('renvoie une chaîne vide sans URL stockée ni coordonnées', () => {
+    expect(etapeMapsUrl(undefined, 0, 0)).toBe('')
+    expect(etapeMapsUrl(null, NaN, NaN)).toBe('')
   })
 })

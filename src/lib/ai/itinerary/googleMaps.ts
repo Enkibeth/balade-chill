@@ -1,6 +1,8 @@
 // lib/itinerary/googleMaps.ts
-// Construit des liens Google Maps Directions qui s'ouvrent avec les VRAIS NOMS
-// des lieux (et non des coordonnées), grâce aux Place IDs.
+// Construit des liens Google Maps Directions. Un arrêt n'est désigné par son
+// NOM que s'il porte un Place ID qui l'ancre précisément ; sinon on passe ses
+// coordonnées — un nom nu est résolu librement par Google et peut retomber
+// ailleurs, voire sur la ville entière.
 //
 // Règle Google Maps (api=1) :
 //   - origin / destination : texte (nom ou "lat,lng")
@@ -17,14 +19,20 @@ const BASE = 'https://www.google.com/maps/dir/?api=1';
 /** Google Maps n'accepte que 9 waypoints intermédiaires par lien. */
 export const MAX_WAYPOINTS = 9;
 
+function coords(stop: Stop): string {
+  return `${stop.lat},${stop.lng}`;
+}
+
 function label(stop: Stop): string {
-  // On préfère le nom (joli libellé) ; repli sur les coordonnées.
-  return stop.name?.trim() ? stop.name.trim() : `${stop.lat},${stop.lng}`;
+  // Le nom (joli libellé) seulement quand un Place ID l'ancre ; sinon les
+  // coordonnées — seules garantes que le lien pointe le bon endroit.
+  return stop.placeId && stop.name?.trim() ? stop.name.trim() : coords(stop);
 }
 
 /**
  * Construit UN lien Google Maps Directions.
- * Si chaque arrêt a un `placeId`, le lien s'ouvre avec les noms des lieux.
+ * Si chaque arrêt a un `placeId`, le lien s'ouvre avec les noms des lieux ;
+ * sans Place ID, l'arrêt est désigné par ses coordonnées exactes.
  * Suppose waypoints.length <= MAX_WAYPOINTS (sinon utiliser buildDirectionsUrls).
  */
 export function buildDirectionsUrl(
@@ -47,11 +55,16 @@ export function buildDirectionsUrl(
   }
 
   if (waypoints.length > 0) {
-    params.push(
-      `waypoints=${waypoints.map((w) => encodeURIComponent(label(w))).join('|')}`,
-    );
     // waypoint_place_ids doit être aligné 1:1 avec waypoints -> tout ou rien.
-    if (waypoints.every((w) => w.placeId)) {
+    // Sans cet alignement, un nom de waypoint serait résolu librement par
+    // Google : dans ce cas, tous les waypoints passent en coordonnées.
+    const allAnchored = waypoints.every((w) => w.placeId);
+    params.push(
+      `waypoints=${waypoints
+        .map((w) => encodeURIComponent(allAnchored ? label(w) : coords(w)))
+        .join('|')}`,
+    );
+    if (allAnchored) {
       params.push(
         `waypoint_place_ids=${waypoints.map((w) => encodeURIComponent(w.placeId!)).join('|')}`,
       );

@@ -8,7 +8,7 @@ import { extractJsonObject } from '@/lib/ai/json'
 import { REGEN_ETAPE_SCHEMA } from '@/lib/ai/schemas'
 import { geocodeAddress, shortenDisplayName } from '@/lib/ai/geocode'
 import { bonusCategoryDef, isBonusCategory } from '@/lib/ai/bonus'
-import { placeSearchUrl } from '@/lib/ai/mapsUrl'
+import { pointMapsUrl } from '@/lib/ai/mapsUrl'
 import type { GeneratedEnigme } from '@/lib/ai/generated'
 import type {
   AIProvider,
@@ -418,7 +418,7 @@ export async function POST(request: Request) {
       location_name: finalName,
       lat,
       lng,
-      maps_url: placeSearchUrl(finalName, city, lat, lng),
+      maps_url: pointMapsUrl(lat, lng),
       story_text: asString(parsed.story_text),
       direction_text: asString(parsed.direction_text),
       action_mission: asString(parsed.action_mission),
